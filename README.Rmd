@@ -118,7 +118,7 @@ smooth_fig(
   )
 ```
 
-![](man/figures/README-smooth-1.png){width="407"}
+![](man/figures/README-smooth-1.png)
 
 #### Monthly detection probabilities
 
@@ -129,7 +129,7 @@ thresh_fig(
 )
 ```
 
-![](man/figures/README-thresh_fig-1.png){width="360"}
+![](man/figures/README-thresh_fig-1.png)
 
 #### Heat map
 
@@ -139,7 +139,7 @@ hm_fig(
 )
 ```
 
-![](man/figures/README-hm-1.png){width="517"}
+![](man/figures/README-hm-1.png)
 
 #### Effort needed
 
@@ -149,7 +149,7 @@ effort_needed_fig(
 )
 ```
 
-![](man/figures/README-effort-1.png){width="381"}
+![](man/figures/README-effort-1.png)
 
 #### Sampling effort
 
@@ -159,7 +159,7 @@ field_sample_fig(
 )
 ```
 
-![](man/figures/README-field-1.png){width="547"}
+![](man/figures/README-field-1.png)
 
 ### Shiny
 
