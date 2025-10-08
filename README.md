@@ -71,7 +71,7 @@ D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
 
 ### Clean/tidy data
 
-As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name necessary with `dplyr::filter()` when working with the code outside the app.
+As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name that you wish to explore with `dplyr::filter()` when working with the code outside the app.
 
 The example data herein contains a sample of metabarcoding data from a single protocol, and contains only the species detected within genus *Acartia*.
 
@@ -96,7 +96,7 @@ win$fshTest
 
 ### Visualization
 
-### Species monthly detection
+#### Species monthly detection
 
 ``` r
  smooth_fig(
@@ -104,7 +104,9 @@ win$fshTest
    )
 ```
 
-### Monthly detection probabilities
+![](man/figures/README-smooth-1.png){width="350"}
+
+#### Monthly detection probabilities
 
 ``` r
 thresh_fig(
@@ -112,6 +114,8 @@ thresh_fig(
   scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis"
 )
 ```
+
+![](man/figures/README-thresh_fig-1.png){width="350"}
 
 #### Heat map
 
@@ -121,7 +125,9 @@ hm_fig(
 )
 ```
 
-### Effort needed
+![](man/figures/README-hm-1.png){width="341"}
+
+#### Effort needed
 
 ``` r
 effort_needed_fig(
@@ -129,13 +135,17 @@ effort_needed_fig(
 )
 ```
 
-### Sampling effort
+![](man/figures/README-effort-1.png){width="296"}
+
+#### Sampling effort
 
 ``` r
 field_sample_fig(
   data = D_mb_ex |> dplyr::filter(class == "Copepoda")
 )
 ```
+
+![](man/figures/README-field-1.png){width="447"}
 
 ### Shiny
 
