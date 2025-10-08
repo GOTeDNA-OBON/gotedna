@@ -9,44 +9,39 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "70%"
 )
 ```
 
 # GOTeDNA
+
 ## An R package for guidance on optimal eDNA sampling periods to develop, optimize, and interpret monitoring programs
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
-
 
 ## Installation
 
 ### non-R users
 
-#### Install R 
+#### Install R
 
-We recommend to use R and RStudio: https://posit.co/download/rstudio-desktop/
+We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 
-1. Download R for your OS: https://cran.rstudio.com/
+1.  Download R for your OS: <https://cran.rstudio.com/>
 
-2. Install R Studio
+2.  Install R Studio
 
+#### Install the package
 
-#### Install the package 
+You first need to have access to the archive `GoteDNA_{version}.tar.gz`. Once you have obtained the archive, use the following:
 
-You first need to have access to the archive `GoteDNA_{version}.tar.gz`.
-Once you have obtained the archive, use the following: 
-
-```R
+``` r
 install.packages("path/to/GoteDNA_{version}.tar.gz")
 ```
-
-
-
-
 
 ### R users with access to the GitHub repository
 
@@ -54,8 +49,7 @@ You can install the development version of GOTeDNA from [GitHub](https://github.
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("mkmor/GOTeDNA")
-devtools::install_github("mkmor/GOTeDNA", dependencies = TRUE)
+devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA", dependencies = TRUE)
 ```
 
 Or if you have a local copy of the repo:
@@ -68,93 +62,116 @@ devtools::install_local("path/to/the/repo", dependencies = TRUE)
 ## Usage
 
 ### R function categories:
-- Import data
-- Clean/tidy data
-- Visualization
+
+-   Import data
+-   Clean/tidy data
+-   Visualization
+-   Shiny
 
 ```{R}
 library("GOTeDNA")
 ```
 
+### Import data
+
+To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
+
+Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email} for access to the latest templates.
+
+```{R eval=FALSE, include=TRUE}
+D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
+```
 
 ### Clean/tidy data
 
-```{R}
-newprob <- calc_det_prob(data = D_mb_ex)
-scaledprobs <- scale_newprob(D_mb_ex, newprob)
+As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name necessary with `dplyr::filter()` when working with the code outside the app.
+
+The example data herein contains a sample of metabarcoding data from a single protocol, and contains only the species detected within genus *Acartia*.
+
+```{R echo=FALSE}
+
+newprob <- calc_det_prob(
+  data = D_mb_ex |> dplyr::filter(genus == "Acartia")
+  )
+
+scaledprobs <- scale_newprob(
+  data = D_mb_ex |> dplyr::filter(genus == "Acartia"), 
+  newprob
+  )
+
 win <- calc_window(
-  data = D_mb_ex, 
-  threshold = "75", 
-  taxon.level = "species",
-  taxon.name = "Acartia longiremis", 
-  scaledprobs
-)
+  threshold = "75",
+  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis")
+  )
+
+win$opt_sampling
+win$fshTest
 ```
 
+### Visualization
 
-### Heat map 
+#### Species monthly detection
 
-```{R hm}
-hm_fig(
-   taxon.level = "class", 
-   taxon.name = "Copepoda", 
-   scaledprobs)
-```
-
-### Effort needed
-
-```{R effort}
-effort_needed_fig(
-  taxon.level = "genus",
-  taxon.name ="Acartia",
-  scaledprobs
-)
-```
-
-### Sampling effort
-
-```{R field}
-field_sample_fig(
-  data = D_mb_ex, 
-  taxon.level = "genus", 
-  taxon.name = "Acartia"
-)
-```
-
-### Species monthly detection
-
-```{R smooth}
-
+```{R smooth, eval=FALSE, include=TRUE}
 smooth_fig(
-  data = D_mb_ex, 
-  taxon.level = "species",
-  taxon.name = "Acartia longiremis"
+  data = D_mb_ex |> dplyr::filter(species == "Acartia longiremis")
+  )
+```
+
+![](man/figures/README-smooth-1.png){width="407"}
+
+#### Monthly detection probabilities
+
+```{R thresh_fig, eval=FALSE, include=TRUE}
+thresh_fig(
+  threshold = "75",   
+  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis")
 )
 ```
 
+![](man/figures/README-thresh_fig-1.png){width="360"}
 
-### Monthly detection probabilities
+#### Heat map
 
-```{R thresh_fig}
-thresh_fig(
-  taxon.level = "species", 
-  taxon.name = "Acartia longiremis", 
-  threshold = "75", 
-  scaledprobs)
+```{R hm, eval=FALSE, include=TRUE}
+hm_fig(
+   scaledprobs = scaledprobs |> dplyr::filter(class == "Copepoda")
+)
 ```
 
+![](man/figures/README-hm-1.png){width="517"}
 
-### Shiny 
+#### Effort needed
 
-Once the package loaded, the shiny can be launched using the following function.
+```{R effort, eval=FALSE, include=TRUE}
+effort_needed_fig(
+  scaledprobs = scaledprobs |> dplyr::filter(species == c("Acartia longiremis","Acartia tonsa"))
+)
+```
 
-```R
+![](man/figures/README-effort-1.png){width="381"}
+
+#### Sampling effort
+
+```{R field, eval=FALSE, include=TRUE}
+field_sample_fig(
+  data = D_mb_ex |> dplyr::filter(class == "Copepoda")
+)
+```
+
+![](man/figures/README-field-1.png){width="547"}
+
+### Shiny
+
+Once the package is loaded, the Shiny application can be launched using the following function.
+
+``` r
 run_gotedna_app()
 ```
 
-There is also a docker file available: 
+There is also a docker file available:
 
-```sh
+``` sh
 # build the container 
 docker build -t gotedna . 
 # use the container
