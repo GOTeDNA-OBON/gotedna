@@ -79,18 +79,20 @@ To import your data within GOTeDNA, it must be formatted within the GOTeDNA temp
 
 Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email} for access to the latest templates.
 
+```{R eval=TRUE, include=FALSE}
+D_mb_ex <- data("D_mb_ex")
+```
 ```{R eval=FALSE, include=TRUE}
 D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
 ```
 
 ### Clean/tidy data
 
-As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name necessary with `dplyr::filter()` when working with the code outside the app.
+As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name that you wish to explore with `dplyr::filter()` when working with the code outside the app.
 
 The example data herein contains a sample of metabarcoding data from a single protocol, and contains only the species detected within genus *Acartia*.
 
 ```{R echo=FALSE}
-
 newprob <- calc_det_prob(
   data = D_mb_ex |> dplyr::filter(genus == "Acartia")
   )
