@@ -1,3 +1,8 @@
+---
+editor_options: 
+  markdown: 
+    wrap: 72
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -6,6 +11,7 @@
 ## An R package for guidance on optimal eDNA sampling periods to develop, optimize, and interpret monitoring programs
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding
@@ -31,7 +37,7 @@ You first need to have access to the archive `GoteDNA_{version}.tar.gz`.
 Once you have obtained the archive, use the following:
 
 ``` r
-install.packages("path/to/GoteDNA_{version}.tar.gz")
+install.packages("path/to/GOTeDNA_{version}.tar.gz")
 ```
 
 ### R users with access to the GitHub repository
@@ -41,7 +47,6 @@ You can install the development version of GOTeDNA from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA")
 devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA", dependencies = TRUE)
 ```
 
@@ -56,166 +61,119 @@ devtools::install_local("path/to/the/repo", dependencies = TRUE)
 
 ### R function categories:
 
-- Import data
-- Clean/tidy data
-- Visualization
+-   Import data
+-   Clean/tidy data
+-   Visualization
+-   Shiny
 
 ``` r
 library("GOTeDNA")
 ```
 
+### Import data
+
+To import your data within GOTeDNA, it must be formatted within the
+GOTeDNA template Excel sheets prior to calling in the `read_data()`
+function.
+
+Please contact
+[Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email}
+for access to the latest templates.
+
+```         
+D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
+```
+
 ### Clean/tidy data
 
+As the Shiny app controls the filtering of each function internally,
+please filter to the taxonomy level and name necessary with
+`dplyr::filter()` when working with the code outside the app.
+
+The example data herein contains a sample of metabarcoding data from a
+single protocol, and contains only the species detected within genus
+*Acartia*.
+
 ``` r
-newprob <- calc_det_prob(data = D_mb_ex)
-scaledprobs <- scale_newprob(D_mb_ex, newprob)
+newprob <- calc_det_prob(
+  data = D_mb_ex |> dplyr::filter(genus == "Acartia")
+  )
+
+scaledprobs <- scale_newprob(
+  data = D_mb_ex |> dplyr::filter(genus == "Acartia"), 
+  newprob
+  )
+
 win <- calc_window(
-  data = D_mb_ex, 
-  threshold = "75", 
-  taxon.level = "species",
-  taxon.name = "Acartia longiremis", 
-  scaledprobs
-)
+  threshold = "75",
+  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis")
+  )
+
+win$opt_sampling
+win$fshTest
 ```
 
-### Heat map
+### Visualization
 
-``` r
-hm_fig(
-   taxon.level = "class", 
-   taxon.name = "Copepoda", 
-   scaledprobs)
-#> Warning in ggplot2::geom_tile(dplyr::filter(scaledprobs, `Detection rate` > :
-#> Ignoring unknown aesthetics: text
-```
-
-<img src="man/figures/README-hm-1.png" width="100%" />
-
-### Effort needed
-
-``` r
-effort_needed_fig(
-  taxon.level = "genus",
-  taxon.name ="Acartia",
-  scaledprobs
-)
-#> Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font family
-#> not found in Windows font database
-
-#> Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font family
-#> not found in Windows font database
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-```
-
-<img src="man/figures/README-effort-1.png" width="100%" />
-
-### Sampling effort
-
-``` r
-field_sample_fig(
-  data = D_mb_ex, 
-  taxon.level = "genus", 
-  taxon.name = "Acartia"
-)
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-#> Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font family
-#> not found in Windows font database
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-```
-
-<img src="man/figures/README-field-1.png" width="100%" />
+#### 
 
 ### Species monthly detection
 
 ``` r
-
-smooth_fig(
-  data = D_mb_ex, 
-  taxon.level = "species",
-  taxon.name = "Acartia longiremis"
-)
-#> $`2.3`
-#> Warning: Removed 1 row containing missing values or values outside the scale range
-#> (`geom_vline()`).
-#> Warning: Removed 4 rows containing missing values or values outside the scale range
-#> (`geom_path()`).
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
-
-#> Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
-#> font family not found in Windows font database
+ smooth_fig(
+   data = D_mb_ex |> dplyr::filter(species == "Acartia longiremis")
+   )
 ```
 
-<img src="man/figures/README-smooth-1.png" width="100%" />
+![](man/figures/README-smooth-1.png){width="61%"}
 
 ### Monthly detection probabilities
 
 ``` r
 thresh_fig(
-  taxon.level = "species", 
-  taxon.name = "Acartia longiremis", 
-  threshold = "75", 
-  scaledprobs)
-#> $`2.3`
-#> Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
-#> family not found in Windows font database
+  threshold = "75",   
+  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis"
+)
 ```
 
-<img src="man/figures/README-thresh_fig-1.png" width="100%" />
+![](man/figures/README-thresh_fig-1.png){width="57%"}
+
+### 
+
+#### Heat map
+
+``` r
+hm_fig(
+  scaledprobs = scaledprobs |> dplyr::filter(class == "Copepoda"
+)
+```
+
+<img src="man/figures/README-hm-1.png" width="78%"/>
+
+### Effort needed
+
+``` r
+effort_needed_fig(
+   scaledprobs = scaledprobs |> dplyr::filter(species == c("Acartia longiremis","Acartia tonsa")
+)
+```
+
+<img src="man/figures/README-effort-1.png" width="60%"/>
+
+### Sampling effort
+
+``` r
+field_sample_fig(
+  data = D_mb_ex |> dplyr::filter(class == "Copepoda")
+)
+```
+
+<img src="man/figures/README-field-1.png" width="89%"/>
 
 ### Shiny
 
-Once the package loaded, the shiny can be launched using the following
-function.
+Once the package is loaded, the Shiny application can be launched using
+the following function:
 
 ``` r
 run_gotedna_app()
