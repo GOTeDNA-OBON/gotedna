@@ -41,6 +41,7 @@ You first need to have access to the archive `GoteDNA_{version}.tar.gz`. Once yo
 
 ``` r
 install.packages("path/to/GOTeDNA_{version}.tar.gz")
+
 ```
 
 ### R users with access to the GitHub repository
