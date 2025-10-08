@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # GOTeDNA
@@ -14,9 +8,7 @@ editor_options:
 
 <!-- badges: end -->
 
-The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding
-metadata/data from GOTeDNA sample templates, visualize species detection
-periods, and statistically delineate optimal species detection windows.
+The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
 
 ## Installation
 
@@ -24,8 +16,7 @@ periods, and statistically delineate optimal species detection windows.
 
 #### Install R
 
-We recommend to use R and RStudio:
-<https://posit.co/download/rstudio-desktop/>
+We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 
 1.  Download R for your OS: <https://cran.rstudio.com/>
 
@@ -33,8 +24,7 @@ We recommend to use R and RStudio:
 
 #### Install the package
 
-You first need to have access to the archive `GoteDNA_{version}.tar.gz`.
-Once you have obtained the archive, use the following:
+You first need to have access to the archive `GoteDNA_{version}.tar.gz`. Once you have obtained the archive, use the following:
 
 ``` r
 install.packages("path/to/GOTeDNA_{version}.tar.gz")
@@ -42,8 +32,7 @@ install.packages("path/to/GOTeDNA_{version}.tar.gz")
 
 ### R users with access to the GitHub repository
 
-You can install the development version of GOTeDNA from
-[GitHub](https://github.com/) with:
+You can install the development version of GOTeDNA from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -72,13 +61,9 @@ library("GOTeDNA")
 
 ### Import data
 
-To import your data within GOTeDNA, it must be formatted within the
-GOTeDNA template Excel sheets prior to calling in the `read_data()`
-function.
+To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
 
-Please contact
-[Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email}
-for access to the latest templates.
+Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email} for access to the latest templates.
 
 ```         
 D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
@@ -86,13 +71,9 @@ D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
 
 ### Clean/tidy data
 
-As the Shiny app controls the filtering of each function internally,
-please filter to the taxonomy level and name necessary with
-`dplyr::filter()` when working with the code outside the app.
+As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name necessary with `dplyr::filter()` when working with the code outside the app.
 
-The example data herein contains a sample of metabarcoding data from a
-single protocol, and contains only the species detected within genus
-*Acartia*.
+The example data herein contains a sample of metabarcoding data from a single protocol, and contains only the species detected within genus *Acartia*.
 
 ``` r
 newprob <- calc_det_prob(
@@ -115,8 +96,6 @@ win$fshTest
 
 ### Visualization
 
-#### 
-
 ### Species monthly detection
 
 ``` r
@@ -124,8 +103,6 @@ win$fshTest
    data = D_mb_ex |> dplyr::filter(species == "Acartia longiremis")
    )
 ```
-
-![](man/figures/README-smooth-1.png){width="61%"}
 
 ### Monthly detection probabilities
 
@@ -136,10 +113,6 @@ thresh_fig(
 )
 ```
 
-![](man/figures/README-thresh_fig-1.png){width="57%"}
-
-### 
-
 #### Heat map
 
 ``` r
@@ -147,8 +120,6 @@ hm_fig(
   scaledprobs = scaledprobs |> dplyr::filter(class == "Copepoda"
 )
 ```
-
-<img src="man/figures/README-hm-1.png" width="78%"/>
 
 ### Effort needed
 
@@ -158,8 +129,6 @@ effort_needed_fig(
 )
 ```
 
-<img src="man/figures/README-effort-1.png" width="60%"/>
-
 ### Sampling effort
 
 ``` r
@@ -168,12 +137,9 @@ field_sample_fig(
 )
 ```
 
-<img src="man/figures/README-field-1.png" width="89%"/>
-
 ### Shiny
 
-Once the package is loaded, the Shiny application can be launched using
-the following function:
+Once the package is loaded, the Shiny application can be launched using the following function:
 
 ``` r
 run_gotedna_app()
