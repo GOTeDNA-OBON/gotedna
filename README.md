@@ -63,7 +63,7 @@ library("GOTeDNA")
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
 
-Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email} for access to the latest templates.
+Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca) for access to the latest templates.
 
 ```         
 D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
@@ -104,7 +104,7 @@ win$fshTest
    )
 ```
 
-![](man/figures/README-smooth-1.png){width="350"}
+![](man/figures/README-smooth-1.png)
 
 #### Monthly detection probabilities
 
@@ -115,7 +115,7 @@ thresh_fig(
 )
 ```
 
-![](man/figures/README-thresh_fig-1.png){width="350"}
+![](man/figures/README-thresh_fig-1.png)
 
 #### Heat map
 
@@ -125,7 +125,7 @@ hm_fig(
 )
 ```
 
-![](man/figures/README-hm-1.png){width="341"}
+![](man/figures/README-hm-1.png)
 
 #### Effort needed
 
@@ -135,7 +135,7 @@ effort_needed_fig(
 )
 ```
 
-![](man/figures/README-effort-1.png){width="296"}
+![](man/figures/README-effort-1.png)
 
 #### Sampling effort
 
@@ -145,7 +145,7 @@ field_sample_fig(
 )
 ```
 
-![](man/figures/README-field-1.png){width="447"}
+![](man/figures/README-field-1.png)
 
 ### Shiny
 

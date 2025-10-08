@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "70%"
+  out.width = "50%"
 )
 ```
 
@@ -77,7 +77,7 @@ library("GOTeDNA")
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
 
-Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca){.email} for access to the latest templates.
+Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca) for access to the latest templates.
 
 ```{R eval=TRUE, include=FALSE}
 D_mb_ex <- data("D_mb_ex")
