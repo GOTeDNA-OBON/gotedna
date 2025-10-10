@@ -77,6 +77,8 @@ library("GOTeDNA")
 
 ### Shiny
 
+#### Note: When viewing the Shiny app on a laptop (not a monitor), set the % Zoom on your screen to 67% by holding the "ctrl" and "-" keys on the keyboard at the same time to avoid distortion of the Figures.
+
 The Shiny application can be launched with:
 
 ``` r
