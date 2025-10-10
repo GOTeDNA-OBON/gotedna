@@ -22,13 +22,18 @@ We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 
 2.  Install R Studio
 
-#### Install the package
+#### Install Rtools (For Windows users)
 
-You first need to have access to the archive `GoteDNA_{version}.tar.gz`. Once you have obtained the archive, use the following:
+Note: macOS and Linux do not need Rtools to be installed to run the GOTeDNA package
 
-``` r
-install.packages("path/to/GOTeDNA_{version}.tar.gz")
+For Windows, the Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
+To see what R Version you currently have:
+
+  ``` r
+R.version.string
 ```
+
+#### Install the GOTeDNA package
 
 ### R users with access to the GitHub repository
 
@@ -44,6 +49,14 @@ Or if you have a local copy of the repo:
 ``` r
 install.packages("devtools")
 devtools::install_local("path/to/the/repo", dependencies = TRUE)
+```
+
+### R users with access to the archive 
+
+You can install the archive `GoteDNA_{version}.tar.gz`, using the following:
+
+``` r
+install.packages("path/to/GOTeDNA_{version}.tar.gz")
 ```
 
 ## Usage
