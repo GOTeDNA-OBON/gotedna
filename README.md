@@ -12,7 +12,7 @@ The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding metadata
 
 ## Installation
 
-### non-R users
+### For non-R users
 
 #### Install R
 
@@ -22,11 +22,13 @@ We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 
 2.  Install R Studio
 
-#### Install Rtools (For Windows users)
+### Install the GOTeDNA package
+
+#### Install Rtools (For Windows)
 
 Note: macOS and Linux do not need Rtools to be installed to run the GOTeDNA package
 
-For Windows, the Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
+The Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
 
 To see what R Version you currently have:
 
@@ -34,14 +36,12 @@ To see what R Version you currently have:
 R.version.string
 ```
 
-#### Install the GOTeDNA package
-
-### R users with access to the GitHub repository
+#### R users with access to the GitHub repository
 
 You can install the development version of GOTeDNA from [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
+install.packages("devtools")
 devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA", dependencies = TRUE)
 ```
 
@@ -52,9 +52,9 @@ install.packages("devtools")
 devtools::install_local("path/to/the/repo", dependencies = TRUE)
 ```
 
-### R users with access to the archive 
+#### R users with access to the archive 
 
-You can install the archive `GoteDNA_{version}.tar.gz`, using the following:
+If you have obtained the archive `GoteDNA_{version}.tar.gz`, you can install the package using:
 
 ``` r
 install.packages("path/to/GOTeDNA_{version}.tar.gz")
@@ -69,13 +69,15 @@ install.packages("path/to/GOTeDNA_{version}.tar.gz")
 -   Clean/tidy data
 -   Visualization
 
+To load the package: 
+
 ``` r
 library("GOTeDNA")
 ```
 
 ### Shiny
 
-Once the package is loaded, the Shiny application can be launched using the following function:
+The Shiny application can be launched with:
 
 ``` r
 run_gotedna_app()
