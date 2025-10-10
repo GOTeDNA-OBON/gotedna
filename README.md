@@ -50,13 +50,31 @@ devtools::install_local("path/to/the/repo", dependencies = TRUE)
 
 ### R function categories:
 
+-   Shiny
 -   Import data
 -   Clean/tidy data
 -   Visualization
--   Shiny
 
 ``` r
 library("GOTeDNA")
+```
+
+### Shiny
+
+Once the package is loaded, the Shiny application can be launched using the following function:
+
+``` r
+run_gotedna_app()
+```
+
+There is also a docker file available:
+
+``` sh
+# build the container 
+docker build -t gotedna . 
+# use the container
+docker run -it --rm --network host gotedna 
+# the shiny will be available at http://0.0.0.0:9292
 ```
 
 ### Import data
@@ -146,21 +164,3 @@ field_sample_fig(
 ```
 
 ![](man/figures/README-field-1.png)
-
-### Shiny
-
-Once the package is loaded, the Shiny application can be launched using the following function:
-
-``` r
-run_gotedna_app()
-```
-
-There is also a docker file available:
-
-``` sh
-# build the container 
-docker build -t gotedna . 
-# use the container
-docker run -it --rm --network host gotedna 
-# the shiny will be available at http://0.0.0.0:9292
-```
