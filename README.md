@@ -27,6 +27,7 @@ We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 Note: macOS and Linux do not need Rtools to be installed to run the GOTeDNA package
 
 For Windows, the Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
+
 To see what R Version you currently have:
 
   ``` r
