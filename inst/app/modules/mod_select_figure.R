@@ -498,81 +498,81 @@ mod_select_figure_server <- function(id, r) {
     })
 
     # EXPORT PDF
-    output$export_pdf <- downloadHandler(
-      filename = function() {
-        paste0("GOTeDNA_report_", Sys.Date(), ".pdf")
-      },
-      contentType = "application/pdf",
-      content = function(file) {
-        # Data Request
-        #   datSrc <- input$datasource
-        #  datTyp <- input$data_type
-        # primers <- r$primer
+    # output$export_pdf <- downloadHandler(
+    #   filename = function() {
+    #     paste0("GOTeDNA_report_", Sys.Date(), ".pdf")
+    #   },
+    #   contentType = "application/pdf",
+    #   content = function(file) {
+    #     # Data Request
+    #     #   datSrc <- input$datasource
+    #     #  datTyp <- input$data_type
+    #     # primers <- r$primer
 
-        # Area Selection
-        if (!is.null(r$geom_slc)) {
-          geom_coords <- sf::st_bbox(r$geom_slc) |>
-            as.matrix() |>
-            t() |>
-            as.data.frame()
-        } else {
-          geom_coords <- c("Area selection not confirmed")
-        }
+    #     # Area Selection
+    #     if (!is.null(r$geom_slc)) {
+    #       geom_coords <- sf::st_bbox(r$geom_slc) |>
+    #         as.matrix() |>
+    #         t() |>
+    #         as.data.frame()
+    #     } else {
+    #       geom_coords <- c("Area selection not confirmed")
+    #     }
 
-        mapDL <- leaflet::addMarkers(
-          basemap(),
-          data = r$geom,
-          clusterOptions = leaflet::markerClusterOptions(),
-          label = ~ paste(success, "observations"),
-          group = "station"
-        ) |>
-          leaflet::addScaleBar()
+    #     mapDL <- leaflet::addMarkers(
+    #       basemap(),
+    #       data = r$geom,
+    #       clusterOptions = leaflet::markerClusterOptions(),
+    #       label = ~ paste(success, "observations"),
+    #       group = "station"
+    #     ) |>
+    #       leaflet::addScaleBar()
 
-        mapview::mapviewOptions(fgb = FALSE)
+    #     mapview::mapviewOptions(fgb = FALSE)
 
-        mapview::mapshot(
-          mapDL,
-          file = file.path(tempdir(), "mapDL.png")
-        )
+    #     mapview::mapshot(
+    #       mapDL,
+    #       file = file.path(tempdir(), "mapDL.png")
+    #     )
 
-        # Observation
-        thresh_slc <- input$threshold
-        protID <- input$prot_id
-        sampWin <- calc_window(
-          threshold = thresh_slc,
-          scaledprobs = r$scaledprobs
-        )
+    #     # Observation
+    #     thresh_slc <- input$threshold
+    #     protID <- input$prot_id
+    #     sampWin <- calc_window(
+    #       threshold = thresh_slc,
+    #       scaledprobs = r$scaledprobs
+    #     )
 
-        cons <- jaccard_test(
-          r$scaledprobs,
-          thresh_slc
-        )
+    #     cons <- jaccard_test(
+    #       r$scaledprobs,
+    #       thresh_slc
+    #     )
 
 
-        # Reference Data Authorship
-        FNdata <- r$data_ready$LClabel
+    #     # Reference Data Authorship
+    #     FNdata <- r$data_ready$LClabel
 
-        tempReport <- file.path(tempdir(), "report.Rmd")
-        tempDFOlogo <- file.path(tempdir(), "DFOlogo.png")
-        tempGOTlogo <- file.path(tempdir(), "GOTeDNAlogo.png")
-        temphmLeg <- file.path(tempdir(), "hmLegend.png")
-        tempthreshAx <- file.path(tempdir(), "threshAxis.png")
-        tempthreshLeg <- file.path(tempdir(), "threshLegend.png")
+    #     tempReport <- file.path(tempdir(), "report.Rmd")
+    #     tempDFOlogo <- file.path(tempdir(), "DFOlogo.png")
+    #     tempGOTlogo <- file.path(tempdir(), "GOTeDNAlogo.png")
+    #     temphmLeg <- file.path(tempdir(), "hmLegend.png")
+    #     tempthreshAx <- file.path(tempdir(), "threshAxis.png")
+    #     tempthreshLeg <- file.path(tempdir(), "threshLegend.png")
 
-        file.copy("Report.rmd", tempReport, overwrite = TRUE)
-        file.copy("DFOlogo.png", tempDFOlogo, overwrite = TRUE)
-        file.copy("GOTeDNAlogo.png", tempGOTlogo, overwrite = TRUE)
-        file.copy("hm_legend.png", temphmLeg, overwrite = TRUE)
-        file.copy("thresh_axis.png", tempthreshAx, overwrite = TRUE)
-        file.copy("thresh_legend.png", tempthreshLeg, overwrite = TRUE)
+    #     file.copy("Report.rmd", tempReport, overwrite = TRUE)
+    #     file.copy("DFOlogo.png", tempDFOlogo, overwrite = TRUE)
+    #     file.copy("GOTeDNAlogo.png", tempGOTlogo, overwrite = TRUE)
+    #     file.copy("hm_legend.png", temphmLeg, overwrite = TRUE)
+    #     file.copy("thresh_axis.png", tempthreshAx, overwrite = TRUE)
+    #     file.copy("thresh_legend.png", tempthreshLeg, overwrite = TRUE)
 
-        # params <- list(win, j.sim)
+    #     # params <- list(win, j.sim)
 
-        out <- rmarkdown::render(tempReport) # ,
-        # params = params)
-        file.rename(out, file)
-      }
-    )
+    #     out <- rmarkdown::render(tempReport) # ,
+    #     # params = params)
+    #     file.rename(out, file)
+    #   }
+    # )
   })
 }
 
