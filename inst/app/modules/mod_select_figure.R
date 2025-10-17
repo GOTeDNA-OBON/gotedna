@@ -116,12 +116,12 @@ mod_select_figure_ui <- function(id) {
                 uiOutput(ns("var_year"), class = "fig_text_output"),
               )
             ),
-            downloadButton(
-              ns("export_pdf"),
-              "Export to PDF",
-              title = "Export figures to PDF",
-               class = "primary-button"
-            )
+            # downloadButton(
+            #   ns("export_pdf"),
+            #   "Export to PDF",
+            #   title = "Export figures to PDF",
+            #    class = "primary-button"
+            # )
           )
         ),
         column(
@@ -138,18 +138,18 @@ mod_select_figure_ui <- function(id) {
             )
           )
         )
-        )
+      )
+    ),
+    div(
+      id = "reference_data_authorship",
+      div(
+        class = "table_title-container",
+        h1("Reference data authorship")
       ),
-        div(
-          id = "reference_data_authorship",
-          div(
-            class = "table_title-container",
-            h1("Reference data authorship")
-          ),
-          DT::DTOutput(ns("data_authorship"))
-        ),
-      #)
-    #)
+      DT::DTOutput(ns("data_authorship"))
+    ),
+    # )
+    # )
   )
 }
 
@@ -218,88 +218,87 @@ mod_select_figure_server <- function(id, r) {
       {
         req(input$calc_window)
 
-            r$data_ready <- prepare_data(r) %>%
-              filter(protocol_ID == input$prot_id)
+        r$data_ready <- prepare_data(r) |>
+          filter(protocol_ID == input$prot_id)
 
-            if (nrow(r$data_ready)) {
-              showNotification(
-                paste0(
-                  "Computing detection window with threshold set to ",
-                  input$threshold, "%",
-                  ifelse(
-                    nrow(r$data_ready) > 1e4,
-                    paste0(" (", nrow(r$data_ready), " observations, this may take some time)"),
-                    ""
-                  )
-                ),
-                type = "message",
-                duration = NULL,
-                id = "notif_calc_win"
+        if (nrow(r$data_ready)) {
+          showNotification(
+            paste0(
+              "Computing detection window with threshold set to ",
+              input$threshold, "%",
+              ifelse(
+                nrow(r$data_ready) > 1e4,
+                paste0(" (", nrow(r$data_ready), " observations, this may take some time)"),
+                ""
               )
-              newprob <- calc_det_prob(r$data_ready)
-              r$scaledprobs <- scale_newprob(r$data_ready, newprob)
+            ),
+            type = "message",
+            duration = NULL,
+            id = "notif_calc_win"
+          )
+          newprob <- calc_det_prob(r$data_ready)
+          r$scaledprobs <- scale_newprob(r$data_ready, newprob)
 
-              cli::cli_alert_info("Computing optimal detection window")
+          cli::cli_alert_info("Computing optimal detection window")
 
-              thresh_slc <- input$threshold
+          thresh_slc <- input$threshold
 
-              win <- calc_window(
-                threshold = input$threshold,
-                scaledprobs = r$scaledprobs
-              )
+          win <- calc_window(
+            threshold = input$threshold,
+            scaledprobs = r$scaledprobs
+          )
 
-              j.sim <- jaccard_test(
-                r$scaledprobs,
-                input$threshold)
+          j.sim <- jaccard_test(
+            r$scaledprobs,
+            input$threshold
+          )
 
-              removeNotification(id = "notif_calc_win")
+          removeNotification(id = "notif_calc_win")
 
-              if (is.null(win)) {
-               #  showNotification("No optimal detection window", type = "warning")
-                output$opt_sampl <- renderUI("No single detection window")
-                output$conf <- renderUI("NA")
-                output$var_year <- renderUI(
-                  paste(j.sim))
-              } else {
-                output$opt_sampl <- renderUI(
-                  paste(win$opt_sampling$period)
-                )
-                output$conf <- renderUI(paste(win$fshTest$confidence))
-                output$var_year <- renderUI(
-                    paste(j.sim)
-                  )
-              }
-
-
-
-              r$fig_ready <- TRUE
-
-              # create protocol vector
-
-              v_prot <- r$scaledprobs$protocol_ID |> unique()
-
-            } else {
-              showNotification("Data selection is empty", type = "warning")
-            }
-
-            shinyscreenshot::screenshot(
-                selector = "#data_request_top_fields",
-                filename = "data_top",
-                download = FALSE, server_dir = tempdir()
-              )
-
-            shinyscreenshot::screenshot(
-              selector = "#data_request_bottom_fields",
-              filename = "data_btm",
-              download = FALSE, server_dir = tempdir()
+          if (is.null(win)) {
+            #  showNotification("No optimal detection window", type = "warning")
+            output$opt_sampl <- renderUI("No single detection window")
+            output$conf <- renderUI("NA")
+            output$var_year <- renderUI(
+              paste(j.sim)
             )
+          } else {
+            output$opt_sampl <- renderUI(
+              paste(win$opt_sampling$period)
+            )
+            output$conf <- renderUI(paste(win$fshTest$confidence))
+            output$var_year <- renderUI(
+              paste(j.sim)
+            )
+          }
 
-              shinyscreenshot::screenshot(
-                selector = "#reference_data_authorship",
-                filename = "dat_auth",
-                download = FALSE, server_dir = tempdir()
-              )
 
+          r$fig_ready <- TRUE
+
+          # create protocol vector
+
+          v_prot <- r$scaledprobs$protocol_ID |> unique()
+        } else {
+          showNotification("Data selection is empty", type = "warning")
+        }
+
+        shinyscreenshot::screenshot(
+          selector = "#data_request_top_fields",
+          filename = "data_top",
+          download = FALSE, server_dir = tempdir()
+        )
+
+        shinyscreenshot::screenshot(
+          selector = "#data_request_bottom_fields",
+          filename = "data_btm",
+          download = FALSE, server_dir = tempdir()
+        )
+
+        shinyscreenshot::screenshot(
+          selector = "#reference_data_authorship",
+          filename = "dat_auth",
+          download = FALSE, server_dir = tempdir()
+        )
       }
     )
 
@@ -310,14 +309,12 @@ mod_select_figure_server <- function(id, r) {
         if (r$taxon_lvl_slc == "species") {
           out <- out |>
             dplyr::filter(species == r$species)
-
         } else {
           if (r$taxon_id_slc != "All") {
             out <- out[
               out[[r$taxon_lvl_slc]] == r$taxon_id_slc,
             ]
-
-         }
+          }
         }
       }
 
@@ -349,7 +346,6 @@ mod_select_figure_server <- function(id, r) {
     })
 
 
-
     # FIGURES
     ## DETECTION part 1
     output$fig_smooth_plot_output <- renderPlot({
@@ -362,15 +358,14 @@ mod_select_figure_server <- function(id, r) {
     ## DETECTION part 2
     output$fig_detect_plot_output <- renderPlot({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
-        draw_fig_detect(r, r$fig_ready && r$fig_slc$fig_detect, input$threshold
-        )
+        draw_fig_detect(r, r$fig_ready && r$fig_slc$fig_detect, input$threshold)
       }
     })
 
     ## EFFORT
     output$fig_effort_plot_output <- plotly::renderPlotly({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
-          ggp <- draw_fig_effort(r, r$fig_ready && r$fig_slc$fig_effort)
+        ggp <- draw_fig_effort(r, r$fig_ready && r$fig_slc$fig_effort)
         # multiply height by number of species
         nys <- r$data_ready$species |>
           unique() |>
@@ -459,7 +454,6 @@ mod_select_figure_server <- function(id, r) {
     })
 
 
-
     # DATA AUTHORSHIP TABLE
     output$data_authorship <- DT::renderDT({
       r$data_active |>
@@ -504,85 +498,83 @@ mod_select_figure_server <- function(id, r) {
     })
 
     # EXPORT PDF
-    output$export_pdf <- downloadHandler(
-     filename = function() {
-        paste0("GOTeDNA_report_",Sys.Date(),".pdf")
-        },
-      contentType = "application/pdf",
-      content = function(file) {
+    # output$export_pdf <- downloadHandler(
+    #   filename = function() {
+    #     paste0("GOTeDNA_report_", Sys.Date(), ".pdf")
+    #   },
+    #   contentType = "application/pdf",
+    #   content = function(file) {
+    #     # Data Request
+    #     #   datSrc <- input$datasource
+    #     #  datTyp <- input$data_type
+    #     # primers <- r$primer
 
-        # Data Request
-     #   datSrc <- input$datasource
-      #  datTyp <- input$data_type
-       # primers <- r$primer
+    #     # Area Selection
+    #     if (!is.null(r$geom_slc)) {
+    #       geom_coords <- sf::st_bbox(r$geom_slc) |>
+    #         as.matrix() |>
+    #         t() |>
+    #         as.data.frame()
+    #     } else {
+    #       geom_coords <- c("Area selection not confirmed")
+    #     }
 
-        # Area Selection
-        if (!is.null(r$geom_slc)){
-        geom_coords <- sf::st_bbox(r$geom_slc) %>%
-          as.matrix() %>%
-          t() %>%
-          as.data.frame()
-        } else {
-          geom_coords <- c("Area selection not confirmed")
-        }
+    #     mapDL <- leaflet::addMarkers(
+    #       basemap(),
+    #       data = r$geom,
+    #       clusterOptions = leaflet::markerClusterOptions(),
+    #       label = ~ paste(success, "observations"),
+    #       group = "station"
+    #     ) |>
+    #       leaflet::addScaleBar()
 
-        mapDL <- leaflet::addMarkers(
-          basemap(),
-          data = r$geom,
-          clusterOptions = leaflet::markerClusterOptions(),
-          label = ~ paste(success, "observations"),
-          group = "station"
-          ) |>
-          leaflet::addScaleBar()
+    #     mapview::mapviewOptions(fgb = FALSE)
 
-        mapview::mapviewOptions(fgb = FALSE)
+    #     mapview::mapshot(
+    #       mapDL,
+    #       file = file.path(tempdir(), "mapDL.png")
+    #     )
 
-        mapview::mapshot(
-          mapDL,
-          file = file.path(tempdir(), "mapDL.png")
-        )
+    #     # Observation
+    #     thresh_slc <- input$threshold
+    #     protID <- input$prot_id
+    #     sampWin <- calc_window(
+    #       threshold = thresh_slc,
+    #       scaledprobs = r$scaledprobs
+    #     )
 
-        # Observation
-        thresh_slc <- input$threshold
-        protID <- input$prot_id
-        sampWin <- calc_window(
-          threshold = thresh_slc,
-          scaledprobs = r$scaledprobs
-        )
-
-        cons <- jaccard_test(
-          r$scaledprobs,
-          thresh_slc)
+    #     cons <- jaccard_test(
+    #       r$scaledprobs,
+    #       thresh_slc
+    #     )
 
 
-        # Reference Data Authorship
-        FNdata <- r$data_ready$LClabel
+    #     # Reference Data Authorship
+    #     FNdata <- r$data_ready$LClabel
 
-        tempReport <- file.path(tempdir(), "report.Rmd")
-        tempDFOlogo <- file.path(tempdir(), "DFOlogo.png")
-        tempGOTlogo <- file.path(tempdir(), "GOTeDNAlogo.png")
-        temphmLeg <- file.path(tempdir(), "hmLegend.png")
-        tempthreshAx <- file.path(tempdir(), "threshAxis.png")
-        tempthreshLeg <- file.path(tempdir(), "threshLegend.png")
+    #     tempReport <- file.path(tempdir(), "report.Rmd")
+    #     tempDFOlogo <- file.path(tempdir(), "DFOlogo.png")
+    #     tempGOTlogo <- file.path(tempdir(), "GOTeDNAlogo.png")
+    #     temphmLeg <- file.path(tempdir(), "hmLegend.png")
+    #     tempthreshAx <- file.path(tempdir(), "threshAxis.png")
+    #     tempthreshLeg <- file.path(tempdir(), "threshLegend.png")
 
-        file.copy("Report.rmd", tempReport, overwrite = TRUE)
-        file.copy("DFOlogo.png", tempDFOlogo, overwrite = TRUE)
-        file.copy("GOTeDNAlogo.png", tempGOTlogo, overwrite = TRUE)
-        file.copy("hm_legend.png", temphmLeg, overwrite = TRUE)
-        file.copy("thresh_axis.png", tempthreshAx, overwrite = TRUE)
-        file.copy("thresh_legend.png", tempthreshLeg, overwrite = TRUE)
+    #     file.copy("Report.rmd", tempReport, overwrite = TRUE)
+    #     file.copy("DFOlogo.png", tempDFOlogo, overwrite = TRUE)
+    #     file.copy("GOTeDNAlogo.png", tempGOTlogo, overwrite = TRUE)
+    #     file.copy("hm_legend.png", temphmLeg, overwrite = TRUE)
+    #     file.copy("thresh_axis.png", tempthreshAx, overwrite = TRUE)
+    #     file.copy("thresh_legend.png", tempthreshLeg, overwrite = TRUE)
 
-       # params <- list(win, j.sim)
+    #     # params <- list(win, j.sim)
 
-        out <- rmarkdown::render(tempReport)#,
-                                # params = params)
-        file.rename(out, file)
-        }
-        )
+    #     out <- rmarkdown::render(tempReport) # ,
+    #     # params = params)
+    #     file.rename(out, file)
+    #   }
+    # )
   })
 }
-
-
 
 
 #------- INTERNALS
@@ -619,7 +611,6 @@ n_prots <- function(r) {
     sort(n, decreasing = TRUE) |>
     select(protocol_ID)
 }
-
 
 
 ## FIG HELPERS
@@ -692,7 +683,7 @@ draw_fig_smooth <- function(r, ready, id) {
 }
 
 ## Detection part 2
-draw_fig_detect <- function(r, ready, threshold){
+draw_fig_detect <- function(r, ready, threshold) {
   if (ready) {
     plt <- thresh_fig(
       threshold,
@@ -705,23 +696,23 @@ draw_fig_detect <- function(r, ready, threshold){
 }
 
 ## Sampling effort
-draw_fig_effort <- function(r, ready){
+draw_fig_effort <- function(r, ready) {
   if (ready) {
     p <- effort_needed_fig(
       r$scaledprobs
     )
     p
-
   } else {
     plotNotAvailable()
   }
 }
 
 ## Heatmap
-draw_fig_heatmap <- function(r, ready){
+draw_fig_heatmap <- function(r, ready) {
   if (ready) {
     p <- try(hm_fig(
-      r$scaledprobs))
+      r$scaledprobs
+    ))
 
     if (inherits(p, "try-error")) {
       plotNotAvailableError()
@@ -730,8 +721,7 @@ draw_fig_heatmap <- function(r, ready){
     } else {
       p
     }
-
-    } else {
+  } else {
     plotNotAvailable()
   }
 }
@@ -748,7 +738,6 @@ draw_fig_samples <- function(r, ready, id) {
     plotNotAvailable()
   }
 }
-
 
 
 ui_fig_detect <- function(fig_id, title, caption_file, ns) {
@@ -880,7 +869,6 @@ ui_fig_samples <- function(fig_id, title, caption_file, ns) {
 }
 
 
-
 ## Plotly Helpers
 facet_strip_format <- function(gp) {
   # get info about facets
@@ -891,7 +879,7 @@ facet_strip_format <- function(gp) {
     )
   ))
 
-  #print(facets)
+  # print(facets)
   n_facets <- length(facets)
 
   # split x ranges from 0 to 1 into
@@ -924,7 +912,6 @@ facet_strip_format <- function(gp) {
       gp$x$layout$annotations[[i]]$xanchor <- "left"
     }
   }
-
 
 
   # Shape manipulations

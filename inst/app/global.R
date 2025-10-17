@@ -2,28 +2,26 @@ library(GOTeDNA)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
-#library(leaflet)
-#library(sf)
-#library(shiny)
-#library(shinyjs)
-#library(bslib)
-#library(plotly)
+# library(leaflet)
+# library(sf)
+# library(shiny)
+# library(shinyjs)
+# library(bslib)
+# library(plotly)
 cli::cli_alert_info("Packages loaded")
 
 list.files("modules", full.names = TRUE) |>
   lapply(source)
 cli::cli_alert_info("Modules loaded")
 
+
 # Ensure that the user installs these if not already installed
 # Necessary to generate PDF report
 
-if(!webshot::is_phantomjs_installed() == TRUE)
-  webshot::install_phantomjs()
 
-if(!tinytex::is_tinytex() == TRUE)
-  tinytex::install_tinytex()
-
-
+# if (!tinytex::is_tinytex() == TRUE) {
+#   tinytex::install_tinytex()
+# }
 
 
 # Generic helpers
@@ -60,25 +58,27 @@ names(ls_threshold) <- paste0(seq(50, 95, 5), "%")
 basemap <- function() {
   leaflet::leaflet() |>
     leafem::addMouseCoordinates() |>
-  #  leaflet::addProviderTiles("Esri.OceanBasemap", group = "OceaBasemap") |>
+    #  leaflet::addProviderTiles("Esri.OceanBasemap", group = "OceaBasemap") |>
     leaflet::addProviderTiles("OpenStreetMap", group = "OpenStreetMap") |>
-  #  leaflet::addProviderTiles("Stadia.StamenTonerLite") |>
-   # leaflet::addProviderTiles("Esri.WorldGrayCanvas") |>
+    #  leaflet::addProviderTiles("Stadia.StamenTonerLite") |>
+    # leaflet::addProviderTiles("Esri.WorldGrayCanvas") |>
 
-   # leaflet::addLayersControl(
+    # leaflet::addLayersControl(
     #  baseGroups = c("OpenStreetMap", "Ocean Basemap"),
     #  position = "bottomleft"
-  #  ) |>
+    #  ) |>
     leaflet::addScaleBar(
       position = c("bottomright"),
       options = leaflet::scaleBarOptions(maxWidth = 200)
     ) |>
-    leaflet.extras::addDrawToolbar(polylineOptions = FALSE,
-                                   circleOptions = FALSE,
-                                   polygonOptions = TRUE,
-                                   rectangleOptions = TRUE,
-                                   circleMarkerOptions = FALSE,
-                                   markerOptions = FALSE)
+    leaflet.extras::addDrawToolbar(
+      polylineOptions = FALSE,
+      circleOptions = FALSE,
+      polygonOptions = TRUE,
+      rectangleOptions = TRUE,
+      circleMarkerOptions = FALSE,
+      markerOptions = FALSE
+    )
 }
 
 
@@ -119,11 +119,11 @@ get_primer_selection <- function(lvl, data) {
 
 # Primer information for primer tab
 ## import glossary
-primer_seqs <- read.csv("data/primers.csv") %>%
-  dplyr::rename("Primer set" = "PrimerSet",
-                "Type of data" = "Data",
-                "Original primer name" = "OriginalName",
-                "Sequence (5'-3')" = "Seq",
-                "Fragment length (bp)" = "bp")
-
-
+primer_seqs <- read.csv("data/primers.csv") |>
+  dplyr::rename(
+    "Primer set" = "PrimerSet",
+    "Type of data" = "Data",
+    "Original primer name" = "OriginalName",
+    "Sequence (5'-3')" = "Seq",
+    "Fragment length (bp)" = "bp"
+  )
