@@ -87,13 +87,15 @@ run_gotedna_app()
 
 ### Import data
 
-To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
+To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.  
 
 Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca) for access to the latest templates.
 
-```         
+#### Example: D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = "~/Desktop/template.xlsx")
+```
 D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
 ```
+
 
 ### Clean/tidy data
 
