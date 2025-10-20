@@ -85,16 +85,6 @@ The Shiny application can be launched with:
 run_gotedna_app()
 ```
 
-There is also a docker file available:
-
-``` sh
-# build the container 
-docker build -t gotedna . 
-# use the container
-docker run -it --rm --network host gotedna 
-# the shiny will be available at http://0.0.0.0:9292
-```
-
 ### Import data
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.
