@@ -362,40 +362,64 @@ mod_select_figure_server <- function(id, r) {
       }
     })
 
-    ## EFFORT
     output$fig_effort_plot_output <- plotly::renderPlotly({
-      if (req(r$fig_ready, cancelOutput = TRUE)) {
-        ggp <- draw_fig_effort(r, r$fig_ready && r$fig_slc$fig_effort)
-        # multiply height by number of species
-        nys <- r$data_ready$species |>
-          unique() |>
-          length()
-        plt <- plotly::ggplotly(
-          ggp,
-          height = 320 * nys
-        ) |>
-          default_layout() |>
-          facet_strip_format() |>
-          plotly::layout(
-            xaxis = list(title = list(
-              text = "Number of samples",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              x = 0
-            )),
-            yaxis = list(title = list(
-              text = "Detection probability",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              y = 0
-            ))
-          )
-      }
+      req(r$fig_ready, cancelOutput = TRUE)
+      effort_needed_plotly(r$scaledprobs)
     })
+
+
+
+    # output$fig_effort_plot_output <- plotly::renderPlotly({
+    #   if (req(r$fig_ready, cancelOutput = TRUE)) {
+    #     draw_fig_effort_plotly(r$scaledprobs)
+    #   }
+    # })
+    #
+    # ## EFFORT
+    # output$fig_effort_plot_output <- plotly::renderPlotly({
+    #   if (req(r$fig_ready, cancelOutput = TRUE)) {
+    #
+    #     # 1️⃣ compute number of species
+    #     n_species <- r$data_ready$species |> unique() |> length()
+    #     facet_height <- 250         # height per facet in pt
+    #     total_height <- n_species * facet_height
+    #
+    #     # 2️⃣ generate ggplot figure
+    #     ggp <- draw_fig_effort(r, r$fig_ready && r$fig_slc$fig_effort)
+    #
+    #     # 3️⃣ force each facet to have the correct height
+    #     ggp <- ggp + ggh4x::force_panelsizes(rows = ggplot2::unit(facet_height, "pt"))
+    #
+    #     # 4️⃣ convert to plotly with dynamic total height
+    #     plt <- plotly::ggplotly(
+    #       ggp,
+    #       height = total_height
+    #     ) |>
+    #       default_layout() |>
+    #       facet_strip_format() |>
+    #       plotly::layout(
+    #         xaxis = list(title = list(
+    #           text = "Number of samples",
+    #           font = list(
+    #             size = 30,
+    #             color = "#5A5A5A"
+    #           ),
+    #           x = 0
+    #         )),
+    #         yaxis = list(title = list(
+    #           text = "Detection probability",
+    #           font = list(
+    #             size = 30,
+    #             color = "#5A5A5A"
+    #           ),
+    #           y = 0
+    #         ))
+    #       )
+    #
+    #     plt
+    #   }
+    # })
+
 
     ## HEATMAP
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
@@ -705,6 +729,176 @@ draw_fig_effort <- function(r, ready) {
   } else {
     plotNotAvailable()
   }
+}
+
+effort_needed_plotly <- function(scaledprobs, height_per_species = 320, dot_size = 12) {
+  # Filter NA years and prepare month labels
+  df <- scaledprobs %>%
+    dplyr::filter(is.na(year)) %>%
+    dplyr::mutate(
+      month = factor(
+        month,
+        levels = 1:12,
+        labels = c("Jan","Feb","Mar","Apr","May",
+                   "Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+      )
+    )
+
+  species_list <- unique(df$species)
+  n_species <- length(species_list)
+
+  # Make a cyclic month color palette (so Dec ~ Jan)
+  cyclic_palette <- colorRampPalette(
+    c("#440154", "#3B528B", "#21908C", "#5DC863", "#FDE725", "#440154")
+  )(12)
+
+  # Generate plots for each species
+  plots <- lapply(seq_along(species_list), function(i) {
+    sp <- species_list[i]
+    df_sp <- df[df$species == sp, ]
+
+    DF_sp <- expand.grid(
+      p = df_sp$fill,
+      `Samples needed` = seq_len(25),
+      `Detection rate` = NA
+    ) %>%
+      merge(data.frame(
+        p = df_sp$fill,
+        Month = df_sp$month,
+        Species = df_sp$species
+      ))
+
+    for (j in seq_len(nrow(DF_sp))) {
+      DF_sp$`Detection rate`[j] <- 1 - dbinom(
+        0,
+        size = DF_sp$`Samples needed`[j],
+        prob = DF_sp$p[j]
+      )
+    }
+
+    show_legend <- i == 1
+
+    plotly::plot_ly(
+      DF_sp,
+      x = ~`Samples needed`,
+      y = ~`Detection rate`,
+      type = "scatter",
+      mode = "markers",
+      color = ~Month,
+      colors = cyclic_palette,
+      marker = list(size = dot_size),
+      showlegend = show_legend
+    ) %>%
+      plotly::layout(
+        yaxis = list(range = c(0, 1), title = "Detection probability"),
+        xaxis = list(title = "Number of samples")
+      )
+  })
+
+  # Combine all subplots vertically
+  subplot_obj <- plotly::subplot(
+    plots,
+    nrows = n_species,
+    shareX = TRUE,
+    titleY = TRUE,
+    heights = rep(1 / n_species, n_species),
+    margin = 0.01
+  )
+
+  # Add per-species titles via annotations
+  annotations <- lapply(seq_along(species_list), function(i) {
+    list(
+      text = species_list[i],
+      x = 0.02,
+      y = 1 - ((i - 0.5) / n_species) + 0.02,
+      xref = "paper",
+      yref = "paper",
+      xanchor = "left",
+      yanchor = "middle",
+      showarrow = FALSE,
+      font = list(size = 22, color = "#333")
+    )
+  })
+
+  subplot_obj %>%
+    plotly::layout(
+      height = n_species * height_per_species,
+      margin = list(t = 80, r = 180, b = 60),
+      legend = list(
+        title = list(text = "Month", font = list(size = 24)),  # legend title size
+        font = list(size = 20),                                 # legend text size
+        orientation = "v",
+        y = 1,          # top
+        x = 1.02,       # right
+        xanchor = "left",
+        yanchor = "top"
+      ),
+      annotations = annotations
+    )
+}
+
+
+
+
+
+
+
+
+draw_fig_effort_plotly <- function(scaledprobs) {
+  # Filter out rows with year
+  df <- scaledprobs %>%
+    filter(is.na(year))
+
+  df$month <- factor(df$month,
+                     levels = 1:12,
+                     labels = c("Jan","Feb","Mar","Apr","May",
+                                "Jun","Jul","Aug","Sep","Oct",
+                                "Nov","Dec"))
+
+  species_list <- unique(df$species)
+  n_species <- length(species_list)
+
+  plots <- lapply(species_list, function(sp) {
+    df_sp <- df %>% filter(species == sp)
+
+    # Calculate detection rate for each sample number
+    df_sp <- df_sp %>%
+      rowwise() %>%
+      mutate(
+        detection_rate = list(1 - dbinom(0, size = 1:25, prob = fill))
+      ) %>%
+      tidyr::unnest(cols = c(detection_rate)) %>%
+      mutate(`Samples needed` = rep(1:25, times = n()))
+
+    plot_ly(
+      df_sp,
+      x = ~`Samples needed`,
+      y = ~detection_rate,
+      type = 'scatter',
+      mode = 'markers',
+      color = ~month,
+      colors = "Viridis",
+      marker = list(size = 8),
+      name = sp,
+      showlegend = FALSE
+    ) %>%
+      layout(yaxis = list(title = sp))
+  })
+
+  # Stack the species vertically with shared X axis
+  subplot(
+    plots,
+    nrows = n_species,
+    shareX = TRUE,
+    titleY = TRUE,
+    margin = 0.05
+  ) %>%
+    layout(
+      xaxis = list(title = "Number of samples"),
+      yaxis = list(title = "Detection probability"),
+      height = 320 * n_species,  # dynamically set total height
+      legend = list(title = list(text = "Month"))
+    )
 }
 
 ## Heatmap
