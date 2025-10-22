@@ -20,95 +20,110 @@
 #'   )
 #' )
 #' }
-effort_needed_fig <- function(
-    scaledprobs) {
 
+effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 12) {
+  # Filter NA years and prepare month labels
   df <- scaledprobs %>%
-    dplyr::filter(is.na(year))
-
-
-  df$month <- factor(df$month,
-                       levels = 1:12,
-                       labels = c("Jan","Feb","Mar","Apr","May",
-                                  "Jun","Jul","Aug","Sep","Oct",
-                                  "Nov","Dec"))
-  DF2 <- vector("list")
-
-  for (sp in unique(df$species)) {
-
-    DF2[[sp]] <- expand.grid(p = df[df$species == sp,]$fill,
-                             `Samples needed` = seq_len(25),
-                             `Detection rate` = NA)
-
-    DF2[[sp]] <- DF2[[sp]] |>
-      merge(
-        data.frame(p = df[df$species == sp,]$fill,
-                   Month = df[df$species == sp,]$month,
-                   Species = df[df$species == sp,]$species
-        )
+    dplyr::filter(is.na(year)) %>%
+    dplyr::mutate(
+      month = factor(
+        month,
+        levels = 1:12,
+        labels = c("Jan","Feb","Mar","Apr","May",
+                   "Jun","Jul","Aug","Sep","Oct","Nov","Dec")
       )
-
-    for (i in seq_len(nrow(DF2[[sp]]))) {
-      DF2[[sp]]$`Detection rate`[i] <- 1 - dbinom(0, size = DF2[[sp]]$`Samples needed`[i], prob = DF2[[sp]]$p[i]) # 1 - probability of zero detects
-    }
-  }
-
-  DF_tot <- dplyr::bind_rows(DF2) |>
-    dplyr::mutate(Species = reorder(Species, dplyr::desc(Species)))
-
-  ggplot2::ggplot(DF_tot,
-                  ggplot2::aes(y = `Detection rate`,
-                               x = `Samples needed`,
-                               colour = Month)) +
-    ggplot2::geom_point(size = 3, show.legend = TRUE) +
-    ggplot2::theme_classic(base_size = 24) +
-    ggplot2::expand_limits(x = 0, y = 0) +
-    ggplot2::scale_y_continuous(
-                                limits = c(0, 1),
-                                expand = c(0, 0)
-    ) +
-    ggplot2::scale_x_continuous(
-      expand = c(0, 0),
-      limits = c(1, 25),
-      breaks = seq(5,25,5)
-    ) +
-    ggplot2::scale_colour_viridis_d(
-      name = "Month",
-      direction = -1,
-      breaks = 1:12,
-      labels = c("Jan","Feb","Mar","Apr","May",
-                 "Jun","Jul","Aug","Sep","Oct",
-                 "Nov","Dec")
-    ) +
-    ggplot2::facet_wrap(~Species,
-                       ncol = 1, scales = "free") +
-    ggplot2::labs(
-      x = NULL, y = NULL
-    ) +
-    ggplot2::theme(
-      panel.grid = ggplot2::element_blank(),
-      panel.border = ggplot2::element_blank(),
-      panel.spacing = ggplot2::unit(20, "pt"),
-      strip.background = ggplot2::element_blank(),
-      axis.ticks = ggplot2::element_line(
-        linewidth = 0.1,
-        colour = "#939598"),
-      text = ggplot2::element_text(
-        family = "sans", size = 24),
-      axis.text = ggplot2::element_text(
-        colour = "#939598", size = 20),
-      axis.title = ggplot2::element_text(colour = "#5A5A5A",
-                                         size = 24),
-      axis.title.x = ggplot2::element_text(
-        hjust = 0),
-      axis.title.y = ggplot2::element_text(
-        hjust = 0),
-      axis.line = ggplot2::element_line(
-        linewidth = 0.1,
-        colour = "#939598"),
-      strip.placement = "outside"
-
     )
 
+  species_list <- unique(df$species)
+  n_species <- length(species_list)
+
+  # Make a cyclic month color palette (so Dec ~ Jan)
+  cyclic_palette <- colorRampPalette(
+    c("#440154", "#3B528B", "#21908C", "#5DC863", "#FDE725", "#7b3f53")
+  )(12)
+
+  # Generate plots for each species
+  plots <- lapply(seq_along(species_list), function(i) {
+    sp <- species_list[i]
+    df_sp <- df[df$species == sp, ]
+
+    DF_sp <- expand.grid(
+      p = df_sp$fill,
+      `Samples needed` = seq_len(25),
+      `Detection rate` = NA
+    ) %>%
+      merge(data.frame(
+        p = df_sp$fill,
+        Month = df_sp$month,
+        Species = df_sp$species
+      ))
+
+    for (j in seq_len(nrow(DF_sp))) {
+      DF_sp$`Detection rate`[j] <- 1 - dbinom(
+        0,
+        size = DF_sp$`Samples needed`[j],
+        prob = DF_sp$p[j]
+      )
+    }
+
+    show_legend <- i == 1
+
+    plotly::plot_ly(
+      DF_sp,
+      x = ~`Samples needed`,
+      y = ~`Detection rate`,
+      type = "scatter",
+      mode = "markers",
+      color = ~Month,
+      colors = cyclic_palette,
+      marker = list(size = dot_size),
+      showlegend = show_legend
+    ) %>%
+      plotly::layout(
+        yaxis = list(range = c(0, 1), title = "Detection probability"),
+        xaxis = list(title = "Number of samples")
+      )
+  })
+
+  # Combine all subplots vertically
+  subplot_obj <- plotly::subplot(
+    plots,
+    nrows = n_species,
+    shareX = TRUE,
+    titleY = TRUE,
+    heights = rep(1 / n_species, n_species),
+    margin = 0.01
+  )
+
+  # Add per-species titles via annotations
+  annotations <- lapply(seq_along(species_list), function(i) {
+    list(
+      text = species_list[i],
+      x = 0.02,
+      y = 1 - ((i - 0.5) / n_species) + 0.02,
+      xref = "paper",
+      yref = "paper",
+      xanchor = "left",
+      yanchor = "middle",
+      showarrow = FALSE,
+      font = list(size = 22, color = "#333")
+    )
+  })
+
+  subplot_obj %>%
+    plotly::layout(
+      height = n_species * height_per_species,
+      margin = list(t = 80, r = 180, b = 60),
+      legend = list(
+        title = list(text = "Month", font = list(size = 24)),  # legend title size
+        font = list(size = 20),                                 # legend text size
+        orientation = "v",
+        y = 1,          # top
+        x = 1.02,       # right
+        xanchor = "left",
+        yanchor = "top"
+      ),
+      annotations = annotations
+    )
 }
 

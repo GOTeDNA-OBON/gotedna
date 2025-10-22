@@ -362,40 +362,11 @@ mod_select_figure_server <- function(id, r) {
       }
     })
 
-    ## EFFORT
     output$fig_effort_plot_output <- plotly::renderPlotly({
-      if (req(r$fig_ready, cancelOutput = TRUE)) {
-        ggp <- draw_fig_effort(r, r$fig_ready && r$fig_slc$fig_effort)
-        # multiply height by number of species
-        nys <- r$data_ready$species |>
-          unique() |>
-          length()
-        plt <- plotly::ggplotly(
-          ggp,
-          height = 320 * nys
-        ) |>
-          default_layout() |>
-          facet_strip_format() |>
-          plotly::layout(
-            xaxis = list(title = list(
-              text = "Number of samples",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              x = 0
-            )),
-            yaxis = list(title = list(
-              text = "Detection probability",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              y = 0
-            ))
-          )
-      }
+      req(r$fig_ready, cancelOutput = TRUE)
+      effort_needed_fig(r$scaledprobs)
     })
+
 
     ## HEATMAP
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
@@ -695,17 +666,6 @@ draw_fig_detect <- function(r, ready, threshold) {
   }
 }
 
-## Sampling effort
-draw_fig_effort <- function(r, ready) {
-  if (ready) {
-    p <- effort_needed_fig(
-      r$scaledprobs
-    )
-    p
-  } else {
-    plotNotAvailable()
-  }
-}
 
 ## Heatmap
 draw_fig_heatmap <- function(r, ready) {
