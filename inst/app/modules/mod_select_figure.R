@@ -749,7 +749,7 @@ effort_needed_plotly <- function(scaledprobs, height_per_species = 320, dot_size
 
   # Make a cyclic month color palette (so Dec ~ Jan)
   cyclic_palette <- colorRampPalette(
-    c("#440154", "#3B528B", "#21908C", "#5DC863", "#FDE725", "#440154")
+    c("#440154", "#3B528B", "#21908C", "#5DC863", "#FDE725", "#7b3f53")
   )(12)
 
   # Generate plots for each species
