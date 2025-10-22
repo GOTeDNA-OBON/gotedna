@@ -96,15 +96,20 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
   )
 
   # Add per-species titles via annotations
+  heights <- rep(1 / n_species, n_species)
+  padding <- 0.02  # distance from bottom of subplot
+
   annotations <- lapply(seq_along(species_list), function(i) {
+    y_bottom <- 1 - sum(heights[1:i])
+    subplot_height <- heights[i]
     list(
       text = species_list[i],
-      x = 0.02,
-      y = 1 - ((i - 0.5) / n_species) + 0.02,
+      x = 0.98,                        # right edge
+      y = y_bottom + subplot_height * padding,
       xref = "paper",
       yref = "paper",
-      xanchor = "left",
-      yanchor = "middle",
+      xanchor = "right",
+      yanchor = "bottom",
       showarrow = FALSE,
       font = list(size = 22, color = "#333")
     )
