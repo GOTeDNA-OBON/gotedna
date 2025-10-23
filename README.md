@@ -96,21 +96,21 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 
 #### Species monthly detection
 
-![](man/figures/README-smooth-1.png)
+![](man/figures/README-smooth-3.png)
 
 #### Monthly detection probabilities
 ######Predicted sample size required to reach targeted probability of detection given the month of sampling.
-![](man/figures/README-thresh_fig-2.png)
+![](man/figures/README-thresh_fig-3.png)
 
 #### Heat map
 ######Heamap displaying variation of normalized speces eDNA detection probability.
-![](man/figures/README-hm-2.png)
+![](man/figures/README-hm-3.png)
 
 #### Effort needed
 
-![](man/figures/README-effort-2.png)
+![](man/figures/README-effort-3.png)
 
 #### Sampling effort
 ######Monthly water sampling effort and proportion of samples having positive eDNA detection.
 
-![](man/figures/README-field-2.png)
+![](man/figures/README-field-3.png)
