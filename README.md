@@ -86,7 +86,7 @@ run_gotedna_app()
 
 ### Import data
 
-To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.  
+To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
 
 Please refer to Appendix 2 in the GOTeDNA manuscript to access the sample metadata, qPCR, and metabarcoding templates.
 
