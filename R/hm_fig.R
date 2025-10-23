@@ -19,57 +19,76 @@
 #' scaledprobs <- scale_newprob(D_mb, newprob)
 #' hm_fig(scaledprobs)
 #' }
-hm_fig <- function(
-    scaledprobs) {
+hm_fig <- function(scaledprobs) {
 
+  # Preprocess data
   df <- scaledprobs %>%
-    dplyr::filter(!is.na(year)) %>%
-    dplyr::group_by(year, month, species) %>%
-    dplyr::summarise(
-      scaleP = mean(scaleP, na.rm = TRUE)
-    ) %>%
-    dplyr::rename("Detection rate" = "scaleP") %>%
-    dplyr::mutate(species = reorder(species, dplyr::desc(species)))
-
-  df$Month <- factor(df$month,
-                       levels = 1:12,
-                       labels = month.abb)
-  ggplot2::ggplot(
-  ) +
-    ggplot2::geom_tile(dplyr::filter(df, `Detection rate` > 0 | is.na(`Detection rate`)),
-                       mapping = ggplot2::aes(x = Month,
-                                              y = reorder(year, dplyr::desc(year)),
-                                              fill = `Detection rate`)) +
-    ggplot2::geom_tile(dplyr::filter(df, `Detection rate` == 0),
-                       mapping = ggplot2::aes(x = Month,
-                                              y = reorder(year, dplyr::desc(year))),
-                       fill = "lightgrey", inherit.aes = FALSE)+
-    ggplot2::facet_wrap(~species,
-                        ncol = 1) +
-    ggplot2::scale_fill_viridis_c(direction = -1, limits = c(0.00001, 1), na.value = "white",
-                                  guide = NULL) +
-    ggplot2::scale_x_discrete(breaks = month.abb, expand = c(0,0)) +
-    ggplot2::scale_y_discrete(expand = c(0,0)) +
-    ggplot2::labs(
-      fill = NULL, x = NULL, y = NULL) +
-    ggplot2::scale_colour_manual(values = "white") +
-    ggplot2::theme_minimal(base_size = 12) +
-    ggplot2::theme(
-      panel.border = ggplot2::element_rect(fill = NA, colour = "lightgrey"),
-      panel.grid = ggplot2::element_blank(),
-      panel.spacing = ggplot2::unit(20, "pt"),
-      plot.title = ggplot2::element_text(face = "bold",
-                                         size = 30,
-                                         hjust = 0,
-                                         colour = "#5A5A5A",
-                                         margin = ggplot2::margin(b = 20,
-                                                                  unit = "pt")),
-      strip.placement = "outside",
-      strip.background = ggplot2::element_blank(),
-      strip.text = ggplot2::element_text(size = 20,
-                                         colour = "#5A5A5A"),
-      axis.text.x = ggplot2::element_text(
-        size = 20, colour = "#939598"),
-      axis.text.y = ggplot2::element_text(size = 20, colour = "#939598")
+    filter(!is.na(year)) %>%
+    group_by(year, month, species) %>%
+    summarise(scaleP = mean(scaleP, na.rm = TRUE), .groups = "drop") %>%
+    rename("Detection rate" = "scaleP") %>%
+    mutate(
+      species = factor(species, levels = rev(unique(species))),
+      Month = factor(month, levels = 1:12, labels = month.abb)
     )
+
+  species_list <- unique(df$species)
+
+  plots <- lapply(species_list, function(sp) {
+    df_sp <- df %>% filter(species == sp)
+
+    # create overlay for zeros
+    df_sp$zero_layer <- ifelse(df_sp$`Detection rate` == 0, 0, NA)
+
+    plot_ly(
+      df_sp,
+      x = ~Month,
+      y = ~factor(year, levels = rev(unique(year))),
+      z = ~`Detection rate`,
+      type = "heatmap",
+      colors = viridis::viridis(100, direction = -1),
+      zmin = 0.00001,
+      zmax = 1,
+      showscale = FALSE,
+      na.color = "white"
+    ) %>%
+      add_trace(
+        z = ~zero_layer,
+        type = "heatmap",
+        colorscale = list(c(0, "lightgrey"), c(1, "lightgrey")),
+        showscale = FALSE,
+        na.color = "transparent"
+      ) %>%
+      layout(
+        xaxis = list(title = "", tickangle = -45, showgrid = FALSE),
+        yaxis = list(title = "", autorange = "reversed", showgrid = FALSE),
+        margin = list(l = 50, r = 20, t = 50, b = 50),
+        annotations = list(
+          list(
+            x = 0,
+            y = 1,
+            text = sp,
+            xref = "paper",
+            yref = "paper",
+            xanchor = "left",
+            yanchor = "bottom",
+            showarrow = FALSE,
+            font = list(size = 14, color = "black")
+          )
+        )
+      )
+  })
+
+  # Combine vertically
+  n_species <- length(species_list)
+  total_height <- 275 * n_species
+
+  subplot(plots,
+          nrows = n_species,
+          shareX = TRUE,
+          shareY = FALSE,
+          titleY = FALSE,
+          margin = 0.02) %>%
+    layout(height = total_height)
 }
+
