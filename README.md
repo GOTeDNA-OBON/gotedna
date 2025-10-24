@@ -62,12 +62,11 @@ install.packages("path/to/GOTeDNA_{version}.tar.gz")
 
 ## Usage
 
-### R function categories:
+### Table of Contents:
 
 -   Shiny
 -   Import data
--   Clean/tidy data
--   Visualization
+-   Visualizations
 
 To load the package: 
 
@@ -87,90 +86,31 @@ run_gotedna_app()
 
 ### Import data
 
-To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets prior to calling in the `read_data()` function.  
+To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
 
 Please refer to Appendix 2 in the GOTeDNA manuscript to access the sample metadata, qPCR, and metabarcoding templates.
 
-#### Example: D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = "~/Desktop/Sample_Template.xlsx")
-```
-D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
-```
-
-
-### Clean/tidy data
-
-As the Shiny app controls the filtering of each function internally, please filter to the taxonomy level and name that you wish to explore with `dplyr::filter()` when working with the code outside the app.
-
-The example data herein contains a sample of metabarcoding data from a single protocol, and contains only the species detected within genus *Acartia*.
-
-``` r
-newprob <- calc_det_prob(
-  data = D_mb_ex |> dplyr::filter(genus == "Acartia")
-  )
-
-scaledprobs <- scale_newprob(
-  data = D_mb_ex |> dplyr::filter(genus == "Acartia"), 
-  newprob
-  )
-
-win <- calc_window(
-  threshold = "75",
-  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis")
-  )
-
-win$opt_sampling
-win$fshTest
-```
-
 ### Visualization
+
+The GOTeDNA app displays the following visualizations for each selected taxon and set of parameters (e.g. detection threshold, primer, etc.) 
 
 #### Species monthly detection
 
-``` r
- smooth_fig(
-   data = D_mb_ex |> dplyr::filter(species == "Acartia longiremis")
-   )
-```
-
-![](man/figures/README-smooth-1.png)
+![](man/figures/README-smooth-3.png)
 
 #### Monthly detection probabilities
-
-``` r
-thresh_fig(
-  threshold = "75",   
-  scaledprobs = scaledprobs |> dplyr::filter(species == "Acartia longiremis")
-)
-```
-
-![](man/figures/README-thresh_fig-1.png)
+######Predicted sample size required to reach targeted probability of detection given the month of sampling.
+![](man/figures/README-thresh_fig-3.png)
 
 #### Heat map
-
-``` r
-hm_fig(
-  scaledprobs = scaledprobs |> dplyr::filter(class == "Copepoda")
-)
-```
-
-![](man/figures/README-hm-1.png)
+######Heamap displaying variation of normalized speces eDNA detection probability.
+![](man/figures/README-hm-3.png)
 
 #### Effort needed
 
-``` r
-effort_needed_fig(
-   scaledprobs = scaledprobs |> dplyr::filter(species == c("Acartia longiremis","Acartia tonsa"))
-)
-```
-
-![](man/figures/README-effort-1.png)
+![](man/figures/README-effort-3.png)
 
 #### Sampling effort
+######Monthly water sampling effort and proportion of samples having positive eDNA detection.
 
-``` r
-field_sample_fig(
-  data = D_mb_ex |> dplyr::filter(class == "Copepoda")
-)
-```
-
-![](man/figures/README-field-1.png)
+![](man/figures/README-field-3.png)
