@@ -83,12 +83,14 @@ hm_fig <- function(scaledprobs) {
   n_species <- length(species_list)
   total_height <- 275 * n_species
 
-  subplot(plots,
-          nrows = n_species,
-          shareX = TRUE,
-          shareY = FALSE,
-          titleY = FALSE,
-          margin = 0.02) %>%
+  subplot(
+    plots,
+    nrows = n_species,
+    shareX = FALSE,  # <- important
+    shareY = FALSE,
+    titleY = FALSE,
+    margin = 0.02
+  ) %>%
     layout(height = total_height)
 }
 
