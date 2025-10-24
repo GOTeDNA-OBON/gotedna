@@ -103,7 +103,7 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 ![](man/figures/README-thresh_fig-3.png)
 
 #### Heat map
-###### Heamap displaying variation of normalized speces eDNA detection probability.
+###### Heatmap displaying variation of normalized species eDNA detection probability.
 ![](man/figures/README-hm-3.png)
 
 #### Effort needed
