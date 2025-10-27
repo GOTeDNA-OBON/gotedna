@@ -362,6 +362,7 @@ mod_select_figure_server <- function(id, r) {
       }
     })
 
+    ## EFFORT NEEDED
     output$fig_effort_plot_output <- plotly::renderPlotly({
       req(r$fig_ready, cancelOutput = TRUE)
       effort_needed_fig(r$scaledprobs)
@@ -372,18 +373,7 @@ mod_select_figure_server <- function(id, r) {
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
         plt_ready <- r$fig_ready && r$fig_slc$fig_heatmap
-        ggp <- draw_fig_heatmap(r, plt_ready)
-        # multiply height by number of species
-        nys <- r$data_ready$species |>
-          unique() |>
-          length()
-        plt <- plotly::ggplotly(
-          ggp,
-          height = 275 * nys,
-          tooltip = c("x", "fill")
-        ) |>
-          default_layout() |>
-          facet_strip_format()
+        hm_fig(r$scaledprobs)
       }
     })
 
