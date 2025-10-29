@@ -1,4 +1,4 @@
-### This code can be used to format bioinformatic output data from metabarcoding into the Sample_metabarcoding template files
+### This code can be used to format bioinformatic output data from metabarcoding into the Sample_metabarcoding template files V.2.2 
 
 # Set working directory to where the files are located (Example)
 setwd("~/Desktop")
