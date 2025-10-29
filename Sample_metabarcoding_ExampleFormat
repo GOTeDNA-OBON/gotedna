@@ -1,5 +1,8 @@
 ### This code can be used to format bioinformatic output data from metabarcoding into the Sample_metabarcoding template files
 
+# Set working directory to where the files are located (Example)
+setwd("~/Desktop")
+
 # Open packages and load libraries
 install.packages("openxlsx")
 install.packages("dplyr")
@@ -19,10 +22,12 @@ library(purrr)
 data1 <- read_csv("Bioinformatic_output_COI.csv")
 data2 <- read_csv("Bioinformatic_output_18S.csv")
 
-# Filter dataframe so that there are no NA_character_ values in species column
+# Filter dataframe so that there are no NA_character_ values in Taxonimic assignment columns
 data1 <- data1 %>%
-  filter(!is.na(species))
-
+  mutate(across(
+    c(species, phylum, class, order, family, genus),
+    ~ coalesce(.x, "(unknown)")
+  ))
 
 # Create df with GOTeDNA columns (see example templates) and add rows for species names from bioinformatic output file (xlsx/csv)
 
@@ -124,7 +129,10 @@ df_data1 <- data1 %>%
 
 # Filter dataframe so that there are no NA_character_ vales in species column
 data2 <- data2 %>%
-  filter(!is.na(species))
+  mutate(across(
+    c(species, phylum, class, order, family, genus),
+    ~ coalesce(.x, "(unknown)")
+  ))
 
 #Create df with GOTeDNA columns and add rows for species names from bioinformatic output file (xlsx/csv)
 
