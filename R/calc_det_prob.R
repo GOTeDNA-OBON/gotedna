@@ -2,13 +2,13 @@
 #' with read_data()
 #'
 #' @description Function that calculates non-parametric probability of detection
-#' for each species and primer for the selected data. Probabilities are
+#' for each selected taxon and primer for the selected data. Probabilities are
 #' calculated both (1) monthly, across all years; and (2) monthly with each year
 #' separate. Outputs are used in subsequent functions.
 #'
 #' @param data (required, data.frame) Data.frame read in with [read_data()].
 #'
-#' @return Two lists, each with distinct elements of species; primer ID
+#' @return Two lists, each with distinct elements of the selected taxon; primer ID
 #' containing 5-7 columns:
 #' * `month`
 #' * `n` total number of samples per month
@@ -26,7 +26,7 @@
 #' \dontrun{
 #'  calc_det_prob(data = D_mb)
 #' }
-calc_det_prob <- function(data) {
+calc_det_prob <- function(data, selected_taxon_level = "species") {
   oop <- options("dplyr.summarise.inform")
   options(dplyr.summarise.inform = FALSE)
   # reset option on exit
@@ -34,11 +34,11 @@ calc_det_prob <- function(data) {
 
   data %<>%
     dplyr::mutate(.,
-      id = paste0(protocol_ID, ";", species, ";", primer),
-      id.yr = paste0(protocol_ID, ";", species, ";", primer, ";", year)
+      id = paste0(protocol_ID, ";", .data[[selected_taxon_level]], ";", primer),
+      id.yr = paste0(protocol_ID, ";", .data[[selected_taxon_level]], ";", primer, ";", year)
     )
   # Create a variable so detection probability is calculated separately for each
-  # protocol ID, version, species, and primer
+  # protocol ID, version, selected_taxon_level, and primer
 
   # create new list variables to store outputs
   lnd <- length(unique(data$id))

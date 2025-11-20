@@ -236,8 +236,13 @@ mod_select_figure_server <- function(id, r) {
             duration = NULL,
             id = "notif_calc_win"
           )
-          newprob <- calc_det_prob(r$data_ready)
-          r$scaledprobs <- scale_newprob(r$data_ready, newprob)
+          if (r$taxon_lvl_slc == "genus" || r$taxon_lvl_slc == "species") {
+            newprob <- calc_det_prob(r$data_ready)
+            r$scaledprobs <- scale_newprob(r$data_ready, newprob)
+          } else {
+            newprob <- calc_det_prob(r$data_ready, r$taxon_lvl_slc)
+            r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$taxon_lvl_slc)
+          }
 
           cli::cli_alert_info("Computing optimal detection window")
 
