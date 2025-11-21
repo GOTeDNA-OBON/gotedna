@@ -48,12 +48,12 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
     df_sp <- df[df[[selected_taxon_level]] == sp, ]
 
     DF_sp <- expand.grid(
-      p = df_sp$fill,
+      p = df_sp$scaleP,
       `Samples needed` = seq_len(25),
       `Detection rate` = NA
     ) %>%
       merge(data.frame(
-        p = df_sp$fill,
+        p = df_sp$scaleP,
         Month = df_sp$month,
         Taxon = df_sp[[selected_taxon_level]]
       ))
@@ -66,8 +66,6 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
       )
     }
 
-    show_legend <- i == 1
-
     plotly::plot_ly(
       DF_sp,
       x = ~`Samples needed`,
@@ -77,7 +75,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
       color = ~Month,
       colors = cyclic_palette,
       marker = list(size = dot_size),
-      showlegend = show_legend
+      showlegend = TRUE
     ) %>%
       plotly::layout(
         yaxis = list(range = c(0, 1), title = "Detection probability"),
