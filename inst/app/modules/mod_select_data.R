@@ -87,7 +87,7 @@ mod_select_data_ui <- function(id) {
               column(
                 3, selectInput(ns("taxo_id"),
                   "Taxa",
-                  choices = "All"
+                  choices = NULL
                 )
               ),
               column(
@@ -254,12 +254,11 @@ mod_select_data_server <- function(id, r) {
         session,
         "taxo_id",
         choices = c(
-          "All",
           r$cur_data[[input$taxo_lvl]] |>
             unique() |>
             sort()
         ),
-        selected = "All"
+        selected = NULL
       )
     })
 

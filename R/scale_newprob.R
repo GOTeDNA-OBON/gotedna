@@ -2,7 +2,7 @@
 #' for each year separately.
 #'
 #' @description This function normalizes (i.e., scales) monthly detection
-#' probabilities for each species, primer, and year that were calculated with
+#' probabilities for each selected taxon (e.g. species), primer, and year that were calculated with
 #' the previous function, [calc_det_prob()]. Outputs fed into figure and window
 #' calculation functions.
 #' * NOTE: Currently this function only works for metabarcoding data.
@@ -12,8 +12,8 @@
 #' @param newprob (required, list) detection probabilities aggregated per month and year
 #' [calc_det_prob()].
 #'
-#' @return Grouped data.frame with 15 columns:
-#' * `id`: unique species;primer;year identifier
+#' @return Grouped data.frame with 15 columns (though lower taxonomic levels are not included beyond the selected taxonomic level):
+#' * `id`: unique taxon;primer;year identifier
 #' * `month`:
 #' * `detect`: number of detections
 #' * `nondetect`: number of non-detections
@@ -37,7 +37,7 @@
 #' newprob <- calc_det_prob(gotedna_data$metabarcoding, "Scotian Shelf")
 #' scale_newprob(data = gotedna_data$metabarcoding, newprob)
 #' }
-scale_newprob <- function(data, newprob) {
+scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
 
   CPscaled <- lapply(newprob, function(x)
     lapply(x, function(y) {
@@ -70,21 +70,25 @@ scale_newprob <- function(data, newprob) {
     dplyr::tibble()
   row.names(DFmo) <- NULL
 
-  DFmo[c("protocol_ID", "species", "primer")] <- stringr::str_split_fixed(DFmo$id, ";", 3)
+  DFmo[c("protocol_ID", selected_taxon_level, "primer")] <- stringr::str_split_fixed(DFmo$id, ";", 3)
+
+  taxa_columns <- c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")
+  cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFmo <- DFmo |>
     dplyr::left_join(
-      unique(data[, c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")]),
-      by = c("species"),
+      unique(data[, cols_to_keep]),
+      by = selected_taxon_level,
       multiple = "first"
     )
+
   # Interpolate missing months
   DFmo$det_int <- NA
   DFmo$nd_int <- NA
   DFmo$fill <- NA # add column
 
-  for (species in unique(DFmo$id)) {
-    DF1 <- DFmo[DFmo$id == species, ]
+  for (taxon in unique(DFmo$id)) {
+    DF1 <- DFmo[DFmo$id == taxon, ]
 
     # then add code for interpolation that starts with DF2 = .....
     # add dataframe above and below to help will fills for jan and dec. Needed to have 4 copyies because of max function used below
@@ -129,9 +133,9 @@ scale_newprob <- function(data, newprob) {
     # DF3 is final DF with fills
     DF3 <- DF2[DF2$G == 2, ]
 
-    DFmo$det_int[DFmo$id == species] <- DF3$det_int
-    DFmo$nd_int[DFmo$id == species] <- DF3$nd_int
-    DFmo$fill[DFmo$id == species] <- DF3$fill
+    DFmo$det_int[DFmo$id == taxon] <- DF3$det_int
+    DFmo$nd_int[DFmo$id == taxon] <- DF3$nd_int
+    DFmo$fill[DFmo$id == taxon] <- DF3$fill
   }
 
   # Pscaled_month <- DFmo %>%
@@ -158,20 +162,23 @@ scale_newprob <- function(data, newprob) {
     dplyr::tibble()
   row.names(DFyr) <- NULL
 
-  DFyr[c("protocol_ID", "species", "primer", "year")] <- stringr::str_split_fixed(DFyr$id, ";", 4)
+  DFyr[c("protocol_ID", selected_taxon_level, "primer", "year")] <- stringr::str_split_fixed(DFyr$id, ";", 4)
+
+  taxa_columns <- c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")
+  cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFyr <- DFyr |>
     dplyr::left_join(
-      unique(data[, c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")]),
-                     by = "species",
-                     multiple = "first"
+      unique(data[, cols_to_keep]),
+      by = selected_taxon_level,
+      multiple = "first"
     )
 
   # Interpolate missing months
   DFyr$fill <- NA # add column
 
-  for (species in unique(DFyr$id)) {
-    DF1 <- DFyr[DFyr$id == species, ]
+  for (taxon in unique(DFyr$id)) {
+    DF1 <- DFyr[DFyr$id == taxon, ]
 
     # then add code for interpolation that starts with DF2 = .....
     # add dataframe above and below to help will fills for jan and dec. Needed to have 4 copyies because of max fucntion used below
@@ -203,7 +210,7 @@ scale_newprob <- function(data, newprob) {
     # then put values from DF3 back into DF$id.sp.pr.yr. This assumes that the months are all in the correct order (jan to dec) in DF3 and test_interp
     # DF3 is final DF with fills
     DF3 <- DF2[DF2$G == 2, ]
-    DFyr$fill[DFyr$id == species] <- DF3$fill
+    DFyr$fill[DFyr$id == taxon] <- DF3$fill
   }
 
   DFmo$year = NA

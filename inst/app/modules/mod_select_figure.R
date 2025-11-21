@@ -236,9 +236,15 @@ mod_select_figure_server <- function(id, r) {
             duration = NULL,
             id = "notif_calc_win"
           )
-          newprob <- calc_det_prob(r$data_ready)
-          r$scaledprobs <- scale_newprob(r$data_ready, newprob)
-
+          if (r$taxon_lvl_slc == "genus") {
+            newprob <- calc_det_prob(r$data_ready, r$taxon_lvl_slc)
+            r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$taxon_lvl_slc)
+            newprob_by_species <- calc_det_prob(r$data_ready, "species")
+            r$scaledprobs_by_species <- scale_newprob(r$data_ready, newprob_by_species, "species")
+          } else {
+            newprob <- calc_det_prob(r$data_ready, r$taxon_lvl_slc)
+            r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$taxon_lvl_slc)
+          }
           cli::cli_alert_info("Computing optimal detection window")
 
           thresh_slc <- input$threshold
@@ -365,7 +371,11 @@ mod_select_figure_server <- function(id, r) {
     ## EFFORT NEEDED
     output$fig_effort_plot_output <- plotly::renderPlotly({
       req(r$fig_ready, cancelOutput = TRUE)
-      effort_needed_fig(r$scaledprobs)
+      if (r$taxon_lvl_slc == 'genus') {
+        effort_needed_fig(r$scaledprobs_by_species, selected_taxon_level = "species")
+      } else {
+        effort_needed_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
+      }
     })
 
 
@@ -373,7 +383,11 @@ mod_select_figure_server <- function(id, r) {
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
         plt_ready <- r$fig_ready && r$fig_slc$fig_heatmap
-        hm_fig(r$scaledprobs)
+        if (r$taxon_lvl_slc == 'genus') {
+          hm_fig(r$scaledprobs_by_species, selected_taxon_level = "species")
+        } else {
+          hm_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
+        }
       }
     })
 
@@ -656,7 +670,7 @@ draw_fig_detect <- function(r, ready, threshold) {
   }
 }
 
-
+## THIS IS NOT BEING CALLED AND CAN BE DELETED OR REFACTORED SO THAT IT IS USED
 ## Heatmap
 draw_fig_heatmap <- function(r, ready) {
   if (ready) {
@@ -756,7 +770,8 @@ ui_fig_hm <- function(fig_id, title, caption_file, ns) {
           ),
           bslib::card_image(
             file = "www/img/fixed-legends/hm_legend.png",
-            fill = FALSE
+            fill = FALSE,
+            style = "min-width:100px; max-width:200px;"
           ),
           col_widths = bslib::breakpoints(
             sm = c(9, 3),
@@ -772,9 +787,11 @@ ui_fig_effort <- function(fig_id, title, caption_file, ns) {
   div(
     id = paste0(ns(fig_id), "_fig_container"),
     class = "fig_container",
+    style = "width:100%;",
     h4(title),
     div(
       class = "fig_caption-container",
+      style = "width:100%;",
       div(
         class = "fig_caption",
         includeHTML(file.path("www", "doc", "caption", caption_file))
@@ -784,8 +801,10 @@ ui_fig_effort <- function(fig_id, title, caption_file, ns) {
       class = "fig_panel_container",
       div(
         class = "fig_panel",
+        style = "width:100%; min-width:700px;",
         plotly::plotlyOutput(
           paste0(ns(fig_id), "_plot_output"),
+          width = "100%",
           height = "auto"
         )
       ),
