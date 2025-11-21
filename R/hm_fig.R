@@ -19,24 +19,22 @@
 #' scaledprobs <- scale_newprob(D_mb, newprob)
 #' hm_fig(scaledprobs)
 #' }
-hm_fig <- function(scaledprobs) {
-
+hm_fig <- function(scaledprobs, selected_taxon_level = "species") {
   # Preprocess data
   df <- scaledprobs %>%
     filter(!is.na(year)) %>%
-    group_by(year, month, species) %>%
+    group_by(year, month, .data[[selected_taxon_level]]) %>%   # note: use .data here
     summarise(scaleP = mean(scaleP, na.rm = TRUE), .groups = "drop") %>%
     rename("Detection rate" = "scaleP") %>%
     mutate(
-      species = factor(species, levels = rev(unique(species))),
+      taxon = as.character(.data[[selected_taxon_level]]),     # works now
       Month = factor(month, levels = 1:12, labels = month.abb)
     )
 
-  species_list <- unique(df$species)
+  taxa_list <- unique(df[[selected_taxon_level]])
 
-  plots <- lapply(species_list, function(sp) {
-    df_sp <- df %>% filter(species == sp)
-
+  plots <- lapply(taxa_list, function(sp) {
+    df_sp <- df %>% filter(taxon == sp)
     # create overlay for zeros
     df_sp$zero_layer <- ifelse(df_sp$`Detection rate` == 0, 0, NA)
 
@@ -80,17 +78,17 @@ hm_fig <- function(scaledprobs) {
   })
 
   # Combine vertically
-  n_species <- length(species_list)
-  total_height <- 275 * n_species
+  n_taxa <- length(taxa_list)
+  total_height <- 275 * n_taxa
 
   subplot(
     plots,
-    nrows = n_species,
+    nrows = n_taxa,
     shareX = FALSE,  # <- important
     shareY = FALSE,
     titleY = FALSE,
     margin = 0.02
   ) %>%
     layout(height = total_height)
-}
+  }
 
