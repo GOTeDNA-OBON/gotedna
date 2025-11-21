@@ -378,7 +378,7 @@ mod_select_figure_server <- function(id, r) {
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
         plt_ready <- r$fig_ready && r$fig_slc$fig_heatmap
-        hm_fig(r$scaledprobs)
+        hm_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
       }
     })
 
@@ -761,7 +761,8 @@ ui_fig_hm <- function(fig_id, title, caption_file, ns) {
           ),
           bslib::card_image(
             file = "www/img/fixed-legends/hm_legend.png",
-            fill = FALSE
+            fill = FALSE,
+            style = "min-width:100px; max-width:200px;"
           ),
           col_widths = bslib::breakpoints(
             sm = c(9, 3),
