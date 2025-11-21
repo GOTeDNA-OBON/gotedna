@@ -370,7 +370,7 @@ mod_select_figure_server <- function(id, r) {
     ## EFFORT NEEDED
     output$fig_effort_plot_output <- plotly::renderPlotly({
       req(r$fig_ready, cancelOutput = TRUE)
-      effort_needed_fig(r$scaledprobs)
+      effort_needed_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
     })
 
 
@@ -661,7 +661,7 @@ draw_fig_detect <- function(r, ready, threshold) {
   }
 }
 
-
+## THIS IS NOT BEING CALLED AND CAN BE DELETED OR REFACTORED SO THAT IT IS USED
 ## Heatmap
 draw_fig_heatmap <- function(r, ready) {
   if (ready) {

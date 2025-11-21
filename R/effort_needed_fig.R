@@ -1,12 +1,12 @@
 #' Calculate sampling effort needed to obtain different detection thresholds.
 #'
 #' @description This function calculates number of samples needed to obtain
-#' species detection at different thresholds by using scaled and interpolated
+#' the selected taxon detection at different thresholds by using scaled and interpolated
 #' data produced with `[scale_newprob()]`.
 #'
 #' @param scaledprobs  (required, data.frame) Normalized detection
 #' probabilities as returned by the element `month` of the list returned by
-#' [scale_newprob()] for one species and one primer.
+#' [scale_newprob()] for one taxon and one primer.
 #'
 #' @author Anais Lacoursiere-Roussel \email{Anais.Lacoursiere@@dfo-mpo.gc.ca}
 #' @rdname effort_needed_fig
@@ -21,7 +21,7 @@
 #' )
 #' }
 
-effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 12) {
+effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 12, selected_taxon_level = "species") {
   # Filter NA years and prepare month labels
   df <- scaledprobs %>%
     dplyr::filter(is.na(year)) %>%
@@ -34,8 +34,8 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
       )
     )
 
-  species_list <- unique(df$species)
-  n_species <- length(species_list)
+  taxa_list <- unique(df[[selected_taxon_level]])
+  n_taxa <- length(taxa_list)
 
   # Make a cyclic month color palette (so Dec ~ Jan)
   cyclic_palette <- colorRampPalette(
@@ -43,9 +43,9 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
   )(12)
 
   # Generate plots for each species
-  plots <- lapply(seq_along(species_list), function(i) {
-    sp <- species_list[i]
-    df_sp <- df[df$species == sp, ]
+  plots <- lapply(seq_along(taxa_list), function(i) {
+    sp <- taxa_list[i]
+    df_sp <- df[df[[selected_taxon_level]] == sp, ]
 
     DF_sp <- expand.grid(
       p = df_sp$fill,
@@ -55,7 +55,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
       merge(data.frame(
         p = df_sp$fill,
         Month = df_sp$month,
-        Species = df_sp$species
+        Taxon = df_sp[[selected_taxon_level]]
       ))
 
     for (j in seq_len(nrow(DF_sp))) {
@@ -88,22 +88,22 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
   # Combine all subplots vertically
   subplot_obj <- plotly::subplot(
     plots,
-    nrows = n_species,
+    nrows = n_taxa,
     shareX = TRUE,
     titleY = TRUE,
-    heights = rep(1 / n_species, n_species),
+    heights = rep(1 / n_taxa, n_taxa),
     margin = 0.01
   )
 
-  # Add per-species titles via annotations
-  heights <- rep(1 / n_species, n_species)
+  # Add per-taxon titles via annotations
+  heights <- rep(1 / n_taxa, n_taxa)
   padding <- 0.02  # distance from bottom of subplot
 
-  annotations <- lapply(seq_along(species_list), function(i) {
+  annotations <- lapply(seq_along(taxa_list), function(i) {
     y_bottom <- 1 - sum(heights[1:i])
     subplot_height <- heights[i]
     list(
-      text = species_list[i],
+      text = taxa_list[i],
       x = 0.98,                        # right edge
       y = y_bottom + subplot_height * padding,
       xref = "paper",
@@ -117,7 +117,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
 
   subplot_obj %>%
     plotly::layout(
-      height = n_species * height_per_species,
+      height = n_taxa * height_per_species,
       margin = list(t = 80, r = 180, b = 60),
       legend = list(
         title = list(text = "Month", font = list(size = 24)),  # legend title size
