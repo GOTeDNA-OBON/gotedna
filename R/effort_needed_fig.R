@@ -21,7 +21,7 @@
 #' )
 #' }
 
-effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 12, selected_taxon_level = "species") {
+effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 12, selected_taxon_level = "species") {
   # Filter NA years and prepare month labels
   df <- scaledprobs %>%
     dplyr::filter(is.na(year)) %>%
@@ -120,8 +120,8 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 320, dot_size = 
       height = n_taxa * height_per_species,
       margin = list(t = 80, r = 180, b = 60),
       legend = list(
-        title = list(text = "Month", font = list(size = 24)),  # legend title size
-        font = list(size = 20),                                 # legend text size
+        title = list(text = "Month", font = list(size = 16)),  # legend title size
+        font = list(size = 12),                                 # legend text size
         orientation = "v",
         y = 1,          # top
         x = 1.02,       # right

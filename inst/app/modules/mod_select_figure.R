@@ -778,9 +778,11 @@ ui_fig_effort <- function(fig_id, title, caption_file, ns) {
   div(
     id = paste0(ns(fig_id), "_fig_container"),
     class = "fig_container",
+    style = "width:100%;",
     h4(title),
     div(
       class = "fig_caption-container",
+      style = "width:100%;",
       div(
         class = "fig_caption",
         includeHTML(file.path("www", "doc", "caption", caption_file))
@@ -790,8 +792,10 @@ ui_fig_effort <- function(fig_id, title, caption_file, ns) {
       class = "fig_panel_container",
       div(
         class = "fig_panel",
+        style = "width:100%; min-width:700px;",
         plotly::plotlyOutput(
           paste0(ns(fig_id), "_plot_output"),
+          width = "100%",
           height = "auto"
         )
       ),
