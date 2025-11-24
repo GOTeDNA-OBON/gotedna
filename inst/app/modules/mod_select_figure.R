@@ -394,37 +394,53 @@ mod_select_figure_server <- function(id, r) {
     ## DATA VARIATION
     output$fig_samples_plot_output <- plotly::renderPlotly({
       plt_ready <- r$fig_ready && r$fig_slc$fig_samples
-      ggp <- draw_fig_samples(r, plt_ready, id = input$prot_id)
-      if (plt_ready) {
-        # multiply height per years #
-        nys <- r$data_ready$year |>
-          unique() |>
-          length()
-        plotly::ggplotly(
-          ggp,
-          height = 320 * nys
-        ) |>
-          default_layout() |>
-          facet_strip_format() |>
+      num_of_species <- r$data_ready$species |> unique() |> length()
+      if (num_of_species > 26) {
+        plotly::plot_ly(
+          type = "scatter",
+          mode = "text",
+          text = "Too many species to plot for this taxon. Please restrict your search to less than 26 species.",
+          x = 0, y = 0,
+          textfont = list(size = 20)
+        ) %>%
           plotly::layout(
-            xaxis = list(title = list(
-              text = "Month",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              x = 0
-            )),
-            yaxis = list(title = list(
-              text = "Detection rate",
-              font = list(
-                size = 30,
-                color = "#5A5A5A"
-              ),
-              y = 0
-            ))
-          ) # change the style but
-        # better than it was!!!!!!
+            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
+          )
+      } else {
+        ggp <- draw_fig_samples(r, plt_ready, id = input$prot_id)
+        if (plt_ready) {
+          # multiply height per years #
+          num_of_years <- r$data_ready$year |>
+            unique() |>
+            length()
+
+          plotly::ggplotly(
+            ggp,
+            height = 320 * num_of_years
+          ) |>
+            default_layout() |>
+            facet_strip_format() |>
+            plotly::layout(
+              xaxis = list(title = list(
+                text = "Month",
+                font = list(
+                  size = 30,
+                  color = "#5A5A5A"
+                ),
+                x = 0
+              )),
+              yaxis = list(title = list(
+                text = "Detection rate",
+                font = list(
+                  size = 30,
+                  color = "#5A5A5A"
+                ),
+                y = 0
+              ))
+            ) # change the style but
+          # better than it was!!!!!!
+        }
       }
     })
 
