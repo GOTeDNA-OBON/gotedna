@@ -181,7 +181,7 @@ scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
     DF1 <- DFyr[DFyr$id == taxon, ]
 
     # then add code for interpolation that starts with DF2 = .....
-    # add dataframe above and below to help will fills for jan and dec. Needed to have 4 copyies because of max fucntion used below
+    # add dataframe above and below to help will fills for jan and dec. Needed to have 4 copies because of max function used below
     DF2 <- rbind(
       cbind(DF1, data.frame(G = 1)),
       cbind(DF1, data.frame(G = 2)),
