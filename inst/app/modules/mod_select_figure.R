@@ -222,7 +222,10 @@ mod_select_figure_server <- function(id, r) {
 
         update_data_active()
         update_protocol_menu()
-
+        req(input$prot_id)
+        validate(
+          need(input$prot_id != "Not available", "Protocol not selected yet")
+        )
         r$data_ready <- prepare_data(r) |>
           filter(protocol_ID == input$prot_id)
 
