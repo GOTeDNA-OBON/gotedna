@@ -404,7 +404,7 @@ mod_select_figure_server <- function(id, r) {
     ## EFFORT NEEDED
     output$fig_effort_plot_output <- plotly::renderPlotly({
       req(r$fig_ready, cancelOutput = TRUE)
-      if (r$frozen_selected_taxon_id == 'genus') {
+      if (r$frozen_selected_taxon_level == 'genus') {
         effort_needed_fig(r$scaledprobs_by_species, selected_taxon_level = "species")
       } else {
         effort_needed_fig(r$scaledprobs, selected_taxon_level = r$frozen_selected_taxon_level)
