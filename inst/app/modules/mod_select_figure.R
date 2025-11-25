@@ -245,12 +245,12 @@ mod_select_figure_server <- function(id, r) {
             id = "notif_calc_win"
           )
           if (r$frozen_selected_taxon_level == "genus") {
-            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level)
+            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
             r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
-            newprob_by_species <- calc_det_prob(r$data_ready, "species")
+            newprob_by_species <- calc_det_prob(r$data_ready, "species", pool_primers = TRUE)
             r$scaledprobs_by_species <- scale_newprob(r$data_ready, newprob_by_species, "species")
           } else {
-            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level)
+            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
             r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
           }
           cli::cli_alert_info("Computing optimal detection window")
@@ -691,8 +691,7 @@ draw_fig_smooth <- function(r, ready, id) {
   if (ready) {
     plt <- try(
       smooth_fig(
-        r$data_ready |>
-          filter(protocol_ID == id)
+        r$scaledprobs
       )
     )
     if (inherits(plt, "try-error")) {
