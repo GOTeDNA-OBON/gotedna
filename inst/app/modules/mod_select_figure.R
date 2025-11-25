@@ -627,17 +627,6 @@ prepare_data <- function(r) {
     dplyr::filter(primer %in% r$primer)
 }
 
-n_prots <- function(r) {
-  prot_ids <- r$data_ready |>
-    dplyr::summarise(
-      n = sum(detect, nondetect, na.rm = TRUE),
-      .by = protocol_ID
-    ) |>
-    sort(n, decreasing = TRUE) |>
-    select(protocol_ID)
-}
-
-
 ## FIG HELPERS
 
 plotText <- function(txt, size = 6) {
@@ -647,24 +636,8 @@ plotText <- function(txt, size = 6) {
     ggplot2::theme_void()
 }
 
-plotNotAvailableTaxoLevel <- function() {
-  plotText("Plot not available at the species level.")
-}
-
-plotNotAvailableSpeciesLevel <- function() {
-  plotText("Plot only available at the species level.")
-}
-
 plotNotAvailable <- function() {
   plotText(stringr::str_wrap("Plot not available. Click 'Compute & visualize'"))
-}
-
-plotNotAvailableForqPCR <- function() {
-  plotText("Plot not available for qPCR data.")
-}
-
-plotNotAvailableYear <- function() {
-  plotText("Plot not available; small sample size.")
 }
 
 plotNotAvailableError <- function() {
@@ -673,18 +646,6 @@ plotNotAvailableError <- function() {
     width = 60
   ))
 }
-
-add_fixed_legend <- function(file) {
-  if (is.null(file)) {
-    tagList()
-  } else {
-    img(
-      src = file.path("img", "fixed-legends", file),
-      alt = "Legend of the figure"
-    )
-  }
-}
-
 
 ## Detection part 1
 draw_fig_smooth <- function(r, ready, id) {
@@ -719,25 +680,6 @@ draw_fig_detect <- function(r, ready, threshold) {
   }
 }
 
-## THIS IS NOT BEING CALLED AND CAN BE DELETED OR REFACTORED SO THAT IT IS USED
-## Heatmap
-draw_fig_heatmap <- function(r, ready) {
-  if (ready) {
-    p <- try(hm_fig(
-      r$scaledprobs
-    ))
-
-    if (inherits(p, "try-error")) {
-      plotNotAvailableError()
-      # there are lots of erros due xmin not found, this is better than a misleading
-      # message on the plot
-    } else {
-      p
-    }
-  } else {
-    plotNotAvailable()
-  }
-}
 
 ## Data variation
 draw_fig_samples <- function(r, ready, id) {
@@ -751,7 +693,6 @@ draw_fig_samples <- function(r, ready, id) {
     plotNotAvailable()
   }
 }
-
 
 ui_fig_detect <- function(fig_id, title, caption_file, ns) {
   div(
@@ -885,7 +826,6 @@ ui_fig_samples <- function(fig_id, title, caption_file, ns) {
     )
   )
 }
-
 
 ## Plotly Helpers
 facet_strip_format <- function(gp) {
