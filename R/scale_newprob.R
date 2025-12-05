@@ -78,7 +78,7 @@ scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
 
   DFmo[c("protocol_ID", selected_taxon_level, "primer")] <- stringr::str_split_fixed(DFmo$id, ";", 3)
 
-  taxa_columns <- c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")
+  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
   cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFmo <- DFmo |>
@@ -170,7 +170,7 @@ scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
 
   DFyr[c("protocol_ID", selected_taxon_level, "primer", "year")] <- stringr::str_split_fixed(DFyr$id, ";", 4)
 
-  taxa_columns <- c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")
+  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
   cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFyr <- DFyr |>
