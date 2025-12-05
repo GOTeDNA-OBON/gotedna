@@ -170,7 +170,7 @@ read_data <- function(
   GOTeDNA_df <- do.call(dplyr::bind_rows, lapply(samples, function(x) {
     x[, names(x) %in% c(
       "protocol_ID", "protocolVersion", "materialSampleID","eventID", "primer",
-      "scientificName", "domain","kingdom", "phylum", "class", "order",
+      "scientificName", "kingdom", "phylum", "class", "order",
       "family", "genus", "date", #"ecodistrict",
       "LClabel", "decimalLatitude", "decimalLongitude",
       "station", "year", "month", "organismQuantity", "concentration", "pcr_primer_lod", "detected", "ownerContact", "bibliographicCitation"
