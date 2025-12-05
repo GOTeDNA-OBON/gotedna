@@ -43,12 +43,15 @@ gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
-#gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
+browser()
+gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
+browser()
 gotedna_station <- gotedna_station0 <- readRDS("data/gotedna_station.rds")
 gotedna_primer <- readRDS("data/gotedna_primer.rds")
 
-taxonomic_ranks <- list("kingdom", "phylum", "family", "order", "class", "genus")
+#taxonomic_ranks <- list("kingdom", "phylum", "family", "order", "class", "genus")
 #taxonomic_ranks <- list("domain", "kingdom", "phylum", "class", "order", "family", "genus")
+taxonomic_ranks <- list("kingdom", "phylum", "class", "order", "family", "genus")
 names(taxonomic_ranks) <- trans_letters(taxonomic_ranks |> unlist())
 
 ls_threshold <- as.list(seq(50, 95, 5))

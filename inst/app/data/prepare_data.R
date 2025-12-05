@@ -85,7 +85,7 @@ scaledprobs_q <- scale_newprob(gotedna_data$qPCR, newprob_q)
 gotedna_primer <- list()
 
 # this needs to be based on the area selection
-for (i in c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")) {
+for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "species")) {
   gotedna_primer[[i]] <- primer_sort(i, dplyr::bind_rows(scaledprobs_mb, scaledprobs_q)) |>
     mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
 }
