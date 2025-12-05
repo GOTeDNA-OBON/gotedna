@@ -296,7 +296,7 @@ mod_select_data_server <- function(id, r) {
       updateSelectInput(
         session,
         "taxo_lvl",
-        selected = "domain"
+        selected = "kingdom"
       )
       updateSelectizeInput(
         session,
@@ -443,15 +443,15 @@ filter_station <- function(r) {
   sta |>
     dplyr::inner_join(
       dff |>
-        dplyr::group_by(station, materialSampleID) |>
+        dplyr::group_by(station, samp_name) |>
         dplyr::summarise(
-          count = dplyr::n_distinct(materialSampleID),
+          count = dplyr::n_distinct(samp_name),
           success = sum(detected)
         ),
       # dplyr::group_by(station, primer, species) |>
       # dplyr::summarise(
       #   success = sum(detected),
-      #   count = dplyr::n_distinct(materialSampleID)),
+      #   count = dplyr::n_distinct(samp_name)),
       join_by(station)
     )
 }
