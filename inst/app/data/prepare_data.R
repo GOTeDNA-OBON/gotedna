@@ -24,6 +24,8 @@ D_qPCR <- read_data(
   choose.method = "qPCR", path.folder = "inst/app/data/raw_xlsx_files"
 )
 
+
+
 # make a list of two data frames
 gotedna_data <- list(
   metabarcoding = D_mb_clean |>
@@ -38,6 +40,19 @@ gotedna_data <- list(
     dplyr::ungroup() |>
     as.data.frame()
 )
+
+# Data
+## import glossary
+gloss <- read.csv("./inst/app/data/glossary.csv")
+gloss$Term <- paste0('<p align ="right"><b>', trimws(gloss$Term), "</b></p>")
+gloss$Definition <- trimws(gloss$Definition)
+
+## import GOTeDNA data
+gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
+
+gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
+
+
 saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
 
 
