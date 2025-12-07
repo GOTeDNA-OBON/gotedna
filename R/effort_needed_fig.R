@@ -76,7 +76,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
       color = ~Month,
       colors = cyclic_palette,
       marker = list(size = dot_size),
-      showlegend = TRUE
+      showlegend = FALSE
     ) %>%
       plotly::layout(
         yaxis = list(range = c(0, 1), title = "Detection probability"),
@@ -118,15 +118,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
     plotly::layout(
       height = n_taxa * height_per_species,
       margin = list(t = 80, r = 180, b = 60),
-      legend = list(
-        title = list(text = "Month", font = list(size = 16)),  # legend title size
-        font = list(size = 12),                                 # legend text size
-        orientation = "v",
-        y = 1,          # top
-        x = 1.02,       # right
-        xanchor = "left",
-        yanchor = "top"
-      ),
+      legend = FALSE,
       annotations = annotations
     )
 }
