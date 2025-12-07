@@ -791,13 +791,24 @@ ui_fig_effort <- function(fig_id, title, caption_file, ns) {
       class = "fig_panel_container",
       div(
         class = "fig_panel",
-        style = "width:100%; min-width:700px;",
-        plotly::plotlyOutput(
-          paste0(ns(fig_id), "_plot_output"),
-          width = "100%",
-          height = "auto"
+        bslib::layout_columns(
+          bslib::card_body(
+            plotly::plotlyOutput(paste0(ns(fig_id), "_plot_output"),
+                                 height = "auto"
+            ),
+            fillable = TRUE,
+          ),
+          bslib::card_image(
+            file = "www/img/fixed-legends/effort_legend.png",
+            fill = FALSE,
+            style = "min-width:50px; max-width:100px;"
+          ),
+          col_widths = bslib::breakpoints(
+            sm = c(9, 3),
+            md = c(10, 2)
+          )
         )
-      ),
+      )
     )
   )
 }
