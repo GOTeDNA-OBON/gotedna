@@ -64,8 +64,8 @@ mod_select_data_ui <- function(id) {
                 selectInput(ns("data_type"),
                   label = "Type of data",
                   choices = list(
-                    "Multi-species (metabarcoding)" = "metabarcoding",
-                    "Species specific (qPCR)" = "qPCR"
+                    "Multi-species (metabarcoding)" = "metabarcoding"
+                    #"Species specific (qPCR)" = "qPCR"
                   ),
                   selected = "metabarcoding"
                 )
