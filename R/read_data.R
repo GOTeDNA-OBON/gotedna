@@ -270,27 +270,32 @@ read_data <- function(
 }
 
 update_station_variable <- function(df, lat_col = "decimalLatitude", long_col = "decimalLongitude") {
-  # df: data frame with latitude and longitude columns
-  # lat_col / long_col: names of latitude/longitude columns
-  if ("station" %in% names(df) && all(!is.na(df$station) & df$station != "")) {
+
+  # If no station column exists, create an empty one
+  if (!"station" %in% names(df)) {
+    df$station <- NA_character_
+  }
+
+  # Identify rows needing a station
+  missing_idx <- which(is.na(df$station) | df$station == "")
+
+  # If nothing needs updating, return unchanged
+  if (length(missing_idx) == 0) {
     return(df)
   }
-  # Ensure coords are numeric
-  coords <- df[, c(long_col, lat_col)]
 
-  # Determine number of clusters: ceiling of sqrt(nrows)
-  n_points <- nrow(coords)
-  k <- ceiling(sqrt(n_points))
+  # Run k-means on only missing rows
+  coords <- df[missing_idx, c(long_col, lat_col)]
 
-  # Run k-means
-  set.seed(123)  # for reproducibility
+  k <- ceiling(sqrt(nrow(coords)))
+  set.seed(123)
   km <- kmeans(coords, centers = k)
 
-  # Add cluster assignments to original data
-  df$station <- as.character(km$cluster)
+  df$station[missing_idx] <- as.character(km$cluster)
 
   return(df)
 }
+
 #Link to OBIS argument definitions: https://iobis.github.io/robis/reference/occurrence.html
 # How to use the function:
 # Example1: Find all DNADerivedData datasets that contain Scomber scombrus, then pull DNADerivedData records only for that species
