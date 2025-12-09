@@ -3,6 +3,16 @@ D_mb <- read_data(
   choose.method = "metabarcoding", path.folder = "inst/app/data/raw_xlsx_files"
 )
 
+
+D_mb <- read_data(
+  dataset_ids    = NULL,
+  scientificname = NULL,
+  worms_id       = NULL,
+  areaid         = NULL,
+  join_by        = c("auto", "occurrenceID", "id"),
+  require_absences = TRUE
+)
+
 D_mb_msct <- D_mb %>%
   dplyr::mutate(msct = case_when(
     organismQuantity == 0 ~ TRUE,
@@ -20,9 +30,9 @@ D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
                                by = c("protocol_ID","protocolVersion","species",
                                       "primer", "station"))
 
-D_qPCR <- read_data(
-  choose.method = "qPCR", path.folder = "inst/app/data/raw_xlsx_files"
-)
+# D_qPCR <- read_data_old(
+#   choose.method = "qPCR", path.folder = "inst/app/data/raw_xlsx_files"
+# )
 
 
 
