@@ -22,12 +22,12 @@ D_mb_msct <- D_mb %>%
 
 D_mb_nodetect <- D_mb_msct %>%
   dplyr::group_by(
-    protocol_ID, protocolVersion, species, primer, station) %>%
+    protocol_ID, protocolVersion, scientificName, primer, station) %>%
   dplyr::summarise(num_detected = sum(detected)) %>%
   dplyr::filter(num_detected == 0)
 
 D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
-                               by = c("protocol_ID","protocolVersion","species",
+                               by = c("protocol_ID","protocolVersion","scientificName",
                                       "primer", "station"))
 
 # D_qPCR <- read_data_old(
@@ -110,7 +110,7 @@ scaledprobs_q <- scale_newprob(gotedna_data$qPCR, newprob_q)
 gotedna_primer <- list()
 
 # this needs to be based on the area selection
-for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "species")) {
+for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
   gotedna_primer[[i]] <- primer_sort(i, dplyr::bind_rows(scaledprobs_mb, scaledprobs_q)) |>
     mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
 }

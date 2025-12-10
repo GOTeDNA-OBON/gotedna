@@ -236,16 +236,16 @@ read_data <- function(
         order                 = order,
         family                = family,
         genus                 = genus,
-        date                  = eventDate_clean,
-        LClabel               = NA_character_,
+        eventDate             = eventDate_clean,
+        LClabel               = LClabel,
         decimalLatitude       = decimalLatitude,
         decimalLongitude      = decimalLongitude,
         station               = station,
         year                  = year,
         month                 = month,
         organismQuantity      = organismQuantity,
-        concentration         = NA_real_,
-        pcr_primer_lod        = NA_real_,
+        concentration         = concentration,
+        pcr_primer_lod        = pcr_primer_lod,
         detected              = detected,
         ownerContact          = ownerContact,
         bibliographicCitation = bibliographicCitation,
@@ -259,8 +259,7 @@ read_data <- function(
     warning("No OBIS datasets with DNADerivedData and both present/absent occurrenceStatus returned any records for these filters.")
     return(tibble::tibble())
   }
-  GOTeDNA_df <- dplyr::bind_rows(obis_list) %>%
-    dplyr::rename(species = scientificName)
+  GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
 
   GOTeDNA_df_with_assigned_stations <- update_station_variable(GOTeDNA_df)

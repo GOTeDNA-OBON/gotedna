@@ -18,14 +18,13 @@ field_sample_fig <- function(
     ) {
 
   data %<>%
-    dplyr::group_by(species, year, month) %>%
+    dplyr::group_by(scientificName, year, month) %>%
     dplyr::summarise(
       n = dplyr::n(),
       nd = sum(detected, na.rm = TRUE),
       freq_det = nd / n
     ) %>%
     dplyr::rename("Month" = "month",
-                  "Species" = "species",
                   "Detection rate" = "freq_det",
                   "Sample size" = "n",
                   "Year" = "year")
@@ -39,7 +38,7 @@ field_sample_fig <- function(
                          mapping = ggplot2::aes(
                            x = Month,
                            y = `Detection rate`,
-                           colour = Species,
+                           colour = scientificName,
                            size = `Sample size`
                          ),
                          alpha = 0.9,
