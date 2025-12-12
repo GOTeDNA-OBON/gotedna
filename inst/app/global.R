@@ -44,7 +44,7 @@ gloss$Definition <- trimws(gloss$Definition)
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
 
-gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
+#gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
 
 gotedna_station <- gotedna_station0 <- readRDS("data/gotedna_station.rds")
 gotedna_primer <- readRDS("data/gotedna_primer.rds")
@@ -91,8 +91,8 @@ get_primer_selection <- function(lvl, data) {
   if (is.null(lvl)) {
     return("Not available")
   } else {
-    if (lvl == "species") {
-      tx_col <- "species"
+    if (lvl == "scientificName") {
+      tx_col <- "scientificName"
     } else {
       tx_col <- lvl
     }

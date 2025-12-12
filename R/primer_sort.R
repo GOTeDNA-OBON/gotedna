@@ -16,7 +16,7 @@
 #' primer_sort("phylum", scaledprobs$Pscaled_month)
 #' }
 primer_sort <- function(
-    taxon.level = c("kingdom", "phylum", "class", "order", "family", "genus", "species"),
+    taxon.level = c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName"),
     scaledprobs) {
   # However the filtering happens (choosing the taxon level/name, region, and
   # threshold), I'm not sure how to code that. The following code calculates

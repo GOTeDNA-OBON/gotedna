@@ -64,8 +64,8 @@ mod_select_data_ui <- function(id) {
                 selectInput(ns("data_type"),
                   label = "Type of data",
                   choices = list(
-                    "Multi-species (metabarcoding)" = "metabarcoding",
-                    "Species specific (qPCR)" = "qPCR"
+                    "Multi-species (metabarcoding)" = "metabarcoding"
+                    #"Species specific (qPCR)" = "qPCR"
                   ),
                   selected = "metabarcoding"
                 )
@@ -271,7 +271,7 @@ mod_select_data_server <- function(id, r) {
             "All",
             r$cur_data[
               r$cur_data[[input$taxo_lvl]] == input$taxo_id,
-            ]$species |>
+            ]$scientificName |>
               unique() |>
               sort()
           ),
@@ -283,7 +283,7 @@ mod_select_data_server <- function(id, r) {
           "slc_spe",
           choices = c(
             "All",
-            r$cur_data_sta_slc$species |>
+            r$cur_data_sta_slc$scientificName |>
               unique() |>
               sort()
           ),
@@ -314,7 +314,7 @@ mod_select_data_server <- function(id, r) {
           isolate(r$cur_data_sta_slc),
           r$taxon_lvl_slc,
           r$taxon_id_slc,
-          r$species
+          r$scientificName
         )
       )
       shinyWidgets::updatePickerInput(
@@ -356,10 +356,10 @@ mod_select_data_server <- function(id, r) {
     })
 
     observeEvent(listenMapData() |> debounce(100), {
-      r$species <- input$slc_spe
+      r$scientificName <- input$slc_spe
       r$taxon_id_slc <- input$taxo_id
       if (!is.null(input$slc_spe) && input$slc_spe != "All") {
-        r$taxon_lvl_slc <- "species"
+        r$taxon_lvl_slc <- "scientificName"
       } else {
         r$taxon_lvl_slc <- input$taxo_lvl
       }
@@ -436,7 +436,7 @@ filter_station <- function(r) {
     sta <- r$data_station
   }
   dff <- filter_taxon(
-    r$cur_data, r$taxon_lvl_slc, r$taxon_id_slc, r$species,
+    r$cur_data, r$taxon_lvl_slc, r$taxon_id_slc, r$scientificName,
     r$primer
   ) |>
     dplyr::filter(primer %in% r$primer)
@@ -457,12 +457,12 @@ filter_station <- function(r) {
 }
 
 
-filter_taxon <- function(data, taxon_lvl, taxon_id, species, primer) {
+filter_taxon <- function(data, taxon_lvl, taxon_id, scientificName, primer) {
   out <- data
   if (!is.null(taxon_lvl)) {
-    if (taxon_lvl == "species") {
+    if (taxon_lvl == "scientificName") {
       out <- out |>
-        dplyr::filter(species == {{ species }}, primer == primer)
+        dplyr::filter(scientificName == {{ scientificName }}, primer == primer)
     } else {
       if (taxon_id != "All") {
         out <- out |>

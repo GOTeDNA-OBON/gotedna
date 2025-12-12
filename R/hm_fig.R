@@ -19,7 +19,7 @@
 #' scaledprobs <- scale_newprob(D_mb, newprob)
 #' hm_fig(scaledprobs)
 #' }
-hm_fig <- function(scaledprobs, selected_taxon_level = "species") {
+hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
   # Preprocess data
   df <- scaledprobs %>%
     filter(!is.na(year)) %>%

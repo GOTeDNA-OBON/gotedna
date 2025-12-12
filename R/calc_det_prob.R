@@ -26,7 +26,7 @@
 #' \dontrun{
 #'  calc_det_prob(data = D_mb)
 #' }
-calc_det_prob <- function(data, selected_taxon_level = "species", pool_primers = FALSE) {
+calc_det_prob <- function(data, selected_taxon_level = "scientificName", pool_primers = FALSE) {
   oop <- options("dplyr.summarise.inform")
   options(dplyr.summarise.inform = FALSE)
   # reset option on exit

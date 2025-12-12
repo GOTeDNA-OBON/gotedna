@@ -1,0 +1,10 @@
+name: gotedna
+title:
+username: appgotedna
+account: appgotedna
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16270844
+bundleId:
+url: https://appgotedna.shinyapps.io/gotedna/
+version: 1
