@@ -21,7 +21,7 @@
 #' )
 #' }
 
-effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 12, selected_taxon_level = "species") {
+effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 12, selected_taxon_level = "scientificName") {
 
   # Filter NA years and prepare month labels
   df <- scaledprobs %>%

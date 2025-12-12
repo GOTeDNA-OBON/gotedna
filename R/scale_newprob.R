@@ -37,7 +37,7 @@
 #' newprob <- calc_det_prob(gotedna_data$metabarcoding, "Scotian Shelf")
 #' scale_newprob(data = gotedna_data$metabarcoding, newprob)
 #' }
-scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
+scale_newprob <- function(data, newprob, selected_taxon_level = "scientificName") {
   CPscaled <- lapply(newprob, function(species_list) {
 
   # 1. Extract the maximum p across all elements for this species
@@ -78,7 +78,7 @@ scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
 
   DFmo[c("protocol_ID", selected_taxon_level, "primer")] <- stringr::str_split_fixed(DFmo$id, ";", 3)
 
-  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
+  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")
   cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFmo <- DFmo |>
@@ -170,7 +170,7 @@ scale_newprob <- function(data, newprob, selected_taxon_level = "species") {
 
   DFyr[c("protocol_ID", selected_taxon_level, "primer", "year")] <- stringr::str_split_fixed(DFyr$id, ";", 4)
 
-  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
+  taxa_columns <- c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")
   cols_to_keep <- taxa_columns[1:which(taxa_columns == selected_taxon_level)]
 
   DFyr <- DFyr |>
