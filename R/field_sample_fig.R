@@ -13,90 +13,82 @@
 #'   data = gotedna_data$metabarcoding
 #' )
 #' }
-field_sample_fig <- function(
-    data
-    ) {
-
-  data %<>%
-    dplyr::group_by(scientificName, year, month) %>%
+prepare_plotly_samples <- function(data) {
+  data %>%
+    dplyr::group_by(scientificName, month) %>%  # remove year grouping
     dplyr::summarise(
       n = dplyr::n(),
       nd = sum(detected, na.rm = TRUE),
-      freq_det = nd / n
+      freq_det = nd / n,
+      .groups = "drop"
     ) %>%
-    dplyr::rename("Month" = "month",
-                  "Detection rate" = "freq_det",
-                  "Sample size" = "n",
-                  "Year" = "year")
-
-
-  data$Year <- reorder(as.numeric(data$Year),
-                       dplyr::desc(as.numeric(data$Year)))
-
-  ggplot2::ggplot() +
-    ggplot2::geom_jitter(data,
-                         mapping = ggplot2::aes(
-                           x = Month,
-                           y = `Detection rate`,
-                           colour = scientificName,
-                           size = `Sample size`
-                         ),
-                         alpha = 0.9,
-                         na.rm = TRUE, width = 0.5, height = 0.01
-    ) +
-    ggplot2::scale_colour_manual(values = palette("Alphabet"))+
-    ggplot2::facet_wrap(~Year,
-                       ncol = 1,
-                       scales = "free") +
-    ggplot2::scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1),
-                                limits = c(-.01, 1),
-                                expand = c(0, 0)
-    ) +
-    ggplot2::scale_x_continuous(limits = c(0.5,12.5),
-                                breaks = 1:12,
-                                labels = month.abb,
-                              expand = c(0, 0)) +
-    ggplot2::scale_size_continuous(limits = c(0, NA), breaks = seq(0, 50, 10)) +
-    ggplot2::theme_minimal(base_size = 10) +
-    ggplot2::guides(size = ggplot2::guide_legend(order = 1,
-                                                 label.position = "left",
-                                                 label.hjust = 1),
-                    colour = ggplot2::guide_legend(order = 1,
-                                                   label.position = "left",
-                                                   label.hjust = 1,
-                                                   override.aes = list(size = 5)
-                    )
-    ) +
-    ggplot2::labs(
-      x = NULL, y = NULL,
-      colour = NULL,
-      size = NULL
-    ) +
-    ggplot2::theme(
-      panel.grid = ggplot2::element_blank(),
-      panel.spacing = ggplot2::unit(30, "pt"),
-      panel.border = ggplot2::element_blank(),
-      strip.background = ggplot2::element_blank(),
-      strip.text = ggplot2::element_text(angle = 0,
-                                         colour = "#939598"),
-      axis.ticks = ggplot2::element_line(
-        linewidth = 1,
-        colour = "#939598"),
-      axis.line = ggplot2::element_line(
-        linewidth = 1,
-        colour = "#939598"),
-      text = ggplot2::element_text(
-        family = "sans", size = 24),
-      axis.text = ggplot2::element_text(
-        colour = "#939598", size = 20),
-      legend.title.align = 1,
-      legend.text = ggplot2::element_text(size = 20,
-                                          colour = "#939598"),
-      legend.position = "right",
-      legend.box.just = "right",
-      legend.key.spacing.y = ggplot2::unit(20, "pt"),
-      legend.spacing.y = ggplot2::unit(20, "pt"),
-      legend.title = ggplot2::element_text(colour = "#5A5A5A",
-                                           margin = ggplot2::margin(b = 20))
+    dplyr::rename(
+      Month = month,
+      `Detection rate` = freq_det,
+      `Sample size` = n
     )
 }
+
+field_sample_fig <- function(data) {
+  data <- prepare_plotly_samples(data)
+
+  # Color palette matching palette("Alphabet")
+  species_levels <- sort(unique(data$scientificName))
+  alphabet_colors <- RColorBrewer::brewer.pal(8, "Set1")
+  colors <- rep(alphabet_colors, length.out = length(species_levels))
+  names(colors) <- species_levels
+
+  max_size <- max(data$`Sample size`, na.rm = TRUE)
+  sizeref <- 40 * max_size / 100^2
+
+  # Optional: x-jitter
+  data$Month_jittered <- data$Month + runif(nrow(data), -0.25, 0.25)
+
+  plotly::plot_ly(
+    data,
+    x = ~Month_jittered,
+    y = ~`Detection rate`,
+    type = "scatter",
+    mode = "markers",
+    color = ~scientificName,
+    colors = colors,
+    size = ~`Sample size`,
+    marker = list(sizemode = 'area', sizeref = sizeref, sizemin = 4),
+    text = ~paste("Species:", scientificName, "<br>Month:", Month, "<br>Sample size:", `Sample size`),
+    hoverinfo = "text"
+  ) %>%
+    plotly::layout(
+      xaxis = list(
+        title = list(
+          text = "Month",
+          font = list(size = 18, color = "black")  # <-- increase size here
+        ),
+        tickmode = "array",
+        tickvals = 1:12,
+        tickangle = -45,
+        ticktext = month.abb,
+        tickfont = list(size = 12, color = "black"),
+        showticklabels = TRUE,
+        range = c(0.5, 12.5),
+        ticks = "outside",    # show small ticks outside
+        tickwidth = 1,        # line thickness
+        tickcolor = "black" # line color
+      ),
+      yaxis = list(
+        title = list(
+          text = "Detection rate",
+          font = list(size = 18, color = "black")  # increase y-axis title size
+        ),
+        range = c(0, 1),
+        tickfont = list(size = 16, color = "#939598")
+      ),
+      showlegend = TRUE,
+      legend = list(
+        font = list(size = 14, color = "#939598"),
+        orientation = "v",
+        x = 1.02, y = 1
+      ),
+      margin = list(t = 60, b = 50, r = 150)
+    )
+}
+
