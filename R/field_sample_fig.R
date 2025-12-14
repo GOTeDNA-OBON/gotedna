@@ -14,8 +14,15 @@
 #' )
 #' }
 prepare_plotly_samples <- function(data) {
+  # Only run if 'detected' exists; otherwise assume already aggregated
+  if (!"detected" %in% names(data)) {
+    message("Data already aggregated, skipping prepare_plotly_samples()")
+    return(data)
+  }
+
+  stopifnot("detected" %in% names(data))
   data %>%
-    dplyr::group_by(scientificName, month) %>%  # remove year grouping
+    dplyr::group_by(scientificName, month) %>%
     dplyr::summarise(
       n = dplyr::n(),
       nd = sum(detected, na.rm = TRUE),
@@ -23,14 +30,33 @@ prepare_plotly_samples <- function(data) {
       .groups = "drop"
     ) %>%
     dplyr::rename(
-      Month = month,
       `Detection rate` = freq_det,
       `Sample size` = n
     )
 }
 
 field_sample_fig <- function(data) {
+  cat("\n=== field_sample_fig ===\n")
+  cat("Incoming rows:", nrow(data), "\n")
+  cat("Incoming cols:", paste(names(data), collapse = ", "), "\n")
+
   data <- prepare_plotly_samples(data)
+
+  cat("After prepare_plotly_samples()\n")
+  cat("Rows:", nrow(data), "\n")
+  cat("Cols:", paste(names(data), collapse = ", "), "\n")
+
+  if (nrow(data) == 0) {
+    cat("⚠️ ZERO ROWS AFTER SUMMARISE\n")
+    return(
+      plotly::plot_ly(
+        type = "scatter",
+        mode = "text",
+        text = "No data available for this selection",
+        x = 0, y = 0
+      )
+    )
+  }
 
   # Color palette matching palette("Alphabet")
   species_levels <- sort(unique(data$scientificName))
@@ -42,11 +68,11 @@ field_sample_fig <- function(data) {
   sizeref <- 40 * max_size / 100^2
 
   # Optional: x-jitter
-  data$Month_jittered <- data$Month + runif(nrow(data), -0.25, 0.25)
+  data$month_jittered <- data$month + runif(nrow(data), -0.25, 0.25)
 
   plotly::plot_ly(
     data,
-    x = ~Month_jittered,
+    x = ~month_jittered,
     y = ~`Detection rate`,
     type = "scatter",
     mode = "markers",
@@ -54,14 +80,14 @@ field_sample_fig <- function(data) {
     colors = colors,
     size = ~`Sample size`,
     marker = list(sizemode = 'area', sizeref = sizeref, sizemin = 4),
-    text = ~paste("Species:", scientificName, "<br>Month:", Month, "<br>Sample size:", `Sample size`),
+    text = ~paste("Species:", scientificName, "<br>Month:", month, "<br>Sample size:", `Sample size`),
     hoverinfo = "text"
   ) %>%
     plotly::layout(
       xaxis = list(
         title = list(
           text = "Month",
-          font = list(size = 18, color = "black")  # <-- increase size here
+          font = list(size = 18, color = "black")
         ),
         tickmode = "array",
         tickvals = 1:12,
@@ -70,14 +96,14 @@ field_sample_fig <- function(data) {
         tickfont = list(size = 12, color = "black"),
         showticklabels = TRUE,
         range = c(0.5, 12.5),
-        ticks = "outside",    # show small ticks outside
-        tickwidth = 1,        # line thickness
-        tickcolor = "black" # line color
+        ticks = "outside",
+        tickwidth = 1,
+        tickcolor = "black"
       ),
       yaxis = list(
         title = list(
           text = "Detection rate",
-          font = list(size = 18, color = "black")  # increase y-axis title size
+          font = list(size = 18, color = "black")
         ),
         range = c(0, 1),
         tickfont = list(size = 16, color = "#939598")
@@ -91,4 +117,5 @@ field_sample_fig <- function(data) {
       margin = list(t = 60, b = 50, r = 150)
     )
 }
+
 

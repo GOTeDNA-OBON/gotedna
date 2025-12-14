@@ -226,6 +226,7 @@ mod_select_figure_server <- function(id, r) {
         validate(
           need(input$prot_id != "Not available", "Protocol not selected yet")
         )
+
         r$data_ready <- prepare_data(r) |>
           filter(protocol_ID == input$prot_id)
 
@@ -245,14 +246,54 @@ mod_select_figure_server <- function(id, r) {
             id = "notif_calc_win"
           )
           if (r$frozen_selected_taxon_level == "genus") {
+
+            # Compute detection probability
             newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
-            r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+
+            # Safely scale probabilities
+            r$scaledprobs <- tryCatch({
+              if (length(newprob$newP_agg) == 0 && length(newprob$newP_yr) == 0) {
+                cat("calc_det_prob returned empty for level: genus\n")
+                NULL
+              } else {
+                scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+              }
+            }, error = function(e) {
+              cat("scale_newprob failed for genus:", conditionMessage(e), "\n")
+              NULL
+            })
+
+            # Do the same for scientificName
             newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", pool_primers = TRUE)
-            r$scaledprobs_by_scientificName <- scale_newprob(r$data_ready, newprob_by_scientificName, "scientificName")
+            r$scaledprobs_by_scientificName <- tryCatch({
+              if (length(newprob_by_scientificName$newP_agg) == 0 && length(newprob_by_scientificName$newP_yr) == 0) {
+                cat("calc_det_prob returned empty for level: scientificName\n")
+                NULL
+              } else {
+                scale_newprob(r$data_ready, newprob_by_scientificName, "scientificName")
+              }
+            }, error = function(e) {
+              cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
+              NULL
+            })
+
           } else {
+
             newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
-            r$scaledprobs <- scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+            r$scaledprobs <- tryCatch({
+              if (length(newprob$newP_agg) == 0 && length(newprob$newP_yr) == 0) {
+                cat("calc_det_prob returned empty for level:", r$frozen_selected_taxon_level, "\n")
+                NULL
+              } else {
+                scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+              }
+            }, error = function(e) {
+              cat("scale_newprob failed for level", r$frozen_selected_taxon_level, ":", conditionMessage(e), "\n")
+              NULL
+            })
+
           }
+
           cli::cli_alert_info("Computing optimal detection window")
 
           thresh_slc <- input$threshold
@@ -443,6 +484,7 @@ mod_select_figure_server <- function(id, r) {
           )
       } else {
         fig_data <- r$data_ready |> filter(protocol_ID == input$prot_id, year == input$year_selected)
+        message("Filtered rows: ", nrow(fig_data), " cols: ", paste(names(fig_data), collapse=", "))
         ggp <- draw_fig_samples(fig_data, plt_ready, id = input$prot_id)
       }
     })
