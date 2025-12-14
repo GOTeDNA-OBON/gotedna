@@ -501,5 +501,3 @@ read_data_old <- function(
 #     measurementRemarks
 #   )
 
-
-obis_checklist <- robis::checklist(taxonid = 12)
