@@ -62,6 +62,7 @@ read_data <- function(
   library(tidyr)
   library(lubridate)
   library(purrr)
+  library(dbscan)
   join_by <- match.arg(join_by)
   ## 0. If dataset_ids is NULL, discover them via robis::dataset() ----
   if (is.null(dataset_ids)) {
@@ -268,32 +269,69 @@ read_data <- function(
 
 }
 
-update_station_variable <- function(df, lat_col = "decimalLatitude", long_col = "decimalLongitude") {
+update_station_variable <- function(df,
+                                    lat_col  = "decimalLatitude",
+                                    long_col = "decimalLongitude",
+                                    eps_km   = 5,
+                                    minPts  = 2) {
 
-  # If no station column exists, create an empty one
-  if (!"station" %in% names(df)) {
-    df$station <- NA_character_
+  # ---- 1. Rename existing station → stationLabel ----
+  if ("station" %in% names(df)) {
+    df$stationLabel <- df$station
+    df$station <- NULL
+  } else if (!"stationLabel" %in% names(df)) {
+    df$stationLabel <- NA_character_
   }
 
-  # Identify rows needing a station
-  missing_idx <- which(is.na(df$station) | df$station == "")
+  # ---- 2. Valid coordinate rows ----
+  valid_idx <- which(
+    !is.na(df[[lat_col]]) &
+      !is.na(df[[long_col]])
+  )
 
-  # If nothing needs updating, return unchanged
-  if (length(missing_idx) == 0) {
+  if (length(valid_idx) < minPts) {
+    df$station <- NA_character_
     return(df)
   }
 
-  # Run k-means on only missing rows
-  coords <- df[missing_idx, c(long_col, lat_col)]
+  # ---- 3. Project coordinates to meters ----
+  sf_pts <- sf::st_as_sf(
+    df[valid_idx, ],
+    coords = c(long_col, lat_col),
+    crs = 4326
+  )
 
-  k <- ceiling(sqrt(nrow(coords)))
-  set.seed(123)
-  km <- kmeans(coords, centers = k)
+  sf_pts <- sf::st_transform(sf_pts, 3857)
+  coords_m <- sf::st_coordinates(sf_pts)
 
-  df$station[missing_idx] <- as.character(km$cluster)
+  # ---- 4. DBSCAN clustering ----
+  eps_m <- eps_km * 1000
+  db <- dbscan::dbscan(coords_m, eps = eps_m, minPts = minPts)
 
-  return(df)
+  # ---- 5. Assign clusters ----
+  df$station <- NA_character_
+
+  clusters <- db$cluster
+
+  # Noise points (0) → unique IDs
+  if (any(clusters == 0)) {
+    noise_ids <- which(clusters == 0)
+    max_cluster <- max(clusters)
+
+    clusters[noise_ids] <- seq(
+      from = max_cluster + 1,
+      length.out = length(noise_ids)
+    )
+  }
+
+  df$station[valid_idx] <- as.character(clusters)
+
+  df
 }
+
+
+
+
 
 #Link to OBIS argument definitions: https://iobis.github.io/robis/reference/occurrence.html
 # How to use the function:

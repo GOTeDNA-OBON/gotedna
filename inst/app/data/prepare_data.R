@@ -7,8 +7,8 @@ D_mb <- read_data(
 D_mb <- read_data(
   dataset_ids    = NULL,
   scientificname = NULL,
-  worms_id       = NULL,
-  areaid         = NULL,
+  worms_id       = 1080,
+  areaid         = 32,
   join_by        = c("auto", "occurrenceID", "id"),
   require_absences = TRUE
 )
