@@ -85,7 +85,6 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
       )
   })
 
-
   n_taxa <- length(taxa_list)
 
   # Set base height per subplot
