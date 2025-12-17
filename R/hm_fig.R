@@ -38,8 +38,8 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
     df_sp <- df %>% filter(taxon == sp)
     df_sp$zero_layer <- ifelse(df_sp$`Detection rate` == 0, 0, NA)
 
-    # Only show x-axis labels on the bottom subplot if <= 3 subplots
-    show_xticks <- if (n_taxa > 3) TRUE else (i == n_taxa)
+    # Only show x-axis labels on the bottom subplot if >= 3 subplots...turned off this feature
+    show_xticks <- if (n_taxa > 0) TRUE else (i == n_taxa)
 
     plot_ly(
       df_sp,
@@ -63,7 +63,7 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
       layout(
         xaxis = list(
           title = "",
-          tickangle = -45,
+          tickangle = 0,
           showgrid = FALSE,
           showticklabels = show_xticks
         ),
