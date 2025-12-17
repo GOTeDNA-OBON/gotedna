@@ -468,8 +468,11 @@ mod_select_figure_server <- function(id, r) {
     ## DATA VARIATION
     output$fig_samples_plot_output <- plotly::renderPlotly({
       req(input$year_selected)
+
+      # Keep your original logic
       plt_ready <- r$fig_ready && r$fig_slc$fig_samples
       num_of_species <- r$data_ready$scientificName |> unique() |> length()
+
       if (num_of_species > 26) {
         plotly::plot_ly(
           type = "scatter",
@@ -484,8 +487,15 @@ mod_select_figure_server <- function(id, r) {
           )
       } else {
         fig_data <- r$data_ready |> filter(protocol_ID == input$prot_id, year == input$year_selected)
-        message("Filtered rows: ", nrow(fig_data), " cols: ", paste(names(fig_data), collapse=", "))
-        ggp <- draw_fig_samples(fig_data, plt_ready, id = input$prot_id)
+
+        # Wrap draw_fig_samples in tryCatch to catch runtime errors without breaking the app
+        tryCatch({
+          ggp <- draw_fig_samples(fig_data, plt_ready, id = input$prot_id)
+        }, error = function(e) {
+          message("*** ERROR in draw_fig_samples: ", conditionMessage(e))
+          return(plotly::plot_ly(type = "scatter", mode = "text",
+                                 text = "Error rendering figure", x = 0, y = 0))
+        })
       }
     })
 
@@ -499,11 +509,31 @@ mod_select_figure_server <- function(id, r) {
         selectInput(
           ns("year_selected"),
           "Year",
-          choices = sort(unique(r$data_ready$year), decreasing = TRUE),
-          selected = max(r$data_ready$year)
+          choices = yrs[order(yrs, decreasing = TRUE)],
+          selected = max(yrs)
         )
       )
     })
+
+    # output$debug_field_sample <- renderPrint({
+    #   req(input$year_selected)
+    #
+    #   # Filter data exactly as for the figure
+    #   fig_data <- r$data_ready |>
+    #     filter(protocol_ID == input$prot_id, year == input$year_selected)
+    #
+    #   # Show structure and some summaries
+    #   cat("=== field_sample_fig debug ===\n")
+    #   cat("Rows:", nrow(fig_data), "\n")
+    #   cat("Cols:", paste(names(fig_data), collapse=", "), "\n\n")
+    #
+    #   # Show a brief summary without printing everything
+    #   str(fig_data)
+    #
+    #   # Optional: show first few rows
+    #   head(fig_data, 10)
+    # })
+
 
     # DATA AUTHORSHIP TABLE
     output$data_authorship <- DT::renderDT({
@@ -853,6 +883,8 @@ ui_fig_samples <- function(fig_id, title, caption_file, ns) {
         includeHTML(file.path("www", "doc", "caption", caption_file))
       )
     ),
+    # somewhere near your plot output
+    verbatimTextOutput(ns("debug_field_sample")),
 
 
     uiOutput(ns("fig_samples_controls")),
