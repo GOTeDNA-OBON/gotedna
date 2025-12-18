@@ -2,6 +2,13 @@
 mod_select_data_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    tags$style(HTML("
+          #slc_data-external_file + label {
+            background-color: #dcdcdc;   /* grey background */
+            color: #888888;              /* grey text */
+            pointer-events: none;         /* prevent clicks (optional, since input is disabled) */
+          }
+        ")),
     div(
       id = "data_request",
       div(
@@ -185,6 +192,7 @@ mod_select_data_server <- function(id, r) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+
     # Generate map
     sf_edits <<- callModule(
       mapedit::editMod,
@@ -221,14 +229,32 @@ mod_select_data_server <- function(id, r) {
     ## load data
     observe({
       if (input$datasource == "gotedna") {
+        # Keep GOTeDNA data as before
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
+
+        # Disable fileInput and visually gray it out
+        shinyjs::disable("external_file")
+
       } else {
-        # TODO: load external data once implemented
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
+        shinyjs::enable("external_file")
       }
     })
+
+
+    observeEvent(input$external_file, {
+      req(input$external_file)
+      df <- read_uploaded_file(input$external_file[1, ])
+      df_with_assigned_stations <- update_station_variable(df)
+      r$cur_data <- df_with_assigned_stations
+      r$data_station <- get_station(df_with_assigned_stations)
+      r$protocol_ID <- paste0(
+        r$cur_data$protocol_ID
+      )
+    })
+
 
     observeEvent(input$data_type, {
       r$data_type <- input$data_type
@@ -511,3 +537,20 @@ update_map <- function(proxy, geom, geom_slc, lock_view = FALSE) {
       leaflet::fitBounds(bb[1], bb[2], bb[3], bb[4])
   }
 }
+
+read_uploaded_file <- function(fileinfo) {
+  stopifnot(nrow(fileinfo) == 1)
+
+  path <- fileinfo$datapath
+  name <- fileinfo$name
+  ext  <- tolower(tools::file_ext(name))
+
+  if (ext == "csv") {
+    read.csv(path, stringsAsFactors = FALSE)
+  } else if (ext %in% c("xls", "xlsx")) {
+    readxl::read_excel(path) |> as.data.frame()
+  } else {
+    stop("Unsupported file type: ", ext)
+  }
+}
+
