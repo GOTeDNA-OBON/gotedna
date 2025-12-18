@@ -5,6 +5,8 @@ server <- function(input, output, session) {
     geom_slc = NULL,
     station_slc = NULL,
     protocol_slc = NULL,
+    upload_data = NULL,
+    upload_stations = NULL,
     scientificName = NULL,
     taxon_lvl_slc = NULL,
     frozen_selected_taxon_level = NULL,
