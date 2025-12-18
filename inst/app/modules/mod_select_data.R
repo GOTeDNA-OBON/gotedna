@@ -229,17 +229,31 @@ mod_select_data_server <- function(id, r) {
     ## load data
     observe({
       if (input$datasource == "gotedna") {
+        shinyjs::hide("external_file")
         # Keep GOTeDNA data as before
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
-
+        r$data_type <- input$data_type
+        r$cur_data <- gotedna_data[[input$data_type]]
+        r$data_station <- gotedna_station[[input$data_type]]
+        r$protocol_ID <- paste0(
+          r$cur_data$protocol_ID
+        )
         # Disable fileInput and visually gray it out
         shinyjs::disable("external_file")
 
       } else {
+        shinyjs::show("external_file")
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
         shinyjs::enable("external_file")
+        req(r$upload_data)
+
+        r$cur_data <- r$upload_data
+        r$data_station <- r$upload_stations
+        r$protocol_ID <- paste0(
+          r$cur_data$protocol_ID
+        )
       }
     })
 
@@ -247,9 +261,20 @@ mod_select_data_server <- function(id, r) {
     observeEvent(input$external_file, {
       req(input$external_file)
       df <- read_uploaded_file(input$external_file[1, ])
+
+      showModal(modalDialog(
+        title = "Please wait",
+        "Processing coordinates into station clusters. This may take several minutes for larger files (e.g. >20MB).",
+        footer = NULL,
+        easyClose = FALSE
+      ))
+
+      on.exit(removeModal(), add = TRUE)
       df_with_assigned_stations <- update_station_variable(df)
-      r$cur_data <- df_with_assigned_stations
-      r$data_station <- get_station(df_with_assigned_stations)
+      r$upload_data <- df_with_assigned_stations
+      r$upload_stations <- get_station(df_with_assigned_stations)
+      r$cur_data <- r$upload_data
+      r$data_station <- r$upload_stations
       r$protocol_ID <- paste0(
         r$cur_data$protocol_ID
       )
