@@ -272,7 +272,7 @@ read_data <- function(
 update_station_variable <- function(df,
                                     lat_col  = "decimalLatitude",
                                     long_col = "decimalLongitude",
-                                    eps_km   = 5,
+                                    eps_km   = .5,
                                     minPts  = 2) {
 
   # ---- 1. Rename existing station → stationLabel ----

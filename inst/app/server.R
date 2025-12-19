@@ -7,6 +7,7 @@ server <- function(input, output, session) {
     protocol_slc = NULL,
     upload_data = NULL,
     upload_stations = NULL,
+    upload_primers = NULL,
     scientificName = NULL,
     taxon_lvl_slc = NULL,
     frozen_selected_taxon_level = NULL,

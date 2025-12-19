@@ -87,7 +87,7 @@ basemap <- function() {
 }
 
 
-get_primer_selection <- function(lvl, data) {
+get_primer_selection <- function(lvl, data, primer_sheet = gotedna_primer) {
   if (is.null(lvl)) {
     return("Not available")
   } else {
@@ -100,7 +100,7 @@ get_primer_selection <- function(lvl, data) {
       select({{ tx_col }}, primer) |>
       distinct()
     if (!is.null(data_available) && nrow(data_available)) {
-      tmp <- gotedna_primer[[lvl]] |>
+      tmp <- primer_sheet[[lvl]] |>
         inner_join(
           data_available,
           join_by(primer == primer, {{ lvl }} == {{ tx_col }})
