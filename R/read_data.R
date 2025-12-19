@@ -272,15 +272,16 @@ read_data <- function(
 update_station_variable <- function(df,
                                     lat_col  = "decimalLatitude",
                                     long_col = "decimalLongitude",
-                                    eps_km   = .5,
+                                    eps_km   = 0.5,
                                     minPts  = 2) {
 
-  # ---- 1. Rename existing station → stationLabel ----
-  if ("station" %in% names(df)) {
-    df$stationLabel <- df$station
-    df$station <- NULL
-  } else if (!"stationLabel" %in% names(df)) {
-    df$stationLabel <- NA_character_
+  # ---- 1. Ensure stationLabel exists, but do NOT overwrite it ----
+  if (!"stationLabel" %in% names(df)) {
+    if ("station" %in% names(df)) {
+      df$stationLabel <- df$station
+    } else {
+      df$stationLabel <- NA_character_
+    }
   }
 
   # ---- 2. Valid coordinate rows ----
@@ -328,6 +329,7 @@ update_station_variable <- function(df,
 
   df
 }
+
 
 
 
