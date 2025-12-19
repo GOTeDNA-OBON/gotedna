@@ -479,7 +479,7 @@ mod_select_figure_server <- function(id, r) {
           mode = "text",
           text = "Too many species to plot for this taxon. Please restrict your search to less than 26 species.",
           x = 0, y = 0,
-          textfont = list(size = 20)
+          textfont = list(size = 12)
         ) %>%
           plotly::layout(
             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),

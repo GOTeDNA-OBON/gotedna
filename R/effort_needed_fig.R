@@ -22,7 +22,6 @@
 #' }
 
 effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 12, selected_taxon_level = "scientificName") {
-
   # Filter NA years and prepare month labels
   df <- scaledprobs %>%
     dplyr::filter(is.na(year)) %>%
@@ -88,7 +87,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
   subplot_obj <- plotly::subplot(
     plots,
     nrows = n_taxa,
-    shareX = TRUE,
+    shareX = FALSE,
     titleY = TRUE,
     heights = rep(1 / n_taxa, n_taxa),
     margin = 0.01
@@ -96,7 +95,7 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
 
   # Add per-taxon titles via annotations
   heights <- rep(1 / n_taxa, n_taxa)
-  padding <- 0.02  # distance from bottom of subplot
+  padding <- 0.1  # distance from bottom of subplot
 
   annotations <- lapply(seq_along(taxa_list), function(i) {
     y_bottom <- 1 - sum(heights[1:i])
@@ -110,14 +109,14 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
       xanchor = "right",
       yanchor = "bottom",
       showarrow = FALSE,
-      font = list(size = 22, color = "#333")
+      font = list(size = 16, color = "#333")
     )
   })
 
   subplot_obj %>%
     plotly::layout(
       height = n_taxa * height_per_species,
-      margin = list(t = 80, r = 180, b = 60),
+      #margin = list(t = 80, r = 180, b = 60),
       legend = FALSE,
       annotations = annotations
     )
