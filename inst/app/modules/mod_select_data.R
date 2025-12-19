@@ -239,6 +239,17 @@ mod_select_data_server <- function(id, r) {
         r$protocol_ID <- paste0(
           r$cur_data$protocol_ID
         )
+
+        r$primer_choices_all <- get_primer_selection(
+          r$taxon_lvl_slc,
+          filter_taxon(
+            isolate(r$cur_data),
+            r$taxon_lvl_slc,
+            r$taxon_id_slc,
+            r$scientificName
+          ),
+          gotedna_primer
+        )
         # Disable fileInput and visually gray it out
         shinyjs::disable("external_file")
 
@@ -251,6 +262,17 @@ mod_select_data_server <- function(id, r) {
 
         r$cur_data <- r$upload_data
         r$data_station <- r$upload_stations
+
+        r$primer_choices_all <- get_primer_selection(
+          r$taxon_lvl_slc,
+          filter_taxon(
+            isolate(r$cur_data),
+            r$taxon_lvl_slc,
+            r$taxon_id_slc,
+            r$scientificName
+          ),
+          r$upload_primers
+        )
         r$protocol_ID <- paste0(
           r$cur_data$protocol_ID
         )
@@ -273,6 +295,19 @@ mod_select_data_server <- function(id, r) {
       df_with_assigned_stations <- update_station_variable(df)
       r$upload_data <- df_with_assigned_stations
       r$upload_stations <- get_station(df_with_assigned_stations)
+      r$upload_primers <-
+      newprob_mb <- calc_det_prob(r$upload_data)
+
+      scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
+
+      upload_gotedna_primer <- list()
+
+      # this needs to be based on the area selection
+      for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
+        upload_gotedna_primer[[i]] <- primer_sort(i, scaledprobs_mb) |>
+          mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
+      }
+      r$upload_primers <- upload_gotedna_primer
       r$cur_data <- r$upload_data
       r$data_station <- r$upload_stations
       r$protocol_ID <- paste0(
@@ -361,12 +396,13 @@ mod_select_data_server <- function(id, r) {
 
     observe({
       r$primer_choices_all <- get_primer_selection(
-        r$taxon_lvl_slc, filter_taxon(
+        r$taxon_lvl_slc,
+        filter_taxon(
           isolate(r$cur_data_sta_slc),
           r$taxon_lvl_slc,
           r$taxon_id_slc,
           r$scientificName
-        )
+        ),
       )
       shinyWidgets::updatePickerInput(
         session,
