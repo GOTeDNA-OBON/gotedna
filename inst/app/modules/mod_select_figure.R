@@ -131,7 +131,8 @@ mod_select_figure_ui <- function(id) {
             class = "fig_main_container",
             div(
               class = "fig_main_container-fig",
-              ui_fig_detect("fig_detect", "Monthly eDNA detection probability", "detection.html", ns),
+              ui_fig_smooth("smooth1", "Monthly eDNA Detection Probability", c("sample_size.html", "detection.html"), ns),
+              ui_fig_detect_bottom("detect1", ns),
               ui_fig_effort("fig_effort", "Guidance on sampling effort", "sample_size.html", ns),
               ui_fig_hm("fig_heatmap", "Species detection heatmap", "heatmap.html", ns),
               ui_fig_samples("fig_samples", "Data variation", "field_sample.html", ns)
@@ -750,46 +751,86 @@ draw_fig_samples <- function(data, ready, id) {
   }
 }
 
-ui_fig_detect <- function(fig_id, title, caption_file, ns) {
+# Top plot: smooth figure
+ui_fig_smooth <- function(fig_id, title, caption_files, ns) {
   div(
     id = paste0(ns(fig_id), "_fig_container"),
     class = "fig_container",
+    style = "padding-bottom: 0rem;",
     h4(title),
     div(
       class = "fig_caption-container",
       div(
         class = "fig_caption",
-        includeHTML(file.path("www", "doc", "caption", caption_file))
+        includeHTML(file.path("www", "doc", "caption", caption_files[[1]]))
+      ),
+      div(
+        class = "fig_caption",
+        includeHTML(file.path("www", "doc", "caption", caption_files[[2]]))
       )
     ),
     div(
       class = "fig_panel_container",
+      style = "padding-bottom: 0rem;",
       div(
         class = "fig_panel",
+        style = "padding-bottom: 0rem;",
         bslib::layout_columns(
+          # Left legend
           bslib::card_image(
             file = "www/img/fixed-legends/thresh_axis.png",
             fill = FALSE,
-            width = "80px"
+            style = "max-width:120px; width:100%; height:auto;"
           ),
+          # Middle plot
           bslib::card_body(
-            plotOutput(ns("fig_smooth_plot_output")),
-            plotOutput(ns("fig_detect_plot_output")),
+            plotOutput(ns("fig_smooth_plot_output"), width = "100%", height = "auto"),
+            fillable = TRUE
           ),
-          bslib::card_body(
-            bslib::card_body(height = "250px"),
-            bslib::card_image(
-              file = "www/img/fixed-legends/thresh_legend.png",
-              fill = FALSE,
-              width = "200px"
-            )
-          ),
-          col_widths = c(2, 6, 4)
+          col_widths = c(2, 10)
         )
       )
     )
   )
 }
+
+# Bottom plot: detect figure
+ui_fig_detect_bottom <- function(fig_id, ns) {
+  div(
+    id = paste0(ns(fig_id), "_fig_container"),
+    class = "fig_container",
+    style = "padding-top: 0rem;",
+    div(
+      class = "fig_panel_container",
+      style = "padding-top: 0rem;",
+      div(
+        class = "fig_panel",
+        style = "padding-top: 0rem;",
+        bslib::layout_columns(
+          # Left empty spacer
+          div(),
+          # Middle plot
+          bslib::card_body(
+            plotOutput(ns("fig_detect_plot_output"), width = "100%", height = "100%"),
+            style = "min-height:450px;",
+            fillable = TRUE
+          ),
+          # Right legend
+          div(
+            style = "display:flex; align-items:center; height:100%;",
+            bslib::card_image(
+              file = "www/img/fixed-legends/thresh_legend.png",
+              fill = FALSE,
+              style = "max-width:620px; width:100%; height:auto;"
+            )
+          ),
+          col_widths = c(2, 7, 3)
+        )
+      )
+    )
+  )
+}
+
 
 ui_fig_hm <- function(fig_id, title, caption_file, ns) {
   div(
