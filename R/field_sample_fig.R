@@ -63,6 +63,7 @@ field_sample_fig <- function(data) {
     text = ~paste(
       "Species:", scientificName,
       "<br>Month:", month,
+      "<br>Detection Rate:", round(`Detection rate`, 2),
       "<br>Sample size:", `Sample size`
     ),
     hoverinfo = "text"
