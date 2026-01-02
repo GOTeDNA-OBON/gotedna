@@ -131,8 +131,8 @@ mod_select_figure_ui <- function(id) {
             class = "fig_main_container",
             div(
               class = "fig_main_container-fig",
-              ui_fig_smooth("smooth1", "Monthly eDNA Detection Probability", c("sample_size.html", "detection.html"), ns),
-              ui_fig_detect_bottom("detect1", ns),
+              ui_fig_smooth("fig_smooth", "Monthly eDNA Detection Probability", c("sample_size.html", "detection.html"), ns),
+              ui_fig_detect_bottom("fig_detect", ns),
               ui_fig_effort("fig_effort", "Guidance on sampling effort", "sample_size.html", ns),
               ui_fig_hm("fig_heatmap", "Species detection heatmap", "heatmap.html", ns),
               ui_fig_samples("fig_samples", "Data variation", "field_sample.html", ns)
@@ -164,14 +164,14 @@ mod_select_figure_server <- function(id, r) {
     })
 
     observeEvent(input$select_all, {
-      for (i in c("fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
+      for (i in c("fig_smooth", "fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
         show_fig(i)
         r$fig_slc[[i]] <- TRUE
       }
     })
 
     observeEvent(input$deselect_all, {
-      for (i in c("fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
+      for (i in c("fig_smooth", "fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
         hide_fig(i)
         r$fig_slc[[i]] <- FALSE
       }
@@ -179,7 +179,7 @@ mod_select_figure_server <- function(id, r) {
 
     observeEvent(r$reset,
       {
-        for (i in c("fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
+        for (i in c("fig_smooth", "fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
           hide_fig(i)
           r$fig_slc[[i]] <- FALSE
         }
@@ -187,10 +187,13 @@ mod_select_figure_server <- function(id, r) {
       ignoreInit = TRUE
     )
 
+    hide_fig("fig_smooth")
     hide_fig("fig_detect")
     observeEvent(input$fig_detect, {
       toggle_legends("thresh_legend")
       toggle_fig("fig_detect")
+      toggle_fig("fig_smooth")
+      r$fig_slc$fig_smooth <- !r$fig_slc$fig_smooth
       r$fig_slc$fig_detect <- !r$fig_slc$fig_detect
     })
 
