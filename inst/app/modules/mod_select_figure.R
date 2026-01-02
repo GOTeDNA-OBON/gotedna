@@ -547,6 +547,7 @@ mod_select_figure_server <- function(id, r) {
       req(!is.null(r$cur_data), nrow(r$cur_data) > 0)
       req(!is.null(input$prot_id))
       authorship_data <- r$cur_data
+      authorship_data <- authorship_data[rowSums(is.na(authorship_data)) != ncol(authorship_data), ]
       if (length(r$station_slc)) {
         authorship_data <- authorship_data |>
           dplyr::filter(station %in% r$station_slc)
@@ -573,9 +574,9 @@ mod_select_figure_server <- function(id, r) {
           bibliographicCitation
         ) |>
         summarise(
-          `Sample #` = dplyr::n_distinct(samp_name),
-          `Station #` = dplyr::n_distinct(station),
-          Contact = unique(ownerContact)
+          `Sample #` = dplyr::n_distinct(samp_name, na.rm = TRUE),
+          `Station #` = dplyr::n_distinct(station, na.rm = TRUE),
+          Contact = paste(unique(ownerContact), collapse = "; ")
         ) |>
         dplyr::ungroup() |>
         mutate(
