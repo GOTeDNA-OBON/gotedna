@@ -312,7 +312,6 @@ mod_select_figure_server <- function(id, r) {
             input$threshold
           )
 
-          removeNotification(id = "notif_calc_win")
 
           if (is.null(win)) {
             #  showNotification("No optimal detection window", type = "warning")
@@ -333,6 +332,10 @@ mod_select_figure_server <- function(id, r) {
 
 
           r$fig_ready <- TRUE
+
+          session$onFlushed(function() {
+            removeNotification(id = "notif_calc_win")
+          }, once = TRUE)
 
           # create protocol vector
 
