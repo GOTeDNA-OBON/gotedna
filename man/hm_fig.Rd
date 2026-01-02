@@ -4,7 +4,7 @@
 \alias{hm_fig}
 \title{Displays heatmap of scaled monthly detection probabilities for taxon}
 \usage{
-hm_fig(scaledprobs)
+hm_fig(scaledprobs, selected_taxon_level = "scientificName")
 }
 \arguments{
 \item{scaledprobs}{(required, data.frame) Normalized detection

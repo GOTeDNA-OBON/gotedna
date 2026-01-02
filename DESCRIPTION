@@ -14,7 +14,9 @@ Depends:
     R (>= 4.1)
 Imports:
     bslib,
+    dbscan,
     dplyr (>= 1.0.0),
+    DT,
     fs,
     ggh4x,
     ggpattern,
@@ -42,7 +44,6 @@ Imports:
 Suggests:
     cli,
     cowplot,
-    DT,
     gridExtra,
     htmlwidgets,
     knitr,
@@ -54,6 +55,7 @@ Suggests:
     readr (>= 2.1.0),
     rlang,
     rmarkdown,
+    robis,
     sf,
     stringi,
     stringr,

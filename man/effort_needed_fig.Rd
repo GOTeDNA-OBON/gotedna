@@ -4,16 +4,21 @@
 \alias{effort_needed_fig}
 \title{Calculate sampling effort needed to obtain different detection thresholds.}
 \usage{
-effort_needed_fig(scaledprobs)
+effort_needed_fig(
+  scaledprobs,
+  height_per_species = 400,
+  dot_size = 12,
+  selected_taxon_level = "scientificName"
+)
 }
 \arguments{
 \item{scaledprobs}{(required, data.frame) Normalized detection
 probabilities as returned by the element \code{month} of the list returned by
-\code{\link[=scale_newprob]{scale_newprob()}} for one species and one primer.}
+\code{\link[=scale_newprob]{scale_newprob()}} for one taxon and one primer.}
 }
 \description{
 This function calculates number of samples needed to obtain
-species detection at different thresholds by using scaled and interpolated
+the selected taxon detection at different thresholds by using scaled and interpolated
 data produced with \verb{[scale_newprob()]}.
 }
 \examples{
