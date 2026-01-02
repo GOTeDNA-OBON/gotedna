@@ -5,13 +5,17 @@
 \title{Calculate detection probabilities from data that were previously imported
 with read_data()}
 \usage{
-calc_det_prob(data)
+calc_det_prob(
+  data,
+  selected_taxon_level = "scientificName",
+  pool_primers = FALSE
+)
 }
 \arguments{
 \item{data}{(required, data.frame) Data.frame read in with \code{\link[=read_data]{read_data()}}.}
 }
 \value{
-Two lists, each with distinct elements of species; primer ID
+Two lists, each with distinct elements of the selected taxon; primer ID
 containing 5-7 columns:
 \itemize{
 \item \code{month}
@@ -26,7 +30,7 @@ containing 5-7 columns:
 }
 \description{
 Function that calculates non-parametric probability of detection
-for each species and primer for the selected data. Probabilities are
+for each selected taxon and primer for the selected data. Probabilities are
 calculated both (1) monthly, across all years; and (2) monthly with each year
 separate. Outputs are used in subsequent functions.
 }

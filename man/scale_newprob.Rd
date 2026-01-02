@@ -5,7 +5,7 @@
 \title{Normalize detection probabilities with min-max method (range 011) by month
 for each year separately.}
 \usage{
-scale_newprob(data, newprob)
+scale_newprob(data, newprob, selected_taxon_level = "scientificName")
 }
 \arguments{
 \item{data}{(required, data.frame) Data.frame imported with \code{\link[=read_data]{read_data()}}. Required
@@ -15,9 +15,9 @@ to join taxonomic information.}
 \code{\link[=calc_det_prob]{calc_det_prob()}}.}
 }
 \value{
-Grouped data.frame with 15 columns:
+Grouped data.frame with 15 columns (though lower taxonomic levels are not included beyond the selected taxonomic level):
 \itemize{
-\item \code{id}: unique species;primer;year identifier
+\item \code{id}: unique taxon;primer;year identifier
 \item \code{month}:
 \item \code{detect}: number of detections
 \item \code{nondetect}: number of non-detections
@@ -36,7 +36,7 @@ Grouped data.frame with 15 columns:
 }
 \description{
 This function normalizes (i.e., scales) monthly detection
-probabilities for each species, primer, and year that were calculated with
+probabilities for each selected taxon (e.g. species), primer, and year that were calculated with
 the previous function, \code{\link[=calc_det_prob]{calc_det_prob()}}. Outputs fed into figure and window
 calculation functions.
 \itemize{

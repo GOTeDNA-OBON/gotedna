@@ -4,7 +4,7 @@
 \alias{smooth_fig}
 \title{Display species monthly detection probability by primer and region.}
 \usage{
-smooth_fig(data)
+smooth_fig(scaledprobs)
 }
 \arguments{
 \item{data}{(required, data.frame): Data.frame read in with \code{\link[=read_data]{read_data()}}.}

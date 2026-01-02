@@ -5,8 +5,8 @@
 \title{Sort primer choices by percent rank detection in data request window.}
 \usage{
 primer_sort(
-  taxon.level = c("domain", "kingdom", "phylum", "class", "order", "family", "genus",
-    "species"),
+  taxon.level = c("kingdom", "phylum", "class", "order", "family", "genus",
+    "scientificName"),
   scaledprobs
 )
 }

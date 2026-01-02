@@ -2,22 +2,24 @@
 % Please edit documentation in R/read_data.R
 \name{read_data}
 \alias{read_data}
-\title{Read and format qPCR and metabarcoding metadata and data from GOTeDNA templates}
+\title{\emph{New proposal of this page}
+Read and format metabarcoding metadata and data from OBIS}
 \usage{
-read_data(choose.method = c("qPCR", "metabarcoding"), path.folder = NULL)
-}
-\arguments{
-\item{choose.method}{(required, character) Choices = c("qPCR", "metabarcoding").}
-
-\item{path.folder}{(optional, character)
-Default: \code{path.folder = NULL}. Default will use the current working directory.}
+read_data(
+  dataset_ids = NULL,
+  scientificname = NULL,
+  worms_id = NULL,
+  areaid = NULL,
+  join_by = c("auto", "occurrenceID", "id"),
+  require_absences = TRUE
+)
 }
 \value{
-A tibble with 26 columns:
+A tibble with 25 columns:
 \itemize{
 \item \code{protocol_ID}
 \item \code{protocolVersion}
-\item \code{materialSampleID}
+\item \code{samp_name}
 \item \code{eventID}
 \item \code{primer}
 \item \code{species}
@@ -46,11 +48,11 @@ A tibble with 26 columns:
 }
 }
 \description{
-Function that reads GOTeDNA qPCR or metabarcoding template MS
-Excel sheets found in a specified folder. When \verb{choose.methods = "qPCR" or "metabarcoding"} it will compile metadata (sheet 2) and data (sheet 3 or 4,
-respectively) into a single dataframe. Data frames are then formatted
-appropriately for use in subsequent analysis and visualizations (e.g., date
-reformatting, merging metadata and data).
+Function that reads for any data in OBIS that has a DNA Derived Data
+extension. Will compile occurrence (core) and DNA Derived Data (extension) files
+into a single dataframe. Data frames are then formatted appropriately for use in
+subsequence analysis and visualizations (e.g., date reformatting, merging metadata
+and data).
 \itemize{
 \item Note that template column names are in the format of Darwin Core Archive
 (DwC-A) using Darwin Core (DwC) data standards where possible.
