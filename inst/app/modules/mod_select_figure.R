@@ -541,8 +541,27 @@ mod_select_figure_server <- function(id, r) {
 
     # DATA AUTHORSHIP TABLE
     output$data_authorship <- DT::renderDT({
-      req(!is.null(r$data_active), nrow(r$data_active) > 0)
-      r$data_active |>
+      req(!is.null(r$cur_data), nrow(r$cur_data) > 0)
+      req(!is.null(input$prot_id))
+      authorship_data <- r$cur_data
+      if (length(r$station_slc)) {
+        authorship_data <- authorship_data |>
+          dplyr::filter(station %in% r$station_slc)
+      }
+      if (!is.null(r$taxon_lvl_slc)) {
+        if (r$taxon_lvl_slc == "scientificName") {
+          authorship_data <- authorship_data |>
+            dplyr::filter(scientificName == r$scientificName)
+        } else {
+          if (r$taxon_id_slc != "All") {
+            authorship_data <- authorship_data[
+              authorship_data[[r$taxon_lvl_slc]] == r$taxon_id_slc,
+            ]
+          }
+        }
+      }
+
+      authorship_data |>
         dplyr::ungroup() |>
         dplyr::group_by(
           protocol_ID,
