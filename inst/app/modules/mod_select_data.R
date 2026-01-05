@@ -63,6 +63,13 @@ mod_select_data_ui <- function(id) {
                     buttonLabel = "Browse...",
                     placeholder = "No file selected",
                     capture = NULL
+                  ),
+                  tags$small(
+                    style = "display:block; margin-top:-24px; margin-bottom:12px; color:#8B0000;",
+                    HTML(
+                      'Warning: uploaded data must use the exact column names and formatting shown in the
+                      <a href="gotedna_data_template.xlsx" download>GOTeDNA template</a>.'
+                    )
                   )
                 )
               ),
@@ -229,7 +236,7 @@ mod_select_data_server <- function(id, r) {
     ## load data
     observe({
       if (input$datasource == "gotedna") {
-        shinyjs::hide("external_file")
+        shinyjs::hide("external_files")
         # Keep GOTeDNA data as before
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
@@ -254,7 +261,7 @@ mod_select_data_server <- function(id, r) {
         shinyjs::disable("external_file")
 
       } else {
-        shinyjs::show("external_file")
+        shinyjs::show("external_files")
         gotedna_data <- gotedna_data0
         gotedna_station <- gotedna_station0
         shinyjs::enable("external_file")
