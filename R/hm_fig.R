@@ -51,14 +51,21 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
       zmin = 0.00001,
       zmax = 1,
       showscale = FALSE,
-      na.color = "white"
+      na.color = "white",
+      hoverinfo = "text",
+      text = ~ifelse(
+        is.na(`Detection rate`),
+        paste0("Year: ", year, "<br>Month: ", Month, "<br>Detection rate: No Data"),
+        paste0("Year: ", year, "<br>Month: ", Month, "<br>Detection rate: ", sprintf("%.3f", `Detection rate`))
+      )
     ) %>%
       add_trace(
         z = ~zero_layer,
         type = "heatmap",
         colorscale = list(c(0, "lightgrey"), c(1, "lightgrey")),
         showscale = FALSE,
-        na.color = "transparent"
+        na.color = "transparent",
+        hoverinfo = "skip"
       ) %>%
       layout(
         xaxis = list(
