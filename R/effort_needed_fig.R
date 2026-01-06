@@ -79,7 +79,21 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
     ) %>%
       plotly::layout(
         yaxis = list(range = c(0, 1), title = "Detection probability"),
-        xaxis = list(title = "Number of samples")
+        xaxis = list(title = "Number of samples"),
+        margin = list(l = 60, r = 20, t = 50, b = 50),
+        annotations = list(
+          list(
+            x = 0,
+            y = 1,
+            text = sp,
+            xref = "paper",
+            yref = "paper",
+            xanchor = "left",
+            yanchor = "bottom",
+            showarrow = FALSE,
+            font = list(size = 14, color = "black")
+          )
+        )
       )
   })
 
@@ -89,36 +103,16 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
     nrows = n_taxa,
     shareX = FALSE,
     titleY = TRUE,
+    titleX = TRUE,
     heights = rep(1 / n_taxa, n_taxa),
-    margin = 0.01
+    margin = 0.06
   )
-
-  # Add per-taxon titles via annotations
-  heights <- rep(1 / n_taxa, n_taxa)
-  padding <- 0.1  # distance from bottom of subplot
-
-  annotations <- lapply(seq_along(taxa_list), function(i) {
-    y_bottom <- 1 - sum(heights[1:i])
-    subplot_height <- heights[i]
-    list(
-      text = taxa_list[i],
-      x = 0.98,                        # right edge
-      y = y_bottom + subplot_height * padding,
-      xref = "paper",
-      yref = "paper",
-      xanchor = "right",
-      yanchor = "bottom",
-      showarrow = FALSE,
-      font = list(size = 16, color = "#333")
-    )
-  })
 
   subplot_obj %>%
     plotly::layout(
       height = n_taxa * height_per_species,
-      #margin = list(t = 80, r = 180, b = 60),
-      legend = FALSE,
-      annotations = annotations
+      legend = FALSE
     )
+
 }
 
