@@ -312,7 +312,6 @@ mod_select_figure_server <- function(id, r) {
             input$threshold
           )
 
-
           if (is.null(win)) {
             #  showNotification("No optimal detection window", type = "warning")
             output$opt_sampl <- renderUI("No single detection window")
@@ -581,7 +580,8 @@ mod_select_figure_server <- function(id, r) {
         dplyr::ungroup() |>
         mutate(
           `Indigenous Contributions` = ifelse(
-            !is.na(LClabel),
+            #!is.na(LClabel),
+            1 == 1,
             "<button type='submit' style='border: 0; background: transparent'
             onclick='fakeClick(\"fn-conts\")'><img src='img/fn_logo.png' height='25'/>
             </button>",
