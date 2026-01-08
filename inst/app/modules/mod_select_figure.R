@@ -564,6 +564,9 @@ mod_select_figure_server <- function(id, r) {
         }
       }
 
+      #THIS REMOVES NA ROWS. NOT SURE WHY THIS IS NECESSARY, BUT SOMETIMES THERE ARE NA ROWS MESSING UP THE TABLE
+      all_na_rows <- apply(authorship_data, 1, function(x) all(is.na(x)))
+      authorship_data <- authorship_data[!all_na_rows, ]
       authorship_data |>
         dplyr::ungroup() |>
         dplyr::group_by(
