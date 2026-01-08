@@ -248,11 +248,14 @@ mod_select_data_server <- function(id, r) {
         background-color: #2241a7;
         color: white;
         border-color: #2241a7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       "
           ),
           tags$small(
             style = "display:block; margin-top:0px; margin-bottom:12px; color:#8B0000;",
-            "Click to download fresh OBIS GOTeDNA data file. This may take minutes or hours."
+            "Click to download all OBIS GOTeDNA data as one file. This may take minutes or hours."
           )
         )
       } else {
