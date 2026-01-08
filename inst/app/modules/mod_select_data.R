@@ -237,18 +237,18 @@ mod_select_data_server <- function(id, r) {
       } else if (input$datasource == "download_from_obis") {
         div(
           id = ns("download_files"),
-          class = "file_input-container",  # reuse the same container class
-          actionButton(
+          class = "file_input-container",
+          downloadButton(
             ns("download_button"),
             "Download File From OBIS",
-            class = "shiny-file-input-btn",  # keep this so it shares styling
+            class = "shiny-file-input-btn",
             style = "
-                width: 100%;
-                margin-top: 30px;
-                background-color: #2241a7;  /* blue like fileInput */
-                color: white;               /* text white */
-                border-color: #2241a7;
-              "
+        width: 100%;
+        margin-top: 30px;
+        background-color: #2241a7;
+        color: white;
+        border-color: #2241a7;
+      "
           ),
           tags$small(
             style = "display:block; margin-top:0px; margin-bottom:12px; color:#8B0000;",
@@ -291,16 +291,36 @@ mod_select_data_server <- function(id, r) {
       r$protocol_ID <- paste0(r$cur_data$protocol_ID)
     })
 
-    # Download button handling for third option
-    observeEvent(input$download_button, {
-      # Replace this with your download logic
-      showModal(modalDialog(
-        title = "Download",
-        "This will trigger your download action.",
-        easyClose = TRUE
-      ))
-    })
 
+    output$download_button <- downloadHandler(
+      filename = function() {
+        paste0(
+          "obis_dataset_dec2e6cd_",
+          Sys.Date(),
+          ".csv"
+        )
+      },
+
+      content = function(file) {
+
+        # Optional: user feedback
+        showModal(modalDialog(
+          title = "Downloading data",
+          "Downloading data from OBIS. This may take a moment.",
+          footer = NULL,
+          easyClose = FALSE
+        ))
+        on.exit(removeModal(), add = TRUE)
+
+        # --- ACTUAL DOWNLOAD ---
+        obis_data <- robis::occurrence(
+          datasetid = "dec2e6cd-7197-4ed2-bb49-ea09c124460c"
+        )
+
+        # Write to the temp file Shiny gives us
+        write.csv(obis_data, file, row.names = FALSE)
+      }
+    )
 
     ## load data
     observe({
