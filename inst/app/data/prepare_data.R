@@ -68,27 +68,7 @@ saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
 
 # for performances sake, we use a separate object for station to only display
 # a few points on map
-get_station <- function(x) {
-  x |>
-    dplyr::ungroup() |>
-    dplyr::filter(!is.na(decimalLongitude)) |>
-    dplyr::filter(!is.na(phylum)) |>
-    dplyr::select(
-      c(decimalLongitude, decimalLatitude, station)
-    ) |>
-    dplyr::distinct() |>
-    dplyr::group_by(station) |>
-    dplyr::summarise(
-      decimalLongitude = mean(as.numeric(decimalLongitude)),
-      decimalLatitude = mean(as.numeric(decimalLatitude))
-    ) |>
-    dplyr::ungroup() |>
-    as.data.frame() |>
-    sf::st_as_sf(
-      coords = c("decimalLongitude", "decimalLatitude"),
-      crs = sf::st_crs(4326)
-    )
-}
+
 
 gotedna_station <- list(
   metabarcoding = gotedna_data$metabarcoding |> get_station(),
