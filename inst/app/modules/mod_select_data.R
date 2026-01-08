@@ -2,13 +2,13 @@
 mod_select_data_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$style(HTML("
-          #slc_data-external_file + label {
-            background-color: #dcdcdc;   /* grey background */
-            color: #888888;              /* grey text */
-            pointer-events: none;         /* prevent clicks (optional, since input is disabled) */
+    tags$style(HTML(sprintf("
+          #%s .shiny-file-input-btn:hover {
+            background-color: white !important;
+            color: #2241a7 !important;
+            border-color: #2241a7 !important;
           }
-        ")),
+        ", ns("download_files")))),
     div(
       id = "data_request",
       div(
@@ -44,34 +44,15 @@ mod_select_data_ui <- function(id) {
                   label = "Data source",
                   choices = list(
                     "GOTeDNA" = "gotedna",
-                    "Upload data" = "external_data"
+                    "Upload data" = "external_data",
+                    "Download OBIS Data" = "download_from_obis"
                   ),
                   selected = "gotedna"
                 )
               ),
               column(
                 3,
-                div(
-                  id = ns("external_files"),
-                  class = "file_input-container",
-                  fileInput(
-                    ns("external_file"),
-                    "Upload your files",
-                    multiple = TRUE,
-                    accept = NULL,
-                    width = NULL,
-                    buttonLabel = "Browse...",
-                    placeholder = "No file selected",
-                    capture = NULL
-                  ),
-                  tags$small(
-                    style = "display:block; margin-top:-24px; margin-bottom:12px; color:#8B0000;",
-                    HTML(
-                      'Warning: uploaded data must use the exact column names and formatting shown in the
-                      <a href="gotedna_data_template.xlsx" download>GOTeDNA template</a>.'
-                    )
-                  )
-                )
+                uiOutput(ns("data_button_placeholder"))
               ),
               column(
                 3,
@@ -232,6 +213,94 @@ mod_select_data_server <- function(id, r) {
       r$lock_view <- !(r$lock_view)
     })
 
+    # Dynamically render button based on datasource
+    output$data_button_placeholder <- renderUI({
+      req(input$datasource)
+
+      if (input$datasource == "external_data") {
+        div(
+          id = ns("external_files"),
+          class = "file_input-container",
+          fileInput(
+            ns("external_file"),
+            "Upload your files",
+            multiple = TRUE,
+            buttonLabel = "Browse...",
+            placeholder = "No file selected"
+          ),
+          tags$small(
+            style = "display:block; margin-top:-24px; margin-bottom:12px; color:#8B0000;",
+            HTML('Warning: uploaded data must use the exact column names and formatting shown in the
+              <a href="gotedna_data_template.xlsx" download>GOTeDNA template</a>.')
+          )
+        )
+      } else if (input$datasource == "download_from_obis") {
+        div(
+          id = ns("download_files"),
+          class = "file_input-container",  # reuse the same container class
+          actionButton(
+            ns("download_button"),
+            "Download File From OBIS",
+            class = "shiny-file-input-btn",  # keep this so it shares styling
+            style = "
+                width: 100%;
+                margin-top: 30px;
+                background-color: #2241a7;  /* blue like fileInput */
+                color: white;               /* text white */
+                border-color: #2241a7;
+              "
+          ),
+          tags$small(
+            style = "display:block; margin-top:0px; margin-bottom:12px; color:#8B0000;",
+            "Click to download fresh OBIS GOTeDNA data file. This may take minutes or hours."
+          )
+        )
+      } else {
+        NULL  # No button for gotedna
+      }
+    })
+
+
+    # File upload handling (existing logic)
+    observeEvent(input$external_file, {
+      req(input$external_file)
+      df <- read_uploaded_file(input$external_file[1, ])
+      showModal(modalDialog(
+        title = "Please wait",
+        "Processing coordinates into station clusters. This may take several minutes for larger files (e.g. >20MB).",
+        footer = NULL,
+        easyClose = FALSE
+      ))
+      on.exit(removeModal(), add = TRUE)
+
+      df_with_assigned_stations <- update_station_variable(df)
+      r$upload_data <- df_with_assigned_stations
+      r$upload_stations <- get_station(df_with_assigned_stations)
+      r$upload_primers <- newprob_mb <- calc_det_prob(r$upload_data)
+      scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
+
+      upload_gotedna_primer <- list()
+      for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
+        upload_gotedna_primer[[i]] <- primer_sort(i, scaledprobs_mb) |>
+          mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
+      }
+
+      r$upload_primers <- upload_gotedna_primer
+      r$cur_data <- r$upload_data
+      r$data_station <- r$upload_stations
+      r$protocol_ID <- paste0(r$cur_data$protocol_ID)
+    })
+
+    # Download button handling for third option
+    observeEvent(input$download_button, {
+      # Replace this with your download logic
+      showModal(modalDialog(
+        title = "Download",
+        "This will trigger your download action.",
+        easyClose = TRUE
+      ))
+    })
+
 
     ## load data
     observe({
@@ -284,42 +353,6 @@ mod_select_data_server <- function(id, r) {
           r$cur_data$protocol_ID
         )
       }
-    })
-
-
-    observeEvent(input$external_file, {
-      req(input$external_file)
-      df <- read_uploaded_file(input$external_file[1, ])
-
-      showModal(modalDialog(
-        title = "Please wait",
-        "Processing coordinates into station clusters. This may take several minutes for larger files (e.g. >20MB).",
-        footer = NULL,
-        easyClose = FALSE
-      ))
-
-      on.exit(removeModal(), add = TRUE)
-      df_with_assigned_stations <- update_station_variable(df)
-      r$upload_data <- df_with_assigned_stations
-      r$upload_stations <- get_station(df_with_assigned_stations)
-      r$upload_primers <-
-      newprob_mb <- calc_det_prob(r$upload_data)
-
-      scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
-
-      upload_gotedna_primer <- list()
-
-      # this needs to be based on the area selection
-      for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
-        upload_gotedna_primer[[i]] <- primer_sort(i, scaledprobs_mb) |>
-          mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
-      }
-      r$upload_primers <- upload_gotedna_primer
-      r$cur_data <- r$upload_data
-      r$data_station <- r$upload_stations
-      r$protocol_ID <- paste0(
-        r$cur_data$protocol_ID
-      )
     })
 
 

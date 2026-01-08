@@ -577,7 +577,7 @@ mod_select_figure_server <- function(id, r) {
         ) |>
         summarise(
           `Sample #` = dplyr::n_distinct(samp_name, na.rm = TRUE),
-          `Station #` = dplyr::n_distinct(station, na.rm = TRUE),
+          `Location #` = dplyr::n_distinct(station, na.rm = TRUE),
           Contact = paste(unique(ownerContact), collapse = "; ")
         ) |>
         dplyr::ungroup() |>
@@ -599,7 +599,7 @@ mod_select_figure_server <- function(id, r) {
         ) |>
         dplyr::relocate(
           `Protocol ID`, `Protocol Version`, # Contact,
-          `Sample #`, `Station #`, `Indigenous Contributions`, Publication
+          `Sample #`, `Location #`, `Indigenous Contributions`, Publication
         ) |>
         DT::datatable(
           escape = FALSE, rownames = FALSE,
