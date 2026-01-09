@@ -43,6 +43,7 @@ gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
+last_obis_download_ts <- as.POSIXct(readLines("data/last_obis_download_ts.txt"), tz = Sys.timezone())
 
 #gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
 
