@@ -64,7 +64,10 @@ gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
 
 
 saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
-
+writeLines(
+  format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
+  "inst/app/data/last_obis_download_ts.txt"
+)
 
 # for performances sake, we use a separate object for station to only display
 # a few points on map

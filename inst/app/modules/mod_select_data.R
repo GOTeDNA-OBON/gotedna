@@ -238,21 +238,21 @@ mod_select_data_server <- function(id, r) {
         div(
           id = ns("download_files"),
           class = "file_input-container",
-          downloadButton(
+          actionButton(
             ns("download_button"),
             "Download File From OBIS",
             class = "shiny-file-input-btn",
             style = "
-        width: 100%;
-        margin-top: 30px;
-        background-color: #2241a7;
-        color: white;
-        border-color: #2241a7;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      "
-          ),
+              width: 100%;
+              margin-top: 32px;
+              background-color: #2241a7;
+              color: white;
+              border-color: #2241a7;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+                    ),
           tags$small(
             style = "display:block; margin-top:0px; margin-bottom:12px; color:#8B0000;",
             "Click to download all OBIS GOTeDNA data as one file. This may take minutes or hours."
@@ -261,6 +261,71 @@ mod_select_data_server <- function(id, r) {
       } else {
         NULL  # No button for gotedna
       }
+    })
+
+    observeEvent(input$download_button, {
+      showModal(
+        modalDialog(
+          title = "Confirm download",
+
+          div(
+            style = "
+          padding: 16px 20px;
+          border: 1px solid #e0e0e0;
+          border-radius: 6px;
+          background-color: #f9fafb;
+        ",
+
+            tags$p(
+              "This will download a single file containing all data from OBIS that are suitable for GOTeDNA."
+            ),
+
+            tags$p(
+              style = "margin-top: 8px;",
+              "After that you can upload that file into the app and explore the data in GOTeDNA."
+            ),
+
+            tags$p(
+              style = "margin-top: 8px;",
+              paste0("The data currently in GOTeDNA were pulled from OBIS at ", last_obis_download_ts, ". A fresh download is only useful if usable data have been uploaded to OBIS since then.")
+            ),
+
+            tags$p(
+              style = "margin-top: 8px;",
+              "The request may take several minutes or longer depending on server load."
+            ),
+
+            tags$div(
+              style = "
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            color: #856404;
+          ",
+              icon("warning"),
+              " This is a potentially long-running operation and cannot be stopped."
+            )
+          ),
+
+          footer = tagList(
+            modalButton("Cancel"),
+            downloadButton(
+              ns("confirm_download"),
+              "OK, download",
+              class = "btn-primary",
+              style = "
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+              "
+            )
+          ),
+
+          easyClose = TRUE
+        )
+      )
     })
 
 
@@ -295,7 +360,7 @@ mod_select_data_server <- function(id, r) {
     })
 
 
-    output$download_button <- downloadHandler(
+    output$confirm_download <- downloadHandler(
       filename = function() {
         paste0(
           "obis_dataset_dec2e6cd_",
@@ -306,13 +371,43 @@ mod_select_data_server <- function(id, r) {
 
       content = function(file) {
 
-        # Optional: user feedback
-        showModal(modalDialog(
-          title = "Downloading data",
-          "Downloading data from OBIS. This may take a moment.",
-          footer = NULL,
-          easyClose = FALSE
-        ))
+        removeModal()  # close confirmation modal
+
+        showModal(
+          modalDialog(
+            title = "Downloading data",
+
+            div(
+              style = "
+        padding: 16px;
+        background-color: #f9fafb;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+      ",
+              p("Downloading all GOTeDNA data from OBIS."),
+              p("This may take several minutes or longer."),
+              tags$div(
+                style = "
+          margin-top: 12px;
+          padding: 10px;
+          background-color: #eef2ff;
+          border-left: 4px solid #2241a7;
+        ",
+                icon("info-circle"),
+                " You may close this dialog. The download will continue in the background."
+              )
+            ),
+
+            footer = tagList(
+              modalButton("Close"),
+              span(style = "margin-left: 8px; font-size: 0.9em; color: #666;",
+                   "Closing will not stop the download")
+            ),
+
+            easyClose = TRUE
+          )
+        )
+
         on.exit(removeModal(), add = TRUE)
 
         # --- ACTUAL DOWNLOAD ---
@@ -320,10 +415,10 @@ mod_select_data_server <- function(id, r) {
           datasetid = "dec2e6cd-7197-4ed2-bb49-ea09c124460c"
         )
 
-        # Write to the temp file Shiny gives us
         write.csv(obis_data, file, row.names = FALSE)
       }
     )
+
 
     ## load data
     observe({
