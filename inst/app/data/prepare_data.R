@@ -1,14 +1,10 @@
-# read data
-D_mb <- read_data(
-  choose.method = "metabarcoding", path.folder = "inst/app/data/raw_xlsx_files"
-)
 
-
+#PULLS ALL SUITABLE DATA FROM OBIS
 D_mb <- read_data(
   dataset_ids    = NULL,
   scientificname = NULL,
-  worms_id       = 1080,
-  areaid         = 32,
+  worms_id       = NULL,
+  areaid         = NULL,
   join_by        = c("auto", "occurrenceID", "id"),
   require_absences = TRUE
 )
