@@ -394,7 +394,7 @@ mod_select_data_server <- function(id, r) {
           border-left: 4px solid #2241a7;
         ",
                 icon("info-circle"),
-                " You may close this dialog. The download will continue in the background."
+                " You may close this dialog. The download will continue in the background. If you would like to stop the download, you need to stop the Shiny app (e.g. interrupt it in rStudio)."
               )
             ),
 
