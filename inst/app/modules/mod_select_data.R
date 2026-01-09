@@ -229,7 +229,7 @@ mod_select_data_server <- function(id, r) {
             placeholder = "No file selected"
           ),
           tags$small(
-            style = "display:block; margin-top:-24px; margin-bottom:12px; color:#8B0000;",
+            style = "display:block; margin-top:-12px; margin-bottom:12px; color:#8B0000;",
             HTML('Warning: uploaded data must use the exact column names and formatting shown in the
               <a href="gotedna_data_template.xlsx" download>GOTeDNA template</a>.')
           )
@@ -255,7 +255,7 @@ mod_select_data_server <- function(id, r) {
                     ),
           tags$small(
             style = "display:block; margin-top:0px; margin-bottom:12px; color:#8B0000;",
-            "Click to download all OBIS GOTeDNA data as one file. This may take minutes or hours."
+            "Click to download all OBIS GOTeDNA data as one file. This may take hours."
           )
         )
       } else {
@@ -292,7 +292,7 @@ mod_select_data_server <- function(id, r) {
 
             tags$p(
               style = "margin-top: 8px;",
-              "The request may take several minutes or longer depending on server load."
+              "The request may take hours depending on server load."
             ),
 
             tags$div(
@@ -363,7 +363,7 @@ mod_select_data_server <- function(id, r) {
     output$confirm_download <- downloadHandler(
       filename = function() {
         paste0(
-          "obis_dataset_dec2e6cd_",
+          "obis_dataset_",
           Sys.Date(),
           ".csv"
         )
@@ -385,7 +385,7 @@ mod_select_data_server <- function(id, r) {
         border-radius: 6px;
       ",
               p("Downloading all GOTeDNA data from OBIS."),
-              p("This may take several minutes or longer."),
+              p("This may take hours, depending on data amount and bandwidth."),
               tags$div(
                 style = "
           margin-top: 12px;
@@ -411,8 +411,15 @@ mod_select_data_server <- function(id, r) {
         on.exit(removeModal(), add = TRUE)
 
         # --- ACTUAL DOWNLOAD ---
-        obis_data <- robis::occurrence(
-          datasetid = "dec2e6cd-7197-4ed2-bb49-ea09c124460c"
+        obis_data <- tryCatch(
+          big_OBIS_data_pull(),
+          error = function(e) {
+            showNotification(
+              paste("Download failed:", e$message),
+              type = "error"
+            )
+            stop(e)
+          }
         )
 
         write.csv(obis_data, file, row.names = FALSE)
