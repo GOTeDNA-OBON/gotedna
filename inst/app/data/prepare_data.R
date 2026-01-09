@@ -9,6 +9,7 @@ D_mb <- read_data(
   require_absences = TRUE
 )
 
+#Reduce false positives (metabarcoding detections < 10 reads/station/primer excluded)
 D_mb_msct <- D_mb %>%
   dplyr::mutate(msct = case_when(
     organismQuantity == 0 ~ TRUE,
@@ -25,12 +26,6 @@ D_mb_nodetect <- D_mb_msct %>%
 D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
                                by = c("protocol_ID","protocolVersion","scientificName",
                                       "primer", "station"))
-
-# D_qPCR <- read_data_old(
-#   choose.method = "qPCR", path.folder = "inst/app/data/raw_xlsx_files"
-# )
-
-
 
 # make a list of two data frames
 gotedna_data <- list(
