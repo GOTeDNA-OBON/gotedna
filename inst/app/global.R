@@ -43,6 +43,7 @@ gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
+last_obis_download_ts <- as.POSIXct(readLines("data/last_obis_download_ts.txt"), tz = Sys.timezone())
 
 #gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
 
@@ -121,6 +122,28 @@ get_primer_selection <- function(lvl, data, primer_sheet = gotedna_primer) {
   }
 }
 
+get_station <- function(x) {
+  x |>
+    dplyr::ungroup() |>
+    dplyr::filter(!is.na(decimalLongitude)) |>
+    dplyr::filter(!is.na(phylum)) |>
+    dplyr::select(
+      c(decimalLongitude, decimalLatitude, station)
+    ) |>
+    dplyr::distinct() |>
+    dplyr::group_by(station) |>
+    dplyr::summarise(
+      decimalLongitude = mean(as.numeric(decimalLongitude)),
+      decimalLatitude = mean(as.numeric(decimalLatitude))
+    ) |>
+    dplyr::ungroup() |>
+    as.data.frame() |>
+    sf::st_as_sf(
+      coords = c("decimalLongitude", "decimalLatitude"),
+      crs = sf::st_crs(4326)
+    )
+}
+
 
 # Primer information for primer tab
 ## import glossary
@@ -132,3 +155,33 @@ primer_seqs <- read.csv("data/primers.csv") |>
     "Sequence (5'-3')" = "Seq",
     "Fragment length (bp)" = "bp"
   )
+
+
+big_OBIS_data_pull <- function(dataset_ids = NULL) {
+  D_mb <- read_data(
+    dataset_ids    = dataset_ids,
+    scientificname = NULL,
+    worms_id       = NULL,
+    areaid         = NULL,
+    join_by        = c("auto", "occurrenceID", "id"),
+    require_absences = TRUE
+  )
+
+  D_mb_msct <- D_mb %>%
+    dplyr::mutate(msct = case_when(
+      organismQuantity == 0 ~ TRUE,
+      organismQuantity > 10 ~ TRUE
+    )) |>
+    tidyr::drop_na(msct)
+
+  D_mb_nodetect <- D_mb_msct %>%
+    dplyr::group_by(
+      protocol_ID, protocolVersion, scientificName, primer, station) %>%
+    dplyr::summarise(num_detected = sum(detected)) %>%
+    dplyr::filter(num_detected == 0)
+
+  D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
+                                 by = c("protocol_ID","protocolVersion","scientificName",
+                                        "primer", "station"))
+  D_mb_clean
+}

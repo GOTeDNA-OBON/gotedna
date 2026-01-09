@@ -1,14 +1,10 @@
-# read data
-D_mb <- read_data(
-  choose.method = "metabarcoding", path.folder = "inst/app/data/raw_xlsx_files"
-)
 
-
+#PULLS ALL SUITABLE DATA FROM OBIS
 D_mb <- read_data(
   dataset_ids    = NULL,
   scientificname = NULL,
-  worms_id       = 1080,
-  areaid         = 32,
+  worms_id       = NULL,
+  areaid         = NULL,
   join_by        = c("auto", "occurrenceID", "id"),
   require_absences = TRUE
 )
@@ -64,31 +60,14 @@ gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
 
 
 saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
-
+writeLines(
+  format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
+  "inst/app/data/last_obis_download_ts.txt"
+)
 
 # for performances sake, we use a separate object for station to only display
 # a few points on map
-get_station <- function(x) {
-  x |>
-    dplyr::ungroup() |>
-    dplyr::filter(!is.na(decimalLongitude)) |>
-    dplyr::filter(!is.na(phylum)) |>
-    dplyr::select(
-      c(decimalLongitude, decimalLatitude, station)
-    ) |>
-    dplyr::distinct() |>
-    dplyr::group_by(station) |>
-    dplyr::summarise(
-      decimalLongitude = mean(as.numeric(decimalLongitude)),
-      decimalLatitude = mean(as.numeric(decimalLatitude))
-    ) |>
-    dplyr::ungroup() |>
-    as.data.frame() |>
-    sf::st_as_sf(
-      coords = c("decimalLongitude", "decimalLatitude"),
-      crs = sf::st_crs(4326)
-    )
-}
+
 
 gotedna_station <- list(
   metabarcoding = gotedna_data$metabarcoding |> get_station(),
