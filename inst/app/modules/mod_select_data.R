@@ -54,17 +54,17 @@ mod_select_data_ui <- function(id) {
                 3,
                 uiOutput(ns("data_button_placeholder"))
               ),
-              # column(
-              #   3,
-              #   selectInput(ns("data_type"),
-              #     label = "Type of data",
-              #     choices = list(
-              #       "Multi-species (metabarcoding)" = "metabarcoding"
-              #       #"Species specific (qPCR)" = "qPCR"
-              #     ),
-              #     selected = "metabarcoding"
-              #   )
-              # )
+              column(
+                3,
+                selectInput(ns("data_type"),
+                  label = "Type of data",
+                  choices = list(
+                    "Multi-species (metabarcoding)" = "metabarcoding"
+                    #"Species specific (qPCR)" = "qPCR"
+                  ),
+                  selected = "metabarcoding"
+                )
+              )
             )
           ),
           ## bottom fields
