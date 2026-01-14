@@ -151,13 +151,14 @@ mod_select_data_ui <- function(id) {
               title = "Hide or show map"
             )
           )
-        )
+        ),
+        uiOutput(ns("map_warning"))
       ),
       div(
         class = "leaflet_container",
-        style = "display: grid; justify-content: center",
+        style = "display: grid; justify-content: center; position: relative;",
         id = ns("map_container"),
-        mapedit::editModUI(ns("map-select"), height = "75vh", width = "65vw")
+        mapedit::editModUI(ns("map-select"), height = "75vh", width = "65vw"),
       ),
       div(
         class = "section_footer",
@@ -211,6 +212,28 @@ mod_select_data_server <- function(id, r) {
     observeEvent(input$lock, {
       shinyjs::toggle("lock")
       r$lock_view <- !(r$lock_view)
+    })
+
+    output$map_warning <- renderUI({
+      if (r$taxon_selected < 4) {
+        div(
+          style = "
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 4px;
+        color: #856404;
+        font-weight: 500;
+        display: flex;
+        justify-content: center;
+      ",
+          icon("exclamation-triangle"),
+          "Map is available after taxon selection."
+        )
+      } else {
+        NULL
+      }
     })
 
     # Dynamically render button based on datasource
@@ -610,6 +633,7 @@ mod_select_data_server <- function(id, r) {
     observeEvent(listenMapData() |> debounce(100), {
       r$scientificName <- input$slc_spe
       r$taxon_id_slc <- input$taxo_id
+      r$taxon_selected <- r$taxon_selected + 1
       if (!is.null(input$slc_spe) && input$slc_spe != "All") {
         r$taxon_lvl_slc <- "scientificName"
       } else {
