@@ -249,11 +249,11 @@ mod_select_figure_server <- function(id, r) {
             duration = NULL,
             id = "notif_calc_win"
           )
+
           if (r$frozen_selected_taxon_level == "genus") {
 
             # Compute detection probability
             newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
-
             # Safely scale probabilities
             r$scaledprobs <- tryCatch({
               if (length(newprob$newP_agg) == 0 && length(newprob$newP_yr) == 0) {
@@ -301,7 +301,6 @@ mod_select_figure_server <- function(id, r) {
           cli::cli_alert_info("Computing optimal detection window")
 
           thresh_slc <- input$threshold
-
           win <- calc_window(
             threshold = input$threshold,
             scaledprobs = r$scaledprobs
@@ -393,7 +392,6 @@ mod_select_figure_server <- function(id, r) {
         v_prot <- r$data_active$protocol_ID |> table()
         # Sort protocols by decreasing count
         sorted_prot <- sort(v_prot, decreasing = TRUE)
-
         # Create choices: display name -> value
         l_prot <- as.list(names(sorted_prot))
         names(l_prot) <- paste0(
@@ -1028,3 +1026,5 @@ toggle_fig <- function(fig_id) {
   shinyjs::toggle(paste0(fig_id, "_thumbnail_selected"))
   shinyjs::toggle(paste0(fig_id, "_fig_container"))
 }
+
+

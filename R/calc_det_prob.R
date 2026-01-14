@@ -32,6 +32,35 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", pool_pr
   # reset option on exit
   on.exit(options(dplyr.summarise.inform = oop))
 
+
+  #removing rows for species that have never been detected at that station
+  data <- drop_all_zero_taxa(data, selected_taxon_level)
+
+  data <- data %>%
+    dplyr::group_by(
+      protocol_ID,
+      primer,
+      month,
+      year,
+      .data[[selected_taxon_level]],
+      samp_name
+    ) %>%
+    dplyr::summarise(
+      detected = as.integer(any(detected == 1)),
+      .groups = "drop"
+    )
+
+  bad <- !data$detected %in% c(0, 1)
+
+  if (any(bad)) {
+    stop(
+      "calc_det_prob(): detected must be 0/1 after collapsing.\n",
+      "Found ", sum(bad), " invalid values.\n",
+      "Unique invalid values: ",
+      paste(unique(data$detected[bad]), collapse = ", ")
+    )
+  }
+
   if (pool_primers) {
   data %<>%
     dplyr::mutate(.,
@@ -45,7 +74,6 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", pool_pr
       id.yr = paste0(protocol_ID, ";", .data[[selected_taxon_level]], ";", primer, ";", year)
     )
   }
-
 
   # Create a variable so detection probability is calculated separately for each
   # protocol ID, version, selected_taxon_level, and primer
@@ -114,3 +142,14 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", pool_pr
 
   list(newP_agg = newP_agg, newP_yr = newP_yr)
 }
+
+drop_all_zero_taxa <- function(df, taxon_col) {
+  df %>%
+    group_by(
+      station,
+      .data[[taxon_col]]
+    ) %>%
+    filter(any(detected == 1)) %>%
+    ungroup()
+}
+
