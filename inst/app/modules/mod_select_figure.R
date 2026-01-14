@@ -215,7 +215,7 @@ mod_select_figure_server <- function(id, r) {
       r$fig_slc$fig_samples <- !r$fig_slc$fig_samples
     })
 
-    # CALC WINDOW
+    # THIS RUNS WHEN WE CLICK COMPUTE & vISUALIZE
     observeEvent(
       ignoreInit = TRUE,
       list(input$calc_window, input$threshold, input$prot_id),
@@ -389,7 +389,11 @@ mod_select_figure_server <- function(id, r) {
 
     update_protocol_menu <- function() {
       if (!is.null(r$data_active) && nrow(r$data_active) > 0) {
-        v_prot <- r$data_active$protocol_ID |> table()
+        #browser()
+        protocols_by_sample <- r$data_active %>%
+          dplyr::distinct(protocol_ID, samp_name)  # unique protocol × sample
+
+        v_prot <- protocols_by_sample$protocol_ID |> table()
         # Sort protocols by decreasing count
         sorted_prot <- sort(v_prot, decreasing = TRUE)
         # Create choices: display name -> value
@@ -397,7 +401,7 @@ mod_select_figure_server <- function(id, r) {
         names(l_prot) <- paste0(
           "Protocol ",
           names(sorted_prot),
-          " (", sorted_prot, " observations)"
+          " (", sorted_prot, " samples)"
         )
 
         # Default selection: largest observation count
