@@ -10,6 +10,7 @@ server <- function(input, output, session) {
     upload_primers = NULL,
     scientificName = NULL,
     taxon_lvl_slc = NULL,
+    taxon_selected = 0,
     frozen_selected_taxon_level = NULL,
     taxon_id_slc = NULL,
     frozen_selected_taxon_id = NULL,
