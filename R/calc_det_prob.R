@@ -32,7 +32,6 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", pool_pr
   # reset option on exit
   on.exit(options(dplyr.summarise.inform = oop))
 
-
   #removing rows for species that have never been detected at that station
   data <- drop_all_zero_taxa(data, selected_taxon_level)
 
@@ -147,6 +146,7 @@ drop_all_zero_taxa <- function(df, taxon_col) {
   df %>%
     group_by(
       station,
+      protocol_ID,
       .data[[taxon_col]]
     ) %>%
     filter(any(detected == 1)) %>%
