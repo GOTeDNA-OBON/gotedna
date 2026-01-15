@@ -547,16 +547,15 @@ mod_select_figure_server <- function(id, r) {
     output$data_authorship <- DT::renderDT({
       req(!is.null(r$cur_data), nrow(r$cur_data) > 0)
       req(!is.null(input$prot_id))
+
       authorship_data <- r$cur_data
       authorship_data <- authorship_data[rowSums(is.na(authorship_data)) != ncol(authorship_data), ]
       if (length(r$station_slc)) {
-        authorship_data <- authorship_data |>
-          dplyr::filter(station %in% r$station_slc)
+        authorship_data <- authorship_data |> dplyr::filter(station %in% r$station_slc)
       }
       if (!is.null(r$taxon_lvl_slc)) {
         if (r$taxon_lvl_slc == "scientificName") {
-          authorship_data <- authorship_data |>
-            dplyr::filter(scientificName == r$scientificName)
+          authorship_data <- authorship_data |> dplyr::filter(scientificName == r$scientificName)
         } else {
           if (r$taxon_id_slc != "All") {
             authorship_data <- authorship_data[
@@ -566,31 +565,32 @@ mod_select_figure_server <- function(id, r) {
         }
       }
 
-      #THIS REMOVES NA ROWS. NOT SURE WHY THIS IS NECESSARY, BUT SOMETIMES THERE ARE NA ROWS MESSING UP THE TABLE
+      # Remove all-NA rows
       all_na_rows <- apply(authorship_data, 1, function(x) all(is.na(x)))
       authorship_data <- authorship_data[!all_na_rows, ]
-      authorship_data |>
+
+      dt_data <- authorship_data |>
         dplyr::ungroup() |>
-        dplyr::group_by(
-          protocol_ID,
-          protocolVersion,
-          LClabel,
-          bibliographicCitation
-        ) |>
-        summarise(
+        dplyr::group_by(protocol_ID, protocolVersion, LClabel, bibliographicCitation) |>
+        dplyr::summarise(
           `Sample #` = dplyr::n_distinct(samp_name, na.rm = TRUE),
           `Location #` = dplyr::n_distinct(station, na.rm = TRUE),
           Contact = paste(unique(ownerContact), collapse = "; ")
         ) |>
-        dplyr::ungroup() |>
-        mutate(
-          `Indigenous Contributions` = ifelse(
-            #!is.na(LClabel),
-            1 == 1,
-            "<button type='submit' style='border: 0; background: transparent'
-            onclick='fakeClick(\"fn-conts\")'><img src='img/fn_logo.png' height='25'/>
-            </button>",
-            NA
+        dplyr::ungroup()
+
+      # Helper to generate shiny action buttons in DT
+      shinyInput <- function(FUN, len, id, ...) {
+        vapply(seq_len(len), function(i) {
+          as.character(FUN(paste0(id, "_", i), ...))
+        }, character(1))
+      }
+
+      dt_data <- dt_data |>
+        dplyr::mutate(
+          `Indigenous Contributions` = sprintf(
+            '<button id="%s" class="btn btn-primary btn-sm" title="Indigenous Contributions"><i class="fa fa-users"></i></button>',
+            ns(paste0("fn_btn_", seq_len(n())))
           ),
           LClabel = NULL
         ) |>
@@ -600,15 +600,52 @@ mod_select_figure_server <- function(id, r) {
           "Publication" = "bibliographicCitation"
         ) |>
         dplyr::relocate(
-          `Protocol ID`, `Protocol Version`, # Contact,
-          `Sample #`, `Location #`, `Indigenous Contributions`, Publication
-        ) |>
-        DT::datatable(
-          escape = FALSE, rownames = FALSE,
-          options = list(
-            columnDefs = list(list(className = "dt-center", targets = "_all"))
-          )
+          `Protocol ID`, `Protocol Version`, `Sample #`, `Location #`, `Indigenous Contributions`, Publication
         )
+
+      r$dt_data(dt_data)  # save the current table for observers
+
+      DT::datatable(
+        dt_data,
+        escape = FALSE,
+        rownames = FALSE,
+        options = list(
+          columnDefs = list(list(className = "dt-center", targets = "_all")),
+          drawCallback = JS(sprintf(
+            "function(settings) {
+        for (var i = 0; i < %d; i++) {
+          var btn = document.getElementById('%s' + (i+1));
+          if (btn) {
+            btn.onclick = function(e) {
+              Shiny.setInputValue('%s', this.id, {priority: 'event'});
+            };
+          }
+        }
+      }",
+            nrow(dt_data),
+            ns("fn_btn_"),
+            ns("fn_btn_clicked")
+          ))
+        )
+      )
+    })
+
+    # Attach observers to each button
+    observeEvent(input$fn_btn_clicked, {
+      dt_data <- r$dt_data()  # retrieve the latest table
+      req(dt_data)            # make sure it's available
+
+      # Extract row number from ID
+      row_idx <- as.numeric(sub(paste0(session$ns("fn_btn_")), "", input$fn_btn_clicked))
+
+      pid <- dt_data$protocol_ID[row_idx]
+
+      showModal(modalDialog(
+        title = paste("Indigenous Contributions for protocol", pid),
+        paste("This is a placeholder for row", row_idx),
+        easyClose = TRUE,
+        footer = modalButton("Close")
+      ))
     })
 
     # EXPORT PDF

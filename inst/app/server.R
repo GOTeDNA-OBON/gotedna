@@ -11,6 +11,7 @@ server <- function(input, output, session) {
     scientificName = NULL,
     taxon_lvl_slc = NULL,
     taxon_selected = 0,
+    dt_data = reactiveVal(NULL),
     frozen_selected_taxon_level = NULL,
     taxon_id_slc = NULL,
     frozen_selected_taxon_id = NULL,
