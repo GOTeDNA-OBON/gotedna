@@ -33,6 +33,9 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
 
   taxa_list <- unique(df[[selected_taxon_level]])
   n_taxa <- length(taxa_list)
+
+
+
   plots <- lapply(seq_along(taxa_list), function(i) {
     sp <- taxa_list[i]
     df_sp <- df %>% filter(taxon == sp)
@@ -40,6 +43,62 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
 
     # Only show x-axis labels on the bottom subplot if >= 3 subplots...turned off this feature
     show_xticks <- if (n_taxa > 0) TRUE else (i == n_taxa)
+
+    z_vals <- df_sp$`Detection rate`
+    z_non_na <- z_vals[!is.na(z_vals)]
+
+    # Check if all non-NA values are 1
+    all_ones <- length(z_non_na) > 0 && all(z_non_na == 1)
+
+
+    if(all_ones) {
+      plot_ly(
+        df_sp,
+        x = ~Month,
+        y = ~factor(year, levels = rev(unique(year))),
+        z = ~`Detection rate`,
+        type = "heatmap",
+        colorscale = list(
+          c(0, "#440154"),   # bottom of scale
+          c(1, "#440154")  # top of scale (first color from viridis)
+        ),
+        zmin = 1,
+        zmax = 1,
+        zauto = FALSE,
+        showscale = FALSE,
+        na.color = "white",
+        hoverinfo = "text",
+        text = ~ifelse(
+          is.na(`Detection rate`),
+          paste0("Year: ", year, "<br>Month: ", Month, "<br>Detection rate: No Data"),
+          paste0("Year: ", year, "<br>Month: ", Month, "<br>Detection rate: ", sprintf("%.3f", `Detection rate`))
+        )
+      ) %>%
+        layout(
+          xaxis = list(
+            title = "",
+            tickangle = 0,
+            showgrid = FALSE,
+            showticklabels = show_xticks
+          ),
+          yaxis = list(title = "", autorange = "reversed", showgrid = FALSE),
+          margin = list(l = 50, r = 20, t = 50, b = 50),
+          annotations = list(
+            list(
+              x = 0,
+              y = 1,
+              text = sp,
+              xref = "paper",
+              yref = "paper",
+              xanchor = "left",
+              yanchor = "bottom",
+              showarrow = FALSE,
+              font = list(size = 14, color = "black")
+            )
+          )
+        )
+    } else {
+
 
     plot_ly(
       df_sp,
@@ -90,6 +149,7 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
           )
         )
       )
+    }
   })
 
   n_taxa <- length(taxa_list)
