@@ -868,24 +868,6 @@ shiny-plot-output {
 }
 
 
-/* indigeneous page */
-.indig_container {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  padding: 25px;
-}
-
-.indig_img {
-  width: 20%;
-}
-
-.indig_txt {
-  width: 80%;
-}
-
 /* structure page */
 .struc_container {
   display: flex;
@@ -903,3 +885,65 @@ shiny-plot-output {
 .struc_txt {
   width: 100%;
 }
+
+
+/* Indigenous Contributions modal layout */
+.indig_container {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.indig_img {
+  flex-shrink: 0;       /* do not shrink */
+  width: 200px;          /* fixed width */
+}
+
+.indig_img img {
+  width: 100%;
+  height: auto;
+  max-width: 200px;
+  max-height: 200px;
+  display: block;
+}
+
+.indig_txt {
+  flex: 1 1 auto;       /* text takes remaining space */
+  min-width: 0;         /* critical for text wrapping */
+  font-size: 15px;
+  line-height: 1.6;
+  word-break: normal;
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: block;
+}
+
+/* Stack nicely on small screens */
+@media (max-width: 768px) {
+  .indig_container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .indig_img {
+    flex: none;
+    width: 150px;
+  }
+}
+
+.modal-dialog {
+  max-width: 900px;
+}
+
+.indig_modal .modal-body {
+  overflow-x: hidden;
+  padding: 15px 20px;
+}
+
+
+
+
