@@ -2,7 +2,7 @@ ui <- fluidPage(
   theme = bslib::bs_theme(version = 5),
   shinyjs::useShinyjs(),
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "extra.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = paste0("extra.css?v=", Sys.time())),
     tags$link(rel = "stylesheet", type = "text/css", href = "fonts.css"),
     tags$style(type = "text/css", "body {padding-top: 100px;}"),
     tags$script(type = "text/javascript", src = "js/scrollPage.js"),

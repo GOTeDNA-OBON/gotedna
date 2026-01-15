@@ -547,7 +547,7 @@ mod_select_figure_server <- function(id, r) {
     output$data_authorship <- DT::renderDT({
       req(!is.null(r$cur_data), nrow(r$cur_data) > 0)
       req(!is.null(input$prot_id))
-
+      req(input$calc_window)
       authorship_data <- r$cur_data
       authorship_data <- authorship_data[rowSums(is.na(authorship_data)) != ncol(authorship_data), ]
       if (length(r$station_slc)) {
@@ -569,15 +569,27 @@ mod_select_figure_server <- function(id, r) {
       all_na_rows <- apply(authorship_data, 1, function(x) all(is.na(x)))
       authorship_data <- authorship_data[!all_na_rows, ]
 
-      dt_data <- authorship_data |>
-        dplyr::ungroup() |>
-        dplyr::group_by(protocol_ID, protocolVersion, LClabel, bibliographicCitation) |>
+      dt_data <- authorship_data %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(protocol_ID, protocolVersion, bibliographicCitation) %>%
         dplyr::summarise(
           `Sample #` = dplyr::n_distinct(samp_name, na.rm = TRUE),
           `Location #` = dplyr::n_distinct(station, na.rm = TRUE),
-          Contact = paste(unique(ownerContact), collapse = "; ")
-        ) |>
+          Contact = paste(unique(ownerContact), collapse = "; "),
+          # collapse LClabels with datasetID_obis prepended as links
+          LClabel = {
+            ul <- unique(LClabel[!is.na(LClabel)])
+            sapply(ul, function(lbl) {
+              # get all datasetID_obis that correspond to this LClabel
+              ids <- unique(datasetID_obis[LClabel == lbl])
+              # convert to HTML links
+              links <- paste0('<a href="https://obis.org/dataset/', ids, '" target="_blank">', ids, '</a>')
+              paste0("(", paste(links, collapse = ", "), ") ", lbl)
+            }) %>% paste(collapse = "<br>")
+          }
+        ) %>%
         dplyr::ungroup()
+
 
       # Helper to generate shiny action buttons in DT
       shinyInput <- function(FUN, len, id, ...) {
@@ -586,14 +598,22 @@ mod_select_figure_server <- function(id, r) {
         }, character(1))
       }
 
-      dt_data <- dt_data |>
+      dt_data <- dt_data %>%
         dplyr::mutate(
-          `Indigenous Contributions` = sprintf(
-            '<button id="%s" class="btn btn-primary btn-sm" title="Indigenous Contributions"><i class="fa fa-users"></i></button>',
-            ns(paste0("fn_btn_", seq_len(n())))
-          ),
-          LClabel = NULL
-        ) |>
+          `Indigenous Contributions` = NA_character_  # default: no button
+        )
+
+      # Only assign buttons to rows where LClabel is not NULL
+      rows_with_label <- which(!is.na(dt_data$LClabel))
+
+      dt_data$`Indigenous Contributions`[rows_with_label] <- sprintf(
+        '<button id="%s" style="border:0; background:transparent;" title="Indigenous Contributions">
+           <img src="img/fn_logo.png" height="25"/>
+         </button>',
+        ns(paste0("fn_btn_", rows_with_label))
+      )
+
+      dt_data <- dt_data %>%
         dplyr::rename(
           "Protocol ID" = "protocol_ID",
           "Protocol Version" = "protocolVersion",
@@ -610,8 +630,11 @@ mod_select_figure_server <- function(id, r) {
         escape = FALSE,
         rownames = FALSE,
         options = list(
-          columnDefs = list(list(className = "dt-center", targets = "_all")),
-          drawCallback = JS(sprintf(
+          columnDefs = list(
+            list(className = "dt-center", targets = "_all"),
+            list(visible = FALSE, targets = which(names(dt_data) == "LClabel") - 1)
+        ),
+        drawCallback = JS(sprintf(
             "function(settings) {
         for (var i = 0; i < %d; i++) {
           var btn = document.getElementById('%s' + (i+1));
@@ -630,23 +653,43 @@ mod_select_figure_server <- function(id, r) {
       )
     })
 
-    # Attach observers to each button
     observeEvent(input$fn_btn_clicked, {
-      dt_data <- r$dt_data()  # retrieve the latest table
-      req(dt_data)            # make sure it's available
+      dt_data <- r$dt_data()
+      req(dt_data)
 
-      # Extract row number from ID
-      row_idx <- as.numeric(sub(paste0(session$ns("fn_btn_")), "", input$fn_btn_clicked))
-
-      pid <- dt_data$protocol_ID[row_idx]
-
-      showModal(modalDialog(
-        title = paste("Indigenous Contributions for protocol", pid),
-        paste("This is a placeholder for row", row_idx),
-        easyClose = TRUE,
-        footer = modalButton("Close")
+      row_idx <- as.numeric(sub(
+        paste0(session$ns("fn_btn_")),
+        "",
+        input$fn_btn_clicked
       ))
+
+      text_to_show <- dt_data$LClabel[row_idx]
+
+      showModal(
+        modalDialog(
+          title = "Indigenous Contributions",
+          size = "xl",
+          easyClose = TRUE,
+          footer = modalButton("Close"),
+          div(
+            class = "indig_container",
+            div(
+              class = "indig_img",
+              tags$img(
+                src = "img/fn_logo.png",
+                alt = "Indigenous icon"
+              )
+            ),
+            div(
+              class = "indig_txt",
+              HTML(text_to_show)
+            )
+          ),
+          class = "indig_modal"
+        )
+      )
     })
+
 
     # EXPORT PDF
     # output$export_pdf <- downloadHandler(
