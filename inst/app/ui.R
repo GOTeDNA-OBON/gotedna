@@ -58,35 +58,6 @@ ui <- fluidPage(
         )
       )
     ),
-    #tabPanel(
-        #title = "Partners",
-        #value = "partners",
-        #class = "standalone_60",
-        #a(
-          #href = "https://sites.google.com/view/gotedna/partners",
-          #target = "_blank"
-        #)),
-    # tabPanel(
-    #   "Indigenous Contributions",
-    #   value = "fn-conts",
-    #   div(
-    #     class = "standalone_container",
-    #     div(
-    #       class = "standalone_60",
-    #       h1("Indigenous Contributions"),
-    #       includeHTML(file.path("www", "doc", "indigenous.html"))
-    #     )
-    #   )
-    # ),
-    #tabPanel(
-      #title = "Team",
-      #value = "team",
-      #class = "standalone_60",
-     #a(
-       #href = "https://sites.google.com/view/gotedna/team",
-       #target = "_blank"
-    #))
-      #,
     tabPanel(
       "Contact",
       value = "contact",

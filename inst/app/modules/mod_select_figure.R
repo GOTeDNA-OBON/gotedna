@@ -573,19 +573,32 @@ mod_select_figure_server <- function(id, r) {
         dplyr::ungroup() %>%
         dplyr::group_by(protocol_ID, protocolVersion, bibliographicCitation) %>%
         dplyr::summarise(
-          `Sample #` = dplyr::n_distinct(samp_name, na.rm = TRUE),
-          `Location #` = dplyr::n_distinct(station, na.rm = TRUE),
+          `# of Samples` = dplyr::n_distinct(samp_name, na.rm = TRUE),
+          `# of Locations` = dplyr::n_distinct(station, na.rm = TRUE),
           Contact = paste(unique(ownerContact), collapse = "; "),
           # collapse LClabels with datasetID_obis prepended as links
           LClabel = {
             ul <- unique(LClabel[!is.na(LClabel)])
             sapply(ul, function(lbl) {
-              # get all datasetID_obis that correspond to this LClabel
+
+              # all dataset IDs that correspond to this LClabel
               ids <- unique(datasetID_obis[LClabel == lbl])
-              # convert to HTML links
-              links <- paste0('<a href="https://obis.org/dataset/', ids, '" target="_blank">', ids, '</a>')
-              paste0("(", paste(links, collapse = ", "), ") ", lbl)
-            }) %>% paste(collapse = "<br>")
+
+              # convert IDs to OBIS links
+              links <- paste0(
+                '<a href="https://obis.org/dataset/', ids,
+                '" target="_blank">', ids, '</a>'
+              )
+
+              paste0(
+                lbl,
+                '<div style="margin-top:10px; font-size: 0.9em;">',
+                '<strong>Data available on the Ocean Biodiversity Information System (OBIS):</strong><br>',
+                paste(links, collapse = ", "),
+                '</div>'
+              )
+            }) %>%
+              paste(collapse = "<br><br>")
           }
         ) %>%
         dplyr::ungroup()
@@ -620,7 +633,7 @@ mod_select_figure_server <- function(id, r) {
           "Publication" = "bibliographicCitation"
         ) |>
         dplyr::relocate(
-          `Protocol ID`, `Protocol Version`, `Sample #`, `Location #`, `Indigenous Contributions`, Publication
+          `Protocol ID`, `Protocol Version`, `# of Samples`, `# of Locations`, `Indigenous Contributions`, Publication
         )
 
       r$dt_data(dt_data)  # save the current table for observers
