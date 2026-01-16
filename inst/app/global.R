@@ -54,8 +54,8 @@ gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   mutate(dataset_idx = cur_group_id()) %>%
   ungroup() %>%
   # create the LClabel text without wrapping <div>
-  mutate(LClabel = paste0(
-    "<p>", dataset_idx, ": We acknowledge that this research was conducted on the unceded and unsurrendered traditional territories of the
+  mutate(LClabel =
+    "<p>We acknowledge that this research was conducted on the unceded and unsurrendered traditional territories of the
             Mi'kmaq, Passamaquoddy, Wabanaki (Bay of Fundy ecodistrict); Mi’kmaq, Wabanaki (Magdalen Shallows, Scotian Shelf);
             Métis peoples (Churchill Estuary-Hudson Bay); and the Inuit homelands of Inuit Nunangat including: Nunatsiavut
             (NL-Labrador Shelves), Nunavik (Southern Hudson Strait), and Nunavut (Baffin Bay/Davis Strait, North Baffin Fjords).</p>
@@ -66,7 +66,7 @@ gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
             Arctic field campaigns were provided by Churchill Northern Studies Centre, Glencore-Raglan, Baffinland Iron and Vale
             Mines, NRCan (Polar Continental Shelf program), Nunatsiavut Government, Environment and Climate Change Canada, and
             Government of Nunavut MV Nuliajuk.</p>"
-  )) %>%
+  ) %>%
   select(-dataset_idx)
 
 gotedna_data0 <- gotedna_data
