@@ -63,7 +63,7 @@ mod_select_figure_ui <- function(id) {
           class = "d-flex justify-content-center",
           id = "confirm_figures_selection",
           actionButton(
-            ns("calc_window"),
+            ns("compute_and_visualize"),
             label = "Compute & Visualize",
             title = "Compute optimal detection window",
             class = "primary-button"
@@ -215,12 +215,12 @@ mod_select_figure_server <- function(id, r) {
       r$fig_slc$fig_samples <- !r$fig_slc$fig_samples
     })
 
-    # THIS RUNS WHEN WE CLICK COMPUTE & vISUALIZE
+    # THIS RUNS WHEN WE CLICK COMPUTE & v\VISUALIZE
     observeEvent(
       ignoreInit = TRUE,
-      list(input$calc_window, input$threshold, input$prot_id),
+      list(input$compute_and_visualize, input$threshold, input$prot_id),
       {
-        req(input$calc_window)
+        req(input$compute_and_visualize)
         r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
         r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
 
@@ -547,7 +547,7 @@ mod_select_figure_server <- function(id, r) {
     output$data_authorship <- DT::renderDT({
       req(!is.null(r$cur_data), nrow(r$cur_data) > 0)
       req(!is.null(input$prot_id))
-      req(input$calc_window)
+      # req(input$calc_window)
       authorship_data <- r$cur_data
       authorship_data <- authorship_data[rowSums(is.na(authorship_data)) != ncol(authorship_data), ]
       if (length(r$station_slc)) {
