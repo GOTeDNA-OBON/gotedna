@@ -123,7 +123,6 @@ GOT_joined <- GOT_joined %>%
     # occurrenceID for every remaining row (present + absent)
     occurrenceID = if_else(
       is.na(occurrenceID),
-      # You might want "Hal" here instead of "BoF" for Halifax:
       paste0("DFO-GRDI-BoF:", materialSampleID, "-", row_suffix),
       paste0(occurrenceID, "-", row_suffix)
     )
