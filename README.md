@@ -4,6 +4,7 @@
 
 ## An R package for guidance on optimal eDNA sampling periods to develop, optimize, and interpret monitoring programs
 
+### This README is intended for installation and usage of the app. There is also a starter guide to the codebase provided [here](README_for_coders.md) in README_for_coders.md
 <!-- badges: start -->
 
 <!-- badges: end -->
