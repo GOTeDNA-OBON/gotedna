@@ -11,7 +11,8 @@ This document is intended for coders or reviewers who wish to better understand 
 
 # 1\. Data Source Options
 
-![](man/guide_figs/data_source.png) 
+![](man/guide_figs/data_source.png)
+
 This menu is defined in **mod\_select\_data.R**.with the id, “datasource”. The menu state and dynamic toggling of the “Browse” and “Download” buttons are also handled here.
 
 ## GOTeDNA Database (default)
@@ -57,6 +58,7 @@ The primer menu is defined in **mod\_select\_data.R** with id “primer”. Prim
 # 3\. Compute & Visualize
 
 ![](man/guide_figs/compute.png)
+
 When a user clicks “Compute & Visualize” a large observeEvent function for **input$compute\_and\_visualize** is run in **mod\_select\_figure.R**. This function filters data, calculates detection probabilities and prepares the output for the Observation Menu (see section 4 below).
 
 * If genus level is selected along with “All” species, detection probabilities are calculated for all individual species in that genus (for comparison in figures) as well as for the entire genus as one taxon. If a broader taxon level is selected along with “All” species, only summarized taxon detection probabilities are calculated.  
@@ -81,7 +83,8 @@ The observation menus are defined in **mod\_select\_figure.R** with ids “thres
 
 # 5\. Guidance Panel
 
-![](man/guide_figs/guidance.png) 
+![](man/guide_figs/guidance.png)
+
 The guidance panel is defined in **mod\_select\_figure.R** with ids “opt\_sampl”, “conf”, and “var\_year”.
 
 * Optimal timing (“opt\_sampl”) displays results from the **calc\_window()** function (see section 3 above)  
