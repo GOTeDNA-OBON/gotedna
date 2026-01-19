@@ -3,7 +3,7 @@
 # Introduction
 
 This document is intended for coders or reviewers who wish to better understand the GOTeDNA code. The structure of this document follows the data flow chart below which shows how data flow through the app. Red numbers on the flow chart correspond to section numbers of this document. There is also a screenshot at each section showing the visual part of the app that corresponds with that section.  
-**Quicktip:** functions and Shiny IDs have been provided so that a programmer in rStudio can run a global search (ctrl \+ shift \+ f) for the text. Filenames can also be searched and opened in rStudio with ctrl \+ . (ctrl key combined with period key)
+**Quicktip:** function and Shiny ID names have been provided in **bold** so that a programmer in rStudio can run a global search (ctrl \+ shift \+ f) for that text. Filenames can also be searched and opened in rStudio with ctrl \+ . (ctrl key combined with period key)
 
 # Visual Table of Contents
 
