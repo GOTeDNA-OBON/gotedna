@@ -7,7 +7,7 @@ This document is intended for coders or reviewers who wish to better understand 
 
 # Visual Table of Contents
 
-![][image1]
+![](man/guide_figs/Interpretation_Guide_TOC.png)
 
 # 1\. Data Source Options
 
