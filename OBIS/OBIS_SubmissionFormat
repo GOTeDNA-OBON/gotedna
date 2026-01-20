@@ -252,10 +252,11 @@ occurrence <- GOT_joined %>%
     !is.na(maximumDepthInMeters),
     !is.na(target_gene),
     !is.na(scientificName)
-#  ) %>%
+) 
+# %>%
 #  left_join(
 #    map_clean, by = "materialSampleID"
-)
+#)
 
 #Look up AphiaID (taxonID) from WoRMS by ScientificName
 
