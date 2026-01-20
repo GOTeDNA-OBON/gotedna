@@ -253,14 +253,14 @@ mod_select_figure_server <- function(id, r) {
           if (r$frozen_selected_taxon_level == "genus") {
 
             # Compute detection probability
-            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
+            r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
             # Safely scale probabilities
             r$scaledprobs <- tryCatch({
-              if (length(newprob$newP_agg) == 0 && length(newprob$newP_yr) == 0) {
+              if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
                 cat("calc_det_prob returned empty for level: genus\n")
                 NULL
               } else {
-                scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+                scale_newprob(r$data_ready, r$newprob, r$frozen_selected_taxon_level)
               }
             }, error = function(e) {
               cat("scale_newprob failed for genus:", conditionMessage(e), "\n")
@@ -268,13 +268,14 @@ mod_select_figure_server <- function(id, r) {
             })
 
             # Do the same for scientificName
-            newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", pool_primers = TRUE)
+            r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", pool_primers = TRUE)
+
             r$scaledprobs_by_scientificName <- tryCatch({
-              if (length(newprob_by_scientificName$newP_agg) == 0 && length(newprob_by_scientificName$newP_yr) == 0) {
+              if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
                 cat("calc_det_prob returned empty for level: scientificName\n")
                 NULL
               } else {
-                scale_newprob(r$data_ready, newprob_by_scientificName, "scientificName")
+                scale_newprob(r$data_ready, r$newprob_by_scientificName, "scientificName")
               }
             }, error = function(e) {
               cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
@@ -283,13 +284,13 @@ mod_select_figure_server <- function(id, r) {
 
           } else {
 
-            newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
+            r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
             r$scaledprobs <- tryCatch({
-              if (length(newprob$newP_agg) == 0 && length(newprob$newP_yr) == 0) {
+              if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
                 cat("calc_det_prob returned empty for level:", r$frozen_selected_taxon_level, "\n")
                 NULL
               } else {
-                scale_newprob(r$data_ready, newprob, r$frozen_selected_taxon_level)
+                scale_newprob(r$data_ready, r$newprob, r$frozen_selected_taxon_level)
               }
             }, error = function(e) {
               cat("scale_newprob failed for level", r$frozen_selected_taxon_level, ":", conditionMessage(e), "\n")
@@ -494,11 +495,9 @@ mod_select_figure_server <- function(id, r) {
             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
           )
       } else {
-        fig_data <- r$data_ready |> filter(protocol_ID == input$prot_id, year == input$year_selected)
-
         # Wrap draw_fig_samples in tryCatch to catch runtime errors without breaking the app
         tryCatch({
-          ggp <- draw_fig_samples(fig_data, plt_ready, id = input$prot_id)
+          ggp <- draw_fig_samples(r$newprob_by_scientificName, plt_ready, year = input$year_selected)
         }, error = function(e) {
           message("*** ERROR in draw_fig_samples: ", conditionMessage(e))
           return(plotly::plot_ly(type = "scatter", mode = "text",
@@ -864,10 +863,10 @@ draw_fig_detect <- function(r, ready, threshold) {
 
 
 ## Data variation
-draw_fig_samples <- function(data, ready, id) {
+draw_fig_samples <- function(newprob, ready, year) {
   if (ready) {
     p <- field_sample_fig(
-      data
+      newprob, year
     )
     p
   } else {

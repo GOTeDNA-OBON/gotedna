@@ -13,21 +13,15 @@
 #'   data = gotedna_data$metabarcoding
 #' )
 #' }
-field_sample_fig <- function(data) {
+field_sample_fig <- function(newprob, year) {
 
-
-  ## ---- aggregation (always happens, once) ----
-  data <- data %>%
-    dplyr::group_by(scientificName, month) %>%
-    dplyr::summarise(
-      `Sample size` = dplyr::n(),
-      nd = sum(detected, na.rm = TRUE),
-      `Detection rate` = nd / `Sample size`,
-      .groups = "drop"
-    )
+  data <- newP_yr_to_plot_df(
+    newprob$newP_yr,
+    year
+  )
 
   if (nrow(data) == 0) {
-    cat("⚠️ ZERO ROWS AFTER SUMMARISE\n")
+    cat("⚠️ ZERO ROWS AFTER FILTERING\n")
     return(
       plotly::plot_ly(
         type = "scatter",
@@ -88,5 +82,31 @@ field_sample_fig <- function(data) {
     )
 }
 
+newP_yr_to_plot_df <- function(newP_yr, year) {
 
+  purrr::imap_dfr(
+    newP_yr,
+    function(df, name) {
+
+      # filter to requested year
+      df <- dplyr::filter(df, .data$year %in% .env$year)
+
+      if (nrow(df) == 0) {
+        return(NULL)
+      }
+
+      # extract clean scientific name
+      sci_name <- strsplit(name, ";", fixed = TRUE)[[1]][2]
+
+      df %>%
+        dplyr::transmute(
+          scientificName = sci_name,
+          month = month,
+          `Sample size` = n,
+          nd = nd,
+          `Detection rate` = p
+        )
+    }
+  )
+}
 
