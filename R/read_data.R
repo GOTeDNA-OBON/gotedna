@@ -262,7 +262,7 @@ read_data <- function(
   }
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
-
+  saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
   GOTeDNA_df_with_assigned_stations <- update_station_variable(GOTeDNA_df)
 
   GOTeDNA_df_with_assigned_stations
@@ -273,9 +273,9 @@ update_station_variable <- function(df,
                                     lat_col  = "decimalLatitude",
                                     long_col = "decimalLongitude",
                                     eps_km   = 0.5,
-                                    minPts  = 2) {
+                                    minPts   = 2) {
 
-  # ---- 1. Ensure stationLabel exists, but do NOT overwrite it ----
+  # ---- 1. Ensure stationLabel exists, do not overwrite ----
   if (!"stationLabel" %in% names(df)) {
     if ("station" %in% names(df)) {
       df$stationLabel <- df$station
@@ -285,48 +285,55 @@ update_station_variable <- function(df,
   }
 
   # ---- 2. Valid coordinate rows ----
-  valid_idx <- which(
-    !is.na(df[[lat_col]]) &
-      !is.na(df[[long_col]])
-  )
-
+  valid_idx <- which(!is.na(df[[lat_col]]) & !is.na(df[[long_col]]))
   if (length(valid_idx) < minPts) {
     df$station <- NA_character_
     return(df)
   }
 
-  # ---- 3. Project coordinates to meters ----
-  sf_pts <- sf::st_as_sf(
-    df[valid_idx, ],
-    coords = c(long_col, lat_col),
-    crs = 4326
-  )
+  coords <- df[valid_idx, c(long_col, lat_col)]
 
-  sf_pts <- sf::st_transform(sf_pts, 3857)
-  coords_m <- sf::st_coordinates(sf_pts)
+  # ---- 3. Decide number of k-means clusters based on dataset size ----
+  n_points <- nrow(coords)
+  k <- max(1, min(ceiling(n_points / 50000), 50))  # 1 to 50 clusters  # 1 to 50 clusters
 
-  # ---- 4. DBSCAN clustering ----
-  eps_m <- eps_km * 1000
-  db <- dbscan::dbscan(coords_m, eps = eps_m, minPts = minPts)
-
-  # ---- 5. Assign clusters ----
-  df$station <- NA_character_
-
-  clusters <- db$cluster
-
-  # Noise points (0) → unique IDs
-  if (any(clusters == 0)) {
-    noise_ids <- which(clusters == 0)
-    max_cluster <- max(clusters)
-
-    clusters[noise_ids] <- seq(
-      from = max_cluster + 1,
-      length.out = length(noise_ids)
-    )
+  if (k == 1) {
+    cluster_groups <- rep(1, n_points)
+  } else {
+    set.seed(42)  # reproducibility
+    cluster_groups <- kmeans(coords, centers = k, nstart = 5)$cluster
   }
 
-  df$station[valid_idx] <- as.character(clusters)
+  df$station <- NA_character_
+  station_counter <- 1
+
+  # ---- 4. Run DBSCAN on each k-means partition ----
+  for (grp in unique(cluster_groups)) {
+    idx_grp <- valid_idx[which(cluster_groups == grp)]
+    coords_grp <- as.matrix(df[idx_grp, c(long_col, lat_col)])
+
+    # Convert eps to meters for DBSCAN
+    sf_pts <- sf::st_as_sf(df[idx_grp, ], coords = c(long_col, lat_col), crs = 4326)
+    sf_pts <- sf::st_transform(sf_pts, 3857)
+    coords_m <- sf::st_coordinates(sf_pts)
+    eps_m <- eps_km * 1000
+
+    db <- dbscan::dbscan(coords_m, eps = eps_m, minPts = minPts)
+    clusters <- db$cluster
+
+    # Assign unique station IDs for noise points (0)
+    if (any(clusters == 0)) {
+      noise_ids <- which(clusters == 0)
+      max_cluster <- max(clusters)
+      clusters[noise_ids] <- seq(from = max_cluster + 1, length.out = length(noise_ids))
+    }
+
+    # Assign global station numbers
+    df$station[idx_grp] <- as.character(clusters + station_counter - 1)
+    station_counter <- max(as.integer(df$station[idx_grp])) + 1
+  }
 
   df
 }
+
 
