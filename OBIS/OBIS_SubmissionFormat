@@ -246,16 +246,11 @@ occurrence <- GOT_joined %>%
     samp_collec_device = samp_collect_device,
     project_id = "DFO-GRDI-BoF-COI",
     pcr_0_1 = "1"
-  ) %>%
-  filter(
-    !is.na(minimumDepthInMeters),
-    !is.na(maximumDepthInMeters),
-    !is.na(target_gene),
-    !is.na(scientificName)
-#  ) %>%
+  ) 
+#  %>%
 #  left_join(
 #    map_clean, by = "materialSampleID"
-)
+#)
 
 #Look up AphiaID (taxonID) from WoRMS by ScientificName
 
