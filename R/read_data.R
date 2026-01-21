@@ -265,13 +265,16 @@ read_data <- function(
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
   # saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
-  GOTeDNA_df_with_assigned_stations <- update_station_variable_hybrid(GOTeDNA_df)
+  GOTeDNA_df_with_assigned_stations <- update_location_clusters(GOTeDNA_df)
 
   GOTeDNA_df_with_assigned_stations
 
 }
 
 
+###########################
+#Code below here is for adding locations to the data based on efficient clustering
+###########################
 
 # ----------------------------
 # Complete-linkage helper
@@ -325,7 +328,7 @@ hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_p
 # ----------------------------
 # Main function
 # ----------------------------
-update_station_variable_hybrid <- function(df,
+update_location_clusters <- function(df,
                                            lat_col = "decimalLatitude",
                                            long_col = "decimalLongitude",
                                            distance_threshold = 500,
