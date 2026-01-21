@@ -63,6 +63,8 @@ read_data <- function(
   library(lubridate)
   library(purrr)
   library(dbscan)
+  library(geosphere)
+  library(sf)
   join_by <- match.arg(join_by)
   ## 0. If dataset_ids is NULL, discover them via robis::dataset() ----
   if (is.null(dataset_ids)) {
@@ -262,20 +264,74 @@ read_data <- function(
   }
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
-  saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
-  GOTeDNA_df_with_assigned_stations <- update_station_variable(GOTeDNA_df)
+  # saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
+  GOTeDNA_df_with_assigned_stations <- update_station_variable_hybrid(GOTeDNA_df)
 
   GOTeDNA_df_with_assigned_stations
 
 }
 
-update_station_variable <- function(df,
-                                    lat_col  = "decimalLatitude",
-                                    long_col = "decimalLongitude",
-                                    eps_km   = 0.5,
-                                    minPts   = 2) {
 
-  # ---- 1. Ensure stationLabel exists, do not overwrite ----
+
+# ----------------------------
+# Complete-linkage helper
+# ----------------------------
+run_complete_linkage <- function(df, threshold_m, cluster_prefix = "C") {
+  if (nrow(df) == 1) return(tibble(cluster = paste0(cluster_prefix, "_1")))
+
+  coords <- df[, c("lon", "lat")]
+  dist_mat <- distm(coords)
+
+  hc <- hclust(as.dist(dist_mat), method = "complete")
+  clusters <- cutree(hc, h = threshold_m)
+
+  tibble(cluster = paste0(cluster_prefix, "_", clusters))
+}
+
+# ----------------------------
+# Recursive hybrid clustering
+# ----------------------------
+hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_prefix = "S") {
+
+  if (nrow(df_unique) <= max_hc_size) {
+    return(run_complete_linkage(df_unique, threshold_m, cluster_prefix))
+  }
+
+  # Compute approximate max distance for coarse DBSCAN
+  coords <- df_unique[, c("lon", "lat")]
+  dist_mat <- distm(coords)
+  max_dist <- max(dist_mat)
+  eps <- max_dist / 2
+
+  db <- dbscan(coords, eps = eps, minPts = 1)
+  df_unique$coarse_cluster <- db$cluster
+
+  result_clusters <- df_unique %>%
+    group_by(coarse_cluster) %>%
+    group_modify(~{
+      if (nrow(.x) > max_hc_size) {
+        hybrid_cluster_unique(.x %>% select(-coarse_cluster), threshold_m, max_hc_size,
+                              cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
+      } else {
+        run_complete_linkage(.x %>% select(-coarse_cluster), threshold_m,
+                             cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
+      }
+    }) %>%
+    ungroup()
+
+  return(result_clusters)
+}
+
+# ----------------------------
+# Main function
+# ----------------------------
+update_station_variable_hybrid <- function(df,
+                                           lat_col = "decimalLatitude",
+                                           long_col = "decimalLongitude",
+                                           distance_threshold = 500,
+                                           max_hc_size = 500) {
+
+  # ---- 1. Ensure stationLabel exists ----
   if (!"stationLabel" %in% names(df)) {
     if ("station" %in% names(df)) {
       df$stationLabel <- df$station
@@ -284,56 +340,82 @@ update_station_variable <- function(df,
     }
   }
 
-  # ---- 2. Valid coordinate rows ----
-  valid_idx <- which(!is.na(df[[lat_col]]) & !is.na(df[[long_col]]))
-  if (length(valid_idx) < minPts) {
+  # ---- 2. Keep only valid coordinates ----
+  valid_df <- df %>%
+    filter(!is.na(.data[[lat_col]]), !is.na(.data[[long_col]]))
+
+  if (nrow(valid_df) == 0) {
     df$station <- NA_character_
     return(df)
   }
 
-  coords <- df[valid_idx, c(long_col, lat_col)]
+  # ---- 3. Reduce to unique coordinates ----
+  coords_unique <- valid_df %>%
+    distinct(.data[[lat_col]], .data[[long_col]]) %>%
+    rename(lat = all_of(lat_col), lon = all_of(long_col))
 
-  # ---- 3. Decide number of k-means clusters based on dataset size ----
-  n_points <- nrow(coords)
-  k <- max(1, min(ceiling(n_points / 50000), 50))  # 1 to 50 clusters  # 1 to 50 clusters
+  # ---- 4. Run hybrid clustering on unique coordinates ----
+  station_map <- hybrid_cluster_unique(coords_unique,
+                                       threshold_m = distance_threshold,
+                                       max_hc_size = max_hc_size,
+                                       cluster_prefix = "Location")
 
-  if (k == 1) {
-    cluster_groups <- rep(1, n_points)
-  } else {
-    set.seed(42)  # reproducibility
-    cluster_groups <- kmeans(coords, centers = k, nstart = 5)$cluster
-  }
+  # ---- 5. Map station IDs back to full dataset ----
+  coords_unique$station <- as.integer(factor(station_map$cluster))
 
-  df$station <- NA_character_
-  station_counter <- 1
-
-  # ---- 4. Run DBSCAN on each k-means partition ----
-  for (grp in unique(cluster_groups)) {
-    idx_grp <- valid_idx[which(cluster_groups == grp)]
-    coords_grp <- as.matrix(df[idx_grp, c(long_col, lat_col)])
-
-    # Convert eps to meters for DBSCAN
-    sf_pts <- sf::st_as_sf(df[idx_grp, ], coords = c(long_col, lat_col), crs = 4326)
-    sf_pts <- sf::st_transform(sf_pts, 3857)
-    coords_m <- sf::st_coordinates(sf_pts)
-    eps_m <- eps_km * 1000
-
-    db <- dbscan::dbscan(coords_m, eps = eps_m, minPts = minPts)
-    clusters <- db$cluster
-
-    # Assign unique station IDs for noise points (0)
-    if (any(clusters == 0)) {
-      noise_ids <- which(clusters == 0)
-      max_cluster <- max(clusters)
-      clusters[noise_ids] <- seq(from = max_cluster + 1, length.out = length(noise_ids))
-    }
-
-    # Assign global station numbers
-    df$station[idx_grp] <- as.character(clusters + station_counter - 1)
-    station_counter <- max(as.integer(df$station[idx_grp])) + 1
-  }
+  df$station <- NULL
+  df <- df %>%
+    left_join(coords_unique, by = setNames(c("lat", "lon"), c(lat_col, long_col)))
 
   df
 }
 
+
+
+# df: dataset with lon/lat and station column
+# lon_col / lat_col: coordinate columns
+# station_col: station IDs
+# threshold_m: maximum allowed distance
+check_station_distances_unique <- function(df,
+                                           lon_col = "decimalLongitude",
+                                           lat_col = "decimalLatitude",
+                                           station_col = "station",
+                                           threshold_m = 500) {
+
+  violations <- df %>%
+    group_by(.data[[station_col]]) %>%
+    group_modify(~{
+      # ---- 1. Reduce to unique coordinates for efficiency ----
+      pts <- .x %>%
+        distinct(.data[[lon_col]], .data[[lat_col]]) %>%
+        select(all_of(c(lon_col, lat_col)))
+
+      n <- nrow(pts)
+      if (n <= 1) return(tibble())
+
+      # ---- 2. Compute pairwise distance matrix ----
+      dmat <- distm(pts)
+
+      # ---- 3. Check for distances exceeding threshold ----
+      idx <- which(dmat > threshold_m, arr.ind = TRUE)
+      idx <- idx[idx[,1] < idx[,2], , drop = FALSE]  # upper triangle only
+      if (nrow(idx) == 0) return(tibble())
+
+      tibble(
+        station = unique(.x[[station_col]]),
+        point1 = idx[,1],
+        point2 = idx[,2],
+        distance_m = dmat[idx]
+      )
+    }) %>%
+    ungroup()
+
+  if (nrow(violations) == 0) {
+    message("✅ All stations pass: no pair of points exceeds ", threshold_m, " meters.")
+  } else {
+    warning("⚠️ Found ", nrow(violations), " pairs exceeding ", threshold_m, " meters.")
+  }
+
+  return(violations)
+}
 

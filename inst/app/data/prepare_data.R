@@ -54,7 +54,7 @@ gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
 gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
 
 
-saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
+
 writeLines(
   format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
   "inst/app/data/last_obis_download_ts.txt"
@@ -70,16 +70,95 @@ gotedna_station <- list(
 )
 saveRDS(gotedna_station, "inst/app/data/gotedna_station.rds")
 
+###################
+#Check Primers for typos
+###################
+library(stringdist)
+library(dplyr)
+library(stringr)
+
+valid_primer_df <- read.csv("inst/app/data/primers.csv")
+valid_primer_df <- valid_primer_df %>% filter(Data == "Metabarcoding")
+
+valid_primer_df <- valid_primer_df %>%
+  mutate(
+    # split OriginalName on <br>
+    primers = str_split(OriginalName, "\\s*<br>\\s*"),
+
+    forward_primer = map_chr(primers, 1),
+    reverse_primer = map_chr(primers, 2),
+
+    primer_display_name = paste0(
+      Locus, " | ",
+      forward_primer, " / ", reverse_primer
+    )
+  ) %>%
+  select(-primers)
+
+valid_primers <- valid_primer_df$primer_display_name
+
+map_primers <- function(
+    observed,
+    valid,
+    method = "osa",
+    max_dist = 2
+) {
+
+  # distance matrix: rows = observed, cols = valid
+  dist_mat <- stringdistmatrix(
+    observed,
+    valid,
+    method = method
+  )
+
+  best_match_idx  <- apply(dist_mat, 1, which.min)
+  best_match_dist <- apply(dist_mat, 1, min)
+
+  tibble(
+    observed_primer = observed,
+    matched_primer  = valid[best_match_idx],
+    distance        = best_match_dist,
+    status = case_when(
+      best_match_dist == 0              ~ "exact",
+      best_match_dist <= max_dist       ~ "corrected",
+      TRUE                              ~ "new_or_unmatched"
+    ),
+    final_primer = if_else(
+      best_match_dist <= max_dist,
+      valid[best_match_idx],
+      observed
+    )
+  )
+}
+
+primer_map <- map_primers(
+  observed = unique(gotedna_data$metabarcoding$primer),
+  valid    = valid_primers,
+  max_dist = 10
+)
+
+View(primer_map)
+
+gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
+  left_join(
+    primer_map %>% select(observed_primer, final_primer),
+    by = c("primer" = "observed_primer")
+  ) %>%
+  mutate(primer = coalesce(final_primer, primer)) %>%
+  select(-final_primer)
+
+saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
 
 #### Need to do for both qPCR and metabarcoding
 # Prepare primer data
-gotedna_data <- readRDS("inst/app/data/gotedna_data.rds")
+# gotedna_data <- readRDS("inst/app/data/gotedna_data.rds")
 
 newprob_mb <- calc_det_prob(gotedna_data$metabarcoding)
 newprob_q <- calc_det_prob(gotedna_data$qPCR)
 
 scaledprobs_mb <- scale_newprob(gotedna_data$metabarcoding, newprob_mb)
 scaledprobs_q <- scale_newprob(gotedna_data$qPCR, newprob_q)
+scaledprobs_q <- NULL
 
 gotedna_primer <- list()
 
