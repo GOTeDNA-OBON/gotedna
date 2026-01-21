@@ -124,7 +124,7 @@ mod_select_data_ui <- function(id) {
           class = "title-container",
           h1(
             "Area selection",
-            span(
+            diagnostic_span(
               id = ns("lock"),
               class = "lock", icon("lock"),
               title = "Map view locked"
@@ -328,7 +328,7 @@ mod_select_data_server <- function(id, r) {
             color: #856404;
           ",
               icon("warning"),
-              " This is a potentially long-running operation and cannot be stopped."
+              " This is a potentially long-running operation and cannot be stopped from the app (must be cancelled on the server or in rStudio)."
             )
           ),
 
@@ -802,5 +802,39 @@ read_uploaded_file <- function(fileinfo) {
   } else {
     stop("Unsupported file type: ", ext)
   }
+}
+
+diagnostic_span <- function(x, ...) {
+  # Pause for interactive inspection
+  browser()
+
+  # Capture all arguments
+  args_list <- list(x = x, ...)
+
+  cat("\n--- diagnostic_span() called ---\n")
+
+  for (arg_name in names(args_list)) {
+    arg_val <- args_list[[arg_name]]
+
+    cat(sprintf("Argument: %s\n", arg_name))
+    cat(sprintf("  Class: %s\n", paste(class(arg_val), collapse = ", ")))
+    cat(sprintf("  Length: %d\n", length(arg_val)))
+
+    if (inherits(arg_val, "shiny.tag")) {
+      # Show a brief preview of the tag
+      cat("  Preview: ")
+      print(arg_val)
+      cat("\n")
+    } else if (length(arg_val) > 1) {
+      cat("  Values (first few):", paste(head(arg_val, 5), collapse = ", "), "\n")
+    } else {
+      cat("  Value:", arg_val, "\n")
+    }
+  }
+
+  cat("--- end of diagnostic_span ---\n\n")
+
+  # Call the real span
+  tags$span(x, ...)
 }
 
