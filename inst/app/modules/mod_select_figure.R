@@ -551,6 +551,9 @@ mod_select_figure_server <- function(id, r) {
       all_na_rows <- apply(authorship_data, 1, function(x) all(is.na(x)))
       authorship_data <- authorship_data[!all_na_rows, ]
 
+      authorship_data <- authorship_data %>%
+        dplyr::mutate(LClabel = dplyr::na_if(LClabel, "NA"))
+
       dt_data <- authorship_data %>%
         dplyr::ungroup() %>%
         dplyr::group_by(protocol_ID, protocolVersion, bibliographicCitation) %>%
@@ -560,28 +563,43 @@ mod_select_figure_server <- function(id, r) {
           Contact = paste(unique(ownerContact), collapse = "; "),
           # collapse LClabels with datasetID_obis prepended as links
           LClabel = {
-            ul <- unique(LClabel[!is.na(LClabel)])
-            sapply(ul, function(lbl) {
+            valid <- !is.na(LClabel)
 
-              # all dataset IDs that correspond to this LClabel
-              ids <- unique(datasetID_obis[LClabel == lbl])
+            if (!any(valid)) {
+              NA_character_
+            } else {
+              ul <- unique(LClabel[valid])
+              out <- vapply(ul, function(lbl) {
 
-              # convert IDs to OBIS links
-              links <- paste0(
-                '<a href="https://obis.org/dataset/', ids,
-                '" target="_blank">', ids, '</a>'
-              )
+                if (is.na(lbl) || !nzchar(lbl)) return(NA_character_)
 
-              paste0(
-                lbl,
-                '<div style="margin-top:10px; font-size: 0.9em;">',
-                '<strong>Data available on the Ocean Biodiversity Information System (OBIS):</strong><br>',
-                paste(links, collapse = ", "),
-                '</div>'
-              )
-            }) %>%
-              paste(collapse = "<br><br>")
+                ids <- unique(datasetID_obis[valid & LClabel == lbl])
+                ids <- ids[!is.na(ids)]
+
+                if (length(ids) == 0) return(NA_character_)
+
+                links <- paste0(
+                  '<a href="https://obis.org/dataset/', ids,
+                  '" target="_blank">', ids, '</a>'
+                )
+
+                paste0(
+                  lbl,
+                  '<div style="margin-top:10px; font-size: 0.9em;">',
+                  '<strong>Data available on the Ocean Biodiversity Information System (OBIS):</strong><br>',
+                  paste(links, collapse = ", "),
+                  '</div>'
+                )
+              }, character(1))
+
+
+              out <- out[!is.na(out)]
+
+              if (length(out) == 0) NA_character_ else paste(out, collapse = "<br><br>")
+            }
           }
+
+
         ) %>%
         dplyr::ungroup()
 
@@ -599,7 +617,7 @@ mod_select_figure_server <- function(id, r) {
         )
 
       # Only assign buttons to rows where LClabel is not NULL
-      rows_with_label <- which(!is.na(dt_data$LClabel))
+      rows_with_label <- which(!is.na(dt_data$LClabel) & nzchar(dt_data$LClabel))
 
       dt_data$`Indigenous Contributions`[rows_with_label] <- sprintf(
         '<button id="%s" style="border:0; background:transparent;" title="Indigenous Contributions">
