@@ -167,7 +167,7 @@ hm_fig <- function(scaledprobs, selected_taxon_level = "scientificName") {
     shareX = FALSE,  # <- important
     shareY = FALSE,
     titleY = FALSE,
-    margin = .03
+    margin = .05
   ) %>%
     layout(height = total_height)
   }
