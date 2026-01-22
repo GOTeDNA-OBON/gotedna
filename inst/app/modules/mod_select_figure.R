@@ -323,7 +323,7 @@ mod_select_figure_server <- function(id, r) {
 
           v_prot <- r$scaledprobs$protocol_ID |> unique()
         } else {
-          showNotification("Data selection is empty", type = "warning")
+          # showNotification("Data selection is empty", type = "warning")
         }
 
         shinyscreenshot::screenshot(
@@ -373,7 +373,6 @@ mod_select_figure_server <- function(id, r) {
 
     update_protocol_menu <- function() {
       if (!is.null(r$data_active) && nrow(r$data_active) > 0) {
-        #browser()
         protocols_by_sample <- r$data_active %>%
           dplyr::distinct(protocol_ID, samp_name)  # unique protocol × sample
 
