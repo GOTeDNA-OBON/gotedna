@@ -13,7 +13,7 @@
 #'   data = gotedna_data$metabarcoding
 #' )
 #' }
-field_sample_fig <- function(newprob, year) {
+field_sample_fig <- function(newprob, year, global_max_size, max_px = 1) {
 
   data <- newP_yr_to_plot_df(
     newprob$newP_yr,
@@ -39,18 +39,12 @@ field_sample_fig <- function(newprob, year) {
   colors <- rep(alphabet_colors, length.out = n_species)
   names(colors) <- species_levels
 
-  max_size <- max(data$`Sample size`, na.rm = TRUE)
-  sizeref <- 40 * max_size / 100^2
+  ## ---- compute fraction of max ----
+  data$size_fraction <- data$`Sample size` / global_max_size
 
   data$month_jittered <- data$month + runif(nrow(data), -0.25, 0.25)
 
-  ## ---- title logic ----
-  plot_title <- if (n_species == 1) {
-    species_levels
-  } else {
-    NULL
-  }
-
+  plot_title <- if (n_species == 1) species_levels else NULL
   show_legend <- n_species > 1
 
   ## ---- plot ----
@@ -62,8 +56,12 @@ field_sample_fig <- function(newprob, year) {
     mode = "markers",
     color = ~scientificName,
     colors = colors,
-    size = ~`Sample size`,
-    marker = list(sizemode = "area", sizeref = sizeref, sizemin = 4),
+    size = ~size_fraction,  # fractions 0-1
+    marker = list(
+      sizemode = "diameter",
+      sizeref = 1 / max_px,  # fraction=1 → max_px
+      sizemin = 4
+    ),
     text = ~paste(
       "Species:", scientificName,
       "<br>Month:", month,
@@ -100,6 +98,7 @@ field_sample_fig <- function(newprob, year) {
                     r = if (n_species == 1) 50 else 150)
     )
 }
+
 
 
 newP_yr_to_plot_df <- function(newP_yr, year) {

@@ -865,8 +865,9 @@ draw_fig_detect <- function(r, ready, threshold) {
 ## Data variation
 draw_fig_samples <- function(newprob, ready, year) {
   if (ready) {
+    global_max_n <- max(unlist(lapply(newprob$newP_yr, `[[`, "n")), na.rm = TRUE)
     p <- field_sample_fig(
-      newprob, year
+      newprob, year, global_max_n
     )
     p
   } else {
