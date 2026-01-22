@@ -679,6 +679,16 @@ mod_select_data_server <- function(id, r) {
 
     observeEvent(input$clear_area, {
       r$geom_slc <- r$station_slc <- NULL
+      r$primer_choices_all <- get_primer_selection(
+        r$taxon_lvl_slc,
+        filter_taxon(
+          isolate(r$cur_data),
+          r$taxon_lvl_slc,
+          r$taxon_id_slc,
+          r$scientificName
+        ),
+        gotedna_primer
+      )
       r$geom <- filter_station(r)
       # Reload module
       sf_edits <<- callModule(
