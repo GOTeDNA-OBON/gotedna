@@ -251,7 +251,7 @@ mod_select_figure_server <- function(id, r) {
           )
 
           # Compute detection probability
-          r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, pool_primers = TRUE)
+          r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, r$frozen_selected_taxon_id, pool_primers = TRUE)
           # Safely scale probabilities
           r$scaledprobs <- tryCatch({
             if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
@@ -265,21 +265,23 @@ mod_select_figure_server <- function(id, r) {
             NULL
           })
 
-          # Do the same for scientificName
-          r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", pool_primers = TRUE)
 
-          r$scaledprobs_by_scientificName <- tryCatch({
-            if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
-              cat("calc_det_prob returned empty for level: scientificName\n")
+          # Do the same for scientificName if level == genus
+          if(r$frozen_selected_taxon_level == "genus") {
+            r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
+
+            r$scaledprobs_by_scientificName <- tryCatch({
+              if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
+                cat("calc_det_prob returned empty for level: scientificName\n")
+                NULL
+              } else {
+                scale_newprob(r$data_ready, r$newprob_by_scientificName, "scientificName")
+              }
+            }, error = function(e) {
+              cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
               NULL
-            } else {
-              scale_newprob(r$data_ready, r$newprob_by_scientificName, "scientificName")
-            }
-          }, error = function(e) {
-            cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
-            NULL
-          })
-
+            })
+          }
 
 
           cli::cli_alert_info("Computing optimal detection window")
