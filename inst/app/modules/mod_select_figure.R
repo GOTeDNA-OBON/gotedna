@@ -677,7 +677,10 @@ mod_select_figure_server <- function(id, r) {
       authorship_data <- authorship_data[!all_na_rows, ]
 
       authorship_data <- authorship_data %>%
-        dplyr::mutate(LClabel = dplyr::na_if(LClabel, "NA"))
+        dplyr::mutate(
+          LClabel = as.character(LClabel),
+          LClabel = dplyr::na_if(LClabel, "NA")
+        )
 
       dt_data <- authorship_data %>%
         dplyr::ungroup() %>%

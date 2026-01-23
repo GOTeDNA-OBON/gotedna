@@ -283,7 +283,7 @@ run_complete_linkage <- function(df, threshold_m, cluster_prefix = "C") {
   if (nrow(df) == 1) return(tibble(cluster = paste0(cluster_prefix, "_1")))
 
   coords <- df[, c("lon", "lat")]
-  dist_mat <- distm(coords)
+  dist_mat <- geosphere::distm(coords)
 
   hc <- hclust(as.dist(dist_mat), method = "complete")
   clusters <- cutree(hc, h = threshold_m)
@@ -302,7 +302,7 @@ hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_p
 
   # Compute approximate max distance for coarse DBSCAN
   coords <- df_unique[, c("lon", "lat")]
-  dist_mat <- distm(coords)
+  dist_mat <- geosphere::distm(coords)
   max_dist <- max(dist_mat)
   eps <- max_dist / 2
 
@@ -331,7 +331,7 @@ hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_p
 update_location_clusters <- function(df,
                                            lat_col = "decimalLatitude",
                                            long_col = "decimalLongitude",
-                                           distance_threshold = 500,
+                                           distance_threshold = 50,
                                            max_hc_size = 500) {
 
   # ---- 1. Ensure stationLabel exists ----
@@ -397,7 +397,7 @@ check_station_distances_unique <- function(df,
       if (n <= 1) return(tibble())
 
       # ---- 2. Compute pairwise distance matrix ----
-      dmat <- distm(pts)
+      dmat <- geosphere::distm(pts)
 
       # ---- 3. Check for distances exceeding threshold ----
       idx <- which(dmat > threshold_m, arr.ind = TRUE)

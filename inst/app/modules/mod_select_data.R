@@ -372,18 +372,17 @@ mod_select_data_server <- function(id, r) {
       df <- read_uploaded_file(input$external_file[1, ])
       showModal(modalDialog(
         title = "Please wait",
-        "Processing coordinates into station clusters. This may take several minutes for larger files (e.g. >20MB).",
+        "Processing coordinates and detection rates. This may take several minutes for large files (e.g. >20MB).",
         footer = NULL,
         easyClose = FALSE
       ))
       on.exit(removeModal(), add = TRUE)
 
-      df_with_assigned_stations <- update_station_variable(df)
+      df_with_assigned_stations <- update_location_clusters(df)
       r$upload_data <- df_with_assigned_stations
       r$upload_stations <- get_station(df_with_assigned_stations)
       r$upload_primers <- newprob_mb <- calc_det_prob(r$upload_data)
       scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
-
       upload_gotedna_primer <- list()
       for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
         upload_gotedna_primer[[i]] <- primer_sort(i, scaledprobs_mb) |>
@@ -394,6 +393,7 @@ mod_select_data_server <- function(id, r) {
       r$cur_data <- r$upload_data
       r$data_station <- r$upload_stations
       r$protocol_ID <- paste0(r$cur_data$protocol_ID)
+      browser()
     })
 
 
@@ -477,7 +477,7 @@ mod_select_data_server <- function(id, r) {
         r$protocol_ID <- paste0(
           r$cur_data$protocol_ID
         )
-
+        r$active_primers <- gotedna_primer
         r$primer_choices_all <- get_primer_selection(
           r$taxon_lvl_slc,
           filter_taxon(
@@ -486,7 +486,7 @@ mod_select_data_server <- function(id, r) {
             r$taxon_id_slc,
             r$scientificName
           ),
-          gotedna_primer
+          r$active_primers
         )
         # Disable fileInput and visually gray it out
         shinyjs::disable("external_file")
@@ -500,7 +500,7 @@ mod_select_data_server <- function(id, r) {
 
         r$cur_data <- r$upload_data
         r$data_station <- r$upload_stations
-
+        r$active_primers <- r$upload_primers
         r$primer_choices_all <- get_primer_selection(
           r$taxon_lvl_slc,
           filter_taxon(
@@ -509,7 +509,7 @@ mod_select_data_server <- function(id, r) {
             r$taxon_id_slc,
             r$scientificName
           ),
-          r$upload_primers
+          r$active_primers
         )
         r$protocol_ID <- paste0(
           r$cur_data$protocol_ID
@@ -608,6 +608,7 @@ mod_select_data_server <- function(id, r) {
           r$taxon_id_slc,
           r$scientificName
         ),
+        r$active_primers
       )
       shinyWidgets::updatePickerInput(
         session,
@@ -704,7 +705,7 @@ mod_select_data_server <- function(id, r) {
           r$taxon_id_slc,
           r$scientificName
         ),
-        gotedna_primer
+        r$active_primers
       )
       r$geom <- filter_station(r)
       # Reload module
