@@ -543,10 +543,13 @@ mod_select_data_server <- function(id, r) {
           "slc_spe",
           choices = c(
             "All",
-            r$cur_data[
-              r$cur_data[[input$taxo_lvl]] == input$taxo_id,
-            ]$scientificName |>
-              unique() |>
+            r$cur_data %>%
+              filter(
+                .data[[input$taxo_lvl]] == input$taxo_id,
+                str_detect(scientificName, " ")  # only names with a space
+              ) %>%
+              pull(scientificName) %>%
+              unique() %>%
               sort()
           ),
           selected = "All"
