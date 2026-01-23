@@ -8,6 +8,7 @@ server <- function(input, output, session) {
     upload_data = NULL,
     upload_stations = NULL,
     upload_primers = NULL,
+    active_primers = NULL,
     scientificName = NULL,
     taxon_lvl_slc = NULL,
     taxon_selected = 0,
