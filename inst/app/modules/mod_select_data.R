@@ -2,13 +2,27 @@
 mod_select_data_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$style(HTML(sprintf("
-          #%s .shiny-file-input-btn:hover {
-            background-color: white !important;
-            color: #2241a7 !important;
-            border-color: #2241a7 !important;
-          }
-        ", ns("download_files")))),
+    tags$style(HTML(paste0(
+      sprintf("
+      #%s .shiny-file-input-btn:hover {
+        background-color: white !important;
+        color: #2241a7 !important;
+        border-color: #2241a7 !important;
+      }
+    ", ns("download_files")),
+      "
+      /* Vertically center the selected text inside shinyWidgets pickerInput */
+      .bootstrap-select > .dropdown-toggle {
+        display: flex !important;
+        align-items: center !important;
+      }
+
+      .bootstrap-select > .dropdown-toggle .filter-option {
+        display: flex !important;
+        align-items: center !important;
+      }
+    "
+    ))),
     div(
       id = "data_request",
       div(

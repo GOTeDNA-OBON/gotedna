@@ -215,10 +215,10 @@ mod_select_figure_server <- function(id, r) {
       r$fig_slc$fig_samples <- !r$fig_slc$fig_samples
     })
 
-    # THIS RUNS WHEN WE CLICK COMPUTE & v\VISUALIZE
+    # THIS RUNS WHEN WE CLICK COMPUTE & VISUALIZE
     observeEvent(
       ignoreInit = TRUE,
-      list(input$compute_and_visualize, input$threshold, input$prot_id),
+      list(input$compute_and_visualize),
       {
         req(input$compute_and_visualize)
         r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
@@ -348,6 +348,136 @@ mod_select_figure_server <- function(id, r) {
       }
     )
 
+    #THIS RUNS WHEN WE CHANGE PROTOCOL ID OR THRESHOLD
+    observeEvent(
+      ignoreInit = TRUE,
+      list(input$threshold, input$prot_id),
+      {
+        req(input$compute_and_visualize)
+        r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
+        r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
+
+        req(input$prot_id)
+        validate(
+          need(input$prot_id != "Not available", "Protocol not selected yet")
+        )
+
+        r$data_ready <- prepare_data(r) |>
+          filter(protocol_ID == input$prot_id)
+
+        if (nrow(r$data_ready)) {
+          showNotification(
+            paste0(
+              "Computing detection window with threshold set to ",
+              input$threshold, "%",
+              ifelse(
+                nrow(r$data_ready) > 1e4,
+                paste0(" (", nrow(r$data_ready), " observations, this may take some time)"),
+                ""
+              )
+            ),
+            type = "message",
+            duration = NULL,
+            id = "notif_calc_win"
+          )
+
+          # Compute detection probability
+          r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, r$frozen_selected_taxon_id, pool_primers = TRUE)
+          # Safely scale probabilities
+          r$scaledprobs <- tryCatch({
+            if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
+              cat("calc_det_prob returned empty")
+              NULL
+            } else {
+              scale_newprob(r$data_ready, r$newprob, r$frozen_selected_taxon_level)
+            }
+          }, error = function(e) {
+            cat("scale_newprob failed:", conditionMessage(e), "\n")
+            NULL
+          })
+
+
+          # Do the same for scientificName if level == genus
+          if(r$frozen_selected_taxon_level == "genus") {
+            r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
+
+            r$scaledprobs_by_scientificName <- tryCatch({
+              if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
+                cat("calc_det_prob returned empty for level: scientificName\n")
+                NULL
+              } else {
+                scale_newprob(r$data_ready, r$newprob_by_scientificName, "scientificName")
+              }
+            }, error = function(e) {
+              cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
+              NULL
+            })
+          }
+
+
+          cli::cli_alert_info("Computing optimal detection window")
+
+          thresh_slc <- input$threshold
+          win <- calc_window(
+            threshold = input$threshold,
+            scaledprobs = r$scaledprobs
+          )
+
+          j.sim <- jaccard_test(
+            r$scaledprobs,
+            input$threshold
+          )
+
+          if (is.null(win)) {
+            #  showNotification("No optimal detection window", type = "warning")
+            output$opt_sampl <- renderUI("No single detection window")
+            output$conf <- renderUI("NA")
+            output$var_year <- renderUI(
+              paste(j.sim)
+            )
+          } else {
+            output$opt_sampl <- renderUI(
+              paste(win$opt_sampling$period)
+            )
+            output$conf <- renderUI(paste(win$fshTest$confidence))
+            output$var_year <- renderUI(
+              paste(j.sim)
+            )
+          }
+
+
+          r$fig_ready <- TRUE
+
+          session$onFlushed(function() {
+            removeNotification(id = "notif_calc_win")
+          }, once = TRUE)
+
+          # create protocol vector
+
+          v_prot <- r$scaledprobs$protocol_ID |> unique()
+        } else {
+          # showNotification("Data selection is empty", type = "warning")
+        }
+
+        shinyscreenshot::screenshot(
+          selector = "#data_request_top_fields",
+          filename = "data_top",
+          download = FALSE, server_dir = tempdir()
+        )
+
+        shinyscreenshot::screenshot(
+          selector = "#data_request_bottom_fields",
+          filename = "data_btm",
+          download = FALSE, server_dir = tempdir()
+        )
+
+        shinyscreenshot::screenshot(
+          selector = "#reference_data_authorship",
+          filename = "dat_auth",
+          download = FALSE, server_dir = tempdir()
+        )
+      }
+    )
 
     update_data_active <- function() {
       out <- r$cur_data_sta_slc
@@ -389,13 +519,7 @@ mod_select_figure_server <- function(id, r) {
           " (", sorted_prot, " samples)"
         )
 
-        # Default selection: largest observation count
-        current_selection <- isolate(input$prot_id)
-        if (is.null(current_selection) || !(current_selection %in% l_prot)) {
-          selected_prot <- names(sorted_prot)[1]  # value with most observations
-        } else {
-          selected_prot <- current_selection
-        }
+        selected_prot <- names(sorted_prot)[1]  # value with most observations
 
         updateSelectInput(
           session,
