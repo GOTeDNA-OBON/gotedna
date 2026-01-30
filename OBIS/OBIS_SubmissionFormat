@@ -47,7 +47,7 @@ GOT_metabar <- GOT_metabar %>%
 
 # If multiple datasets are in the template, remove hashtags to filter for select owner contacts, locations, target genes, etc. specific to each data sheet 
 
-#GOT_f <- GOT %>%
+#GOT <- GOT %>%
 #  filter(
 #    ownerContact == "anais.lacoursiere@dfo-mpo.gc.ca",
 #   decimalLatitude  >= 44.80 & decimalLatitude <= 45.27,   #Filter for coordinates between Bangor and St. John (to exclude PEI data) 
@@ -55,16 +55,16 @@ GOT_metabar <- GOT_metabar %>%
 #  )
 
 # Filter the metabarcoding dataset
-#GOT_metabar_f <- GOT_metabar %>%
+#GOT_metabar <- GOT_metabar %>%
 #  filter(
 #    target_gene == "COI",
 #  )
 
 
 #Combine the two data sheets into one by matching columns by the materialSampleID (sample name) 
-GOT_joined <- GOT_f %>%
+GOT_joined <- GOT %>%
   left_join(
-    GOT_metabar_f,
+    GOT_metabar,
     by = "materialSampleID",
     relationship = "many-to-many"
   )
