@@ -242,7 +242,7 @@ filter_nondetections_all <- function(df,
   if (nrow(df) == 0) return(df)
 
   df %>%
-    group_by(protocol_ID, .data[[selected_taxon_level]]) %>%
+    group_by(protocol_ID, primer, .data[[selected_taxon_level]]) %>%
     group_modify(~ filter_nondetections_specifics(.x, distance = distance)) %>%
     ungroup()
 }

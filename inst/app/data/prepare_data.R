@@ -1,4 +1,16 @@
 
+#Code for removing duplicate data
+# n_before <- nrow(data_df)
+#
+# df_dedup <- data_df[!duplicated(data_df), ]
+#
+# n_after <- nrow(df_dedup)
+#
+# n_duplicates <- n_before - n_after
+# n_duplicates
+
+
+
 #PULLS ALL SUITABLE DATA FROM OBIS
 D_mb <- read_data(
   dataset_ids    = NULL,
