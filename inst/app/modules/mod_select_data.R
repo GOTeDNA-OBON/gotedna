@@ -138,12 +138,12 @@ mod_select_data_ui <- function(id) {
           class = "title-container",
           h1(
             "Area selection",
-            span(
+            htmltools::span(
               id = ns("lock"),
               class = "lock", icon("lock"),
               title = "Map view locked"
             ),
-            span(
+            htmltools::span(
               id = ns("restrict"),
               class = "restrict", icon("warning"),
               title = "Selection restricted to spatial area"
@@ -437,7 +437,7 @@ mod_select_data_server <- function(id, r) {
 
             footer = tagList(
               modalButton("Close"),
-              span(style = "margin-left: 8px; font-size: 0.9em; color: #666;",
+              htmltools::span(style = "margin-left: 8px; font-size: 0.9em; color: #666;",
                    "Closing will not stop the download")
             ),
 
@@ -629,7 +629,7 @@ mod_select_data_server <- function(id, r) {
           class = "sample_selected",
           p(
             "Total number of samples: ",
-            span(
+            htmltools::span(
               class = "sample_selected_map",
               format(r$n_sample, big.mark = ",")
             )
