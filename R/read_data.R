@@ -225,6 +225,7 @@ read_data <- function(
         ),
         primer = dplyr::coalesce(target_subfragment, target_gene)
       )
+
     # ---- 5. Return in GOTeDNA_df-like shape ----
     out <- core_and_extensions %>%
       transmute(
@@ -250,7 +251,7 @@ read_data <- function(
         concentration         = concentration,
         pcr_primer_lod        = pcr_primer_lod,
         detected              = detected,
-        ownerContact          = ownerContact,
+        ownerContact          = project_contact,
         bibliographicCitation = bibliographicCitation,
         datasetID_obis        = datasetID_obis
       )
