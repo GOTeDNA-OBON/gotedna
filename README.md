@@ -112,4 +112,4 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 #### Sampling effort
 ###### Monthly water sampling effort and proportion of samples having positive eDNA detection.
 
-![](man/figures/README-field-3.png)
+![](man/figures/README-field-4.png)

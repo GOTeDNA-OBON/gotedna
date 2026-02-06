@@ -35,9 +35,10 @@ field_sample_fig <- function(newprob, year, global_max_size, max_px = 1) {
   species_levels <- sort(unique(data$scientificName))
   n_species <- length(species_levels)
 
-  alphabet_colors <- RColorBrewer::brewer.pal(8, "Set1")
-  colors <- rep(alphabet_colors, length.out = n_species)
+  colors <- viridis::viridis(n_species)  # returns numeric vector of colors
   names(colors) <- species_levels
+  # colors <- rep(species_colors, length.out = n_species)
+  # names(colors) <- species_levels
 
   ## ---- compute fraction of max ----
   data$size_fraction <- data$`Sample size` / global_max_size

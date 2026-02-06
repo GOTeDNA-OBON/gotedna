@@ -97,8 +97,8 @@ valid_primer_df <- valid_primer_df %>%
     # split OriginalName on <br>
     primers = str_split(OriginalName, "\\s*<br>\\s*"),
 
-    forward_primer = map_chr(primers, 1),
-    reverse_primer = map_chr(primers, 2),
+    forward_primer = purrr::map_chr(primers, 1),
+    reverse_primer = purrr::map_chr(primers, 2),
 
     primer_display_name = paste0(
       Locus, " | ",
@@ -149,7 +149,7 @@ primer_map <- map_primers(
   max_dist = 10
 )
 
-View(primer_map)
+# View(primer_map)
 
 gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   left_join(
