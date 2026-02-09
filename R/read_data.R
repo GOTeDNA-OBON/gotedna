@@ -225,8 +225,20 @@ read_data <- function(
         ),
         primer = dplyr::coalesce(target_subfragment, target_gene)
       )
-
+    if (!check_required_cols(core_and_extensions, old_cols, ds)) {
+      return(NULL)
+    }
     # ---- 5. Return in GOTeDNA_df-like shape ----
+    out <- core_and_extensions %>%
+      mutate(
+        samp_name = as.character(samp_name),
+        sprintf(
+          "%s | %s / %s",
+          target_gene,
+          pcr_primer_name_forward,
+          pcr_primer_name_reverse
+        )
+      )
     out <- core_and_extensions %>%
       transmute(
         protocol_ID           = protocol_ID,
@@ -257,6 +269,7 @@ read_data <- function(
       )
     out
   })
+  obis_list <- Filter(Negate(is.null), obis_list)
   ## 6. Bind everything together ----
   obis_list <- purrr::compact(obis_list)
   if (length(obis_list) == 0L) {
@@ -421,5 +434,105 @@ check_station_distances_unique <- function(df,
   }
 
   return(violations)
+}
+
+
+
+
+##############NEW LIST SANDBOX HERE
+
+
+old_cols <- c(
+  "protocol_ID",
+  "protocolVersion",
+  "samp_name",
+  "primer",
+  "scientificName",
+  "kingdom",
+  "phylum",
+  "class",
+  "order",
+  "family",
+  "genus",
+  "eventDate",
+  "LClabel",
+  "decimalLatitude",
+  "decimalLongitude",
+  "station",
+  "year",
+  "month",
+  "organismQuantity",
+  "concentration",
+  "pcr_primer_lod",
+  "detected",
+  "project_contact",
+  "bibliographicCitation",
+  "datasetID_obis"
+)
+
+# protocol_ID           = protocol_ID,
+# protocolVersion       = protocolVersion,
+# samp_name             = as.character(samp_name),
+# primer                = sprintf("%s | %s / %s", target_gene, pcr_primer_name_forward, pcr_primer_name_reverse),
+# scientificName        = scientificName,
+# kingdom               = kingdom,
+# phylum                = phylum,
+# class                 = class,
+# order                 = order,
+# family                = family,
+# genus                 = genus,
+# eventDate             = eventDate_clean,
+# LClabel               = LClabel,
+# decimalLatitude       = decimalLatitude,
+# decimalLongitude      = decimalLongitude,
+# station               = station,
+# year                  = year,
+# month                 = month,
+# organismQuantity      = organismQuantity,
+# concentration         = concentration,
+# pcr_primer_lod        = pcr_primer_lod,
+# detected              = detected,
+# ownerContact          = project_contact,
+# bibliographicCitation = bibliographicCitation,
+# datasetID_obis        = datasetID_obis
+
+protocol_columns <- c(
+  'samp_size',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol',
+  'target_gene',
+  'pcr_primer_forward',
+  'pcr_primer_reverse',
+  'nucl_acid_ext_kit',
+  'platform',
+  'instrument',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr'
+  )
+
+not_found <- setdiff(new_columns, names(core_and_extensions_debug))
+#"platform"       "instrument"     "tax_assign_cat"
+
+
+check_required_cols <- function(df, req_cols, dataset_id) {
+  missing <- setdiff(req_cols, names(df))
+
+  if (length(missing) > 0) {
+    message(
+      sprintf(
+        'dataset_id: "%s" did not have required column(s): %s',
+        dataset_id,
+        paste(missing, collapse = ", ")
+      )
+    )
+    return(FALSE)
+  }
+
+  TRUE
 }
 
