@@ -216,49 +216,75 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
 
 }
 
+#
+# protocol_info <- data.frame(
+#   protocol_id = 1:10,
+#   pcr_primer_forward = c(
+#     "MiFish-U",
+#     "MiFish-E",
+#     "12S-V5",
+#     "COI-Leray",
+#     "16S-Metazoa",
+#     "18S-V4",
+#     "ITS2",
+#     "rbcL",
+#     "trnL",
+#     "12S-Teleo"
+#   ),
+#   filter_material = c(
+#     "0.45 µm cellulose nitrate",
+#     "0.22 µm Sterivex",
+#     "0.45 µm glass fiber",
+#     "0.7 µm GF/F",
+#     "0.22 µm polycarbonate",
+#     "0.45 µm mixed cellulose ester",
+#     "0.22 µm PES",
+#     "0.45 µm nylon",
+#     "0.22 µm PVDF",
+#     "0.7 µm glass fiber"
+#   ),
+#   samp_size = c(
+#     75, 75, 80, 70, 85,
+#     90, 60, 75, 80, 85
+#   ),
+#   notes = c(
+#     "Optimized for freshwater fish communities.",
+#     "Enhanced detection of marine teleosts.",
+#     "Broad vertebrate detection with moderate specificity.",
+#     "Metabarcoding for invertebrates.",
+#     "Good for mixed metazoan assemblages.",
+#     "Eukaryotic community profiling.",
+#     "Fungal diversity surveys.",
+#     "Plant barcoding in freshwater systems.",
+#     "Chloroplast marker for degraded samples.",
+#     "High specificity for teleost fish."
+#   ),
+#   stringsAsFactors = FALSE
+# )
 
-protocol_info <- data.frame(
-  protocol_id = paste0("PROT_", sprintf("%02d", 1:10)),
-  primer = c(
-    "MiFish-U",
-    "MiFish-E",
-    "12S-V5",
-    "COI-Leray",
-    "16S-Metazoa",
-    "18S-V4",
-    "ITS2",
-    "rbcL",
-    "trnL",
-    "12S-Teleo"
-  ),
-  filter = c(
-    "0.45 µm cellulose nitrate",
-    "0.22 µm Sterivex",
-    "0.45 µm glass fiber",
-    "0.7 µm GF/F",
-    "0.22 µm polycarbonate",
-    "0.45 µm mixed cellulose ester",
-    "0.22 µm PES",
-    "0.45 µm nylon",
-    "0.22 µm PVDF",
-    "0.7 µm glass fiber"
-  ),
-  threshold = c(
-    75, 75, 80, 70, 85,
-    90, 60, 75, 80, 85
-  ),
-  notes = c(
-    "Optimized for freshwater fish communities.",
-    "Enhanced detection of marine teleosts.",
-    "Broad vertebrate detection with moderate specificity.",
-    "Metabarcoding for invertebrates.",
-    "Good for mixed metazoan assemblages.",
-    "Eukaryotic community profiling.",
-    "Fungal diversity surveys.",
-    "Plant barcoding in freshwater systems.",
-    "Chloroplast marker for degraded samples.",
-    "High specificity for teleost fish."
-  ),
-  stringsAsFactors = FALSE
+protocol_info <- readRDS("data/protocol_sheet.rds")
+
+protocol_labels <- c(
+  samp_size = "Sample Size (L)",
+  size_frac = "Size Fraction",
+  filter_material = "Filter Material",
+  samp_mat_process = "Sample Processing Method",
+  minimumDepthInMeters = "Minimum Depth (m)",
+  maximumDepthInMeters = "Maximum Depth (m)",
+
+  samp_store_temp = "Storage Temperature",
+  samp_store_sol = "Storage Solution",
+
+  target_gene = "Target Gene",
+  pcr_primer_forward = "Forward Primer",
+  pcr_primer_reverse = "Reverse Primer",
+  nucl_acid_ext_kit = "DNA Extraction Kit",
+
+  platform = "Sequencing Platform",
+  instrument = "Instrument",
+  seq_kit = "Sequencing Kit",
+
+  otu_db = "Reference Database",
+  tax_assign_cat = "Taxonomic Assignment Method",
+  otu_seq_comp_appr = "OTU/ASV Approach"
 )
-

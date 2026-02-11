@@ -72,6 +72,43 @@ mod_select_figure_ui <- function(id) {
       )
     ),
     div(
+      id = "observation_protocol",
+      fluidRow(
+        class = "",
+        column(
+          3,
+          class = "control-panel",
+          div(
+            id = "protocol_panel",
+            class = "section_header",
+            h1("Protocol")
+          ),
+          div(
+            id = "fig_left_panel",
+            selectInput(
+              ns("prot_id"),
+              label = tagList(
+                "Protocol ID ",
+                actionLink(
+                  ns("protocol_info_btn"),
+                  icon("info-circle"),
+                  class = "definition",
+                  title = "Click for protocol details"
+                )
+              ),
+              choices = "Not available",
+              selected = NULL
+            )
+          )
+        ),
+        column(
+          width = 8,
+          uiOutput(ns("protocol_details"))
+        )
+      )
+    ),
+
+    div(
       id = "observation",
       fluidRow(
         class = "panels-container",
@@ -90,20 +127,6 @@ mod_select_figure_ui <- function(id) {
               "Threshold",
               choices = ls_threshold,
               selected = 75
-            ),
-            selectInput(
-              ns("prot_id"),
-              label = tagList(
-                "Protocol ID ",
-                actionLink(
-                  ns("protocol_info_btn"),
-                  icon("info-circle"),
-                  class = "definition",
-                  title = "Click for protocol details"
-                )
-              ),
-              choices = "Not available",
-              selected = NULL
             ),
             div(
               id = "fig_sampling_info",
@@ -551,13 +574,13 @@ mod_select_figure_server <- function(id, r) {
     protocol_info_reactive <- reactive({
       req(input$prot_id)
       protocol_info |>
-        dplyr::filter(protocol_id == input$prot_id)
+        dplyr::filter(protocol_ID == input$prot_id)
     })
 
     observeEvent(input$protocol_info_btn, {
       showModal(
         modalDialog(
-          title = paste("Protocol:", input$protocol_id),
+          title = paste("Protocol:", input$prot_id),
           uiOutput(ns("protocol_table")),
           easyClose = TRUE,
           footer = modalButton("Close")
@@ -575,6 +598,131 @@ mod_select_figure_server <- function(id, r) {
         strong("Notes:"), info$notes
       )
     })
+
+    selected_protocol_rows <- reactive({
+      req(input$prot_id)
+
+      protocol_info %>%
+        dplyr::filter(
+          protocol_ID == input$prot_id
+        )
+    })
+
+    # --- base protocol per Location (the "starting choice") ---
+    base_protocol <- reactiveVal(4)
+
+    # live details card
+    output$protocol_details <- renderUI({
+      df <- selected_protocol_rows()
+
+      if (nrow(df) == 0) {
+        return(tags$div(style="margin-top:10px;", em("No rows found for this ProtocolID.")))
+      }
+
+      method_groups <- list(
+        "Field Methods" = c("samp_size","size_frac","filter_material","samp_mat_process",
+                            "minimumDepthInMeters","maximumDepthInMeters"),
+        "Storage Methods" = c("samp_store_temp","samp_store_sol"),
+        "Lab Methods" = c("target_gene","pcr_primer_forward","pcr_primer_reverse","nucl_acid_ext_kit"),
+        "Library Preparation" = c("platform","instrument","seq_kit"),
+        "Bioinformatic Methods" = c("otu_db","tax_assign_cat","otu_seq_comp_appr")
+      )
+
+      pick_display <- function(x) {
+        x <- as.character(x)
+        x <- x[!is.na(x) & nzchar(trimws(x))]
+        if (length(x) == 0) return(NA_character_)
+        ux <- unique(x)
+        if (length(ux) == 1) ux else paste(ux, collapse = " | ")
+      }
+
+      # Build base df (for comparison)
+      bp <- base_protocol()
+      df_base <- NULL
+      if (!is.null(bp) && nzchar(bp)) {
+        df_base <- protocol_info %>%
+          dplyr::filter(protocol_ID == bp)
+        if (nrow(df_base) == 0) df_base <- NULL
+      }
+
+      # UI
+
+      tags$div(
+        class = "protocol-details-wrap",
+        tagList(
+          lapply(names(method_groups), function(group_name) {
+            fields <- method_groups[[group_name]]
+
+            # Keep only fields that actually exist in df
+            fields <- fields[fields %in% names(df)]
+            if (length(fields) == 0) return(NULL)  # hide empty groups
+
+            tags$div(
+              tags$h5(class = "protocol-group-title", group_name),
+
+              tags$div(
+                class="protocol-grid",
+
+                lapply(fields, function(f) {
+                  cur <- pick_display(df[[f]])
+                  bas <- if (!is.null(df_base) && f %in% names(df_base)) pick_display(df_base[[f]]) else NA_character_
+
+                  cur2 <- ifelse(is.na(cur), "", trimws(as.character(cur)))
+                  bas2 <- ifelse(is.na(bas), "", trimws(as.character(bas)))
+
+                  changed <- nzchar(cur2) && nzchar(bas2) && !identical(cur2, bas2)
+                  is_na   <- !nzchar(cur2)
+
+                  display_value <- if (nchar(cur2) > 60) {
+                    paste0(substr(cur2, 1, 60), "…")
+                  } else {
+                    cur2
+                  }
+                  has_url <- grepl("https?://", cur2)
+
+                  display_value <- if (has_url) {
+                    # Extract URL
+                    url <- sub(".*(https?://[^ )]+).*", "\\1", cur2)
+
+                    # Extract label before URL
+                    label <- trimws(gsub("\\(https?://.*\\)", "", cur2))
+
+                    # Fallback if label is empty
+                    if (!nzchar(label)) label <- "View link"
+
+                    tags$a(
+                      href = url,
+                      target = "_blank",
+                      label
+                    )
+                  } else {
+                    cur2
+                  }
+
+
+                  tags$div(
+                    tags$div(
+                      class="protocol-field-title",
+                      protocol_labels[[f]] %||% f
+                    ),
+
+                    tags$div(
+                      class = paste("protocol-card", if (changed) "changed", if (is_na) "na"),
+                      if (is_na) "—" else display_value
+                    )
+                  )
+                })
+              )
+            )
+          })
+        )
+      )
+    })
+
+
+
+
+
 
 
     # FIGURES
@@ -1286,5 +1434,29 @@ toggle_fig <- function(fig_id) {
   shinyjs::toggle(paste0(fig_id, "_thumbnail_selected"))
   shinyjs::toggle(paste0(fig_id, "_fig_container"))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
