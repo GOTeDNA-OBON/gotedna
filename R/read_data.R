@@ -95,6 +95,7 @@ read_data <- function(
     message("Found ", length(dataset_ids), " dataset(s) with DNADerivedData.")
   }
   dataset_ids <- as.character(dataset_ids)
+
   ## 1. Loop over datasets and pull DNADerivedData occurrences ----
   obis_list <- purrr::map(dataset_ids, function(ds) {
     message("Pulling OBIS dataset: ", ds)
@@ -208,6 +209,9 @@ read_data <- function(
         decimalLatitude  = suppressWarnings(as.numeric(decimalLatitude)),
         decimalLongitude = suppressWarnings(as.numeric(decimalLongitude))
       )
+    if (!has_required_cols(core_and_extensions, required_cols)) {
+      return(NULL)
+    }
     # Safe versions if fields are missing
     core_and_extensions <- core_and_extensions %>%
       mutate(
@@ -226,47 +230,48 @@ read_data <- function(
         primer = dplyr::coalesce(target_subfragment, target_gene)
       )
 
+    #select the necessary columns
+    core_and_extensions <- enforce_schema(
+      core_and_extensions,
+      required = required_cols,
+      optional = protocol_columns
+    )
+    if (is.null(core_and_extensions)) {
+      return(NULL)
+    }
+    dup_names <- names(core_and_extensions)[duplicated(names(core_and_extensions))]
+
+    if (length(dup_names) > 0) {
+      message("Duplicate column names detected:")
+      print(unique(dup_names))
+    }
     # ---- 5. Return in GOTeDNA_df-like shape ----
     out <- core_and_extensions %>%
-      transmute(
-        protocol_ID           = protocol_ID,
-        protocolVersion       = protocolVersion,
-        samp_name             = as.character(samp_name),
-        primer                = sprintf("%s | %s / %s", target_gene, pcr_primer_name_forward, pcr_primer_name_reverse),
-        scientificName        = scientificName,
-        kingdom               = kingdom,
-        phylum                = phylum,
-        class                 = class,
-        order                 = order,
-        family                = family,
-        genus                 = genus,
-        eventDate             = eventDate_clean,
-        LClabel               = LClabel,
-        decimalLatitude       = decimalLatitude,
-        decimalLongitude      = decimalLongitude,
-        station               = station,
-        year                  = year,
-        month                 = month,
-        organismQuantity      = organismQuantity,
-        concentration         = concentration,
-        pcr_primer_lod        = pcr_primer_lod,
-        detected              = detected,
-        ownerContact          = project_contact,
-        bibliographicCitation = bibliographicCitation,
-        datasetID_obis        = datasetID_obis
+      mutate(
+        samp_name = as.character(samp_name),
+        primer = sprintf(
+          "%s | %s / %s",
+          target_gene,
+          pcr_primer_name_forward,
+          pcr_primer_name_reverse
+        ),
+        eventDate = eventDate_clean
       )
     out
   })
   ## 6. Bind everything together ----
+
   obis_list <- purrr::compact(obis_list)
+
   if (length(obis_list) == 0L) {
     warning("No OBIS datasets with DNADerivedData and both present/absent occurrenceStatus returned any records for these filters.")
     return(tibble::tibble())
   }
+
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
-  # saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
-  GOTeDNA_df_with_assigned_stations <- update_location_clusters(GOTeDNA_df)
+  GOTeDNA_df_with_assigned_stations <-
+    update_location_clusters(GOTeDNA_df)
 
   GOTeDNA_df_with_assigned_stations
 
@@ -422,4 +427,146 @@ check_station_distances_unique <- function(df,
 
   return(violations)
 }
+
+
+required_cols <- c(
+  # "protocol_ID",
+  # "protocolVersion",
+  "samp_name",
+  "target_gene",
+  "pcr_primer_name_forward",
+  "pcr_primer_name_reverse",
+  "scientificName",
+  "kingdom",
+  "phylum",
+  "class",
+  "order",
+  "family",
+  "genus",
+  "eventDate_clean",
+  "LClabel",
+  "decimalLatitude",
+  "decimalLongitude",
+  "organismQuantity",
+  "concentration",
+  "pcr_primer_lod",
+  "datasetID_obis"
+)
+
+
+
+protocol_columns <- c(
+'samp_size',
+'size_frac',
+'filter_material',
+'samp_mat_process',
+'samp_store_temp',
+'samp_store_sol',
+# 'target_gene',
+'project_contact',
+# 'pcr_primer_forward',
+# 'pcr_primer_reverse',
+'nucl_acid_ext_kit',
+'platform',
+'instrument',
+'seq_kit',
+'otu_db',
+'tax_assign_cat',
+'otu_seq_comp_appr',
+'minimumDepthInMeters',
+'maximumDepthInMeters'
+)
+
+has_required_cols <- function(df, required_cols) {
+  missing <- setdiff(required_cols, colnames(df))
+
+  if (length(missing) > 0) {
+    message(
+      "Skipping dataset — missing columns: ",
+      paste(missing, collapse = ", ")
+    )
+    return(FALSE)
+  }
+
+  TRUE
+}
+
+
+enforce_schema <- function(df, required, optional) {
+  # Check required columns exist
+  missing_required <- setdiff(required, names(df))
+  if (length(missing_required)) {
+    message("Missing required columns: ", paste(missing_required, collapse = ", "))
+    return(NULL)
+  }
+
+  # Only add optional columns that aren't already in df
+  optional_to_add <- setdiff(optional, names(df))
+  if (length(optional_to_add)) {
+    df[optional_to_add] <- NA
+  }
+
+  # Strict allow-list: only include each column once
+  df <- df[, c(required, optional_to_add), drop = FALSE]
+
+  df
+}
+
+
+assign_protocol_ID <- function(df, cols, protocol_sheet = NULL) {
+
+  if ("protocol_ID" %in% names(df)) {
+    df <- df %>% select(-protocol_ID)
+  }
+
+  # Get distinct combinations in incoming data
+  new_combos <- df %>%
+    select(all_of(cols)) %>%
+    distinct()
+
+  # ---------------------------------------------------------
+  # CASE 1: No existing protocol sheet → create fresh
+  # ---------------------------------------------------------
+  if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
+
+    protocol_sheet <- new_combos %>%
+      mutate(protocol_ID = row_number())
+
+  } else {
+
+    # ---------------------------------------------------------
+    # CASE 2: Existing protocol sheet → extend it
+    # ---------------------------------------------------------
+
+    # Find combinations not already in protocol_sheet
+    unseen_combos <- anti_join(
+      new_combos,
+      protocol_sheet %>% select(all_of(cols)),
+      by = cols
+    )
+
+    if (nrow(unseen_combos) > 0) {
+
+      max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
+
+      unseen_combos <- unseen_combos %>%
+        mutate(protocol_ID = row_number() + max_id)
+
+      protocol_sheet <- bind_rows(protocol_sheet, unseen_combos)
+    }
+  }
+
+  # ---------------------------------------------------------
+  # Assign protocol_ID back to df
+  # ---------------------------------------------------------
+  df_with_ids <- df %>%
+    left_join(protocol_sheet, by = cols)
+
+  return(list(
+    data = df_with_ids,
+    protocol_sheet = protocol_sheet
+  ))
+}
+
+
 
