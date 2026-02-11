@@ -513,10 +513,19 @@ h6 {
 /* #ObservationCSS */
 #observation {
   background-color: #e8e8e8;
-  padding: 80px 50px 0;
+  padding: 20px 50px 0;
 }
 
 #observation .section_header {
+  padding: 0;
+}
+
+#observation_protocol {
+  background-color: #e8e8e8;
+  padding: 80px 50px 0;
+}
+
+#observation_protocol .section_header {
   padding: 0;
 }
 
@@ -944,6 +953,74 @@ shiny-plot-output {
   padding: 15px 20px;
 }
 
+.protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
 
+.protocol-field-title {
+  font-size: 13px;
+  font-weight: 400 !important;
+  margin-bottom: 4px;
+  color: #0b2a2a;
+}
+
+.protocol-card {
+  background: #EAF7FB;            /* pastel baby blue */
+  border: 1px solid rgba(49, 180, 219, 0.75); /* deepskyblue border */
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0b2a2a;                 /* readable dark text */
+  box-shadow: 0 1px 6px rgba(44, 98, 203, 0.10);
+  transition: background-color 250ms ease, border-color 250ms ease, box-shadow 250ms ease, color 250ms ease;
+}
+
+/* changed card = darker */
+.protocol-card.changed {
+  background: #9ADBE8;            /* royalblue (DARKEST = changed) */
+  border-color: #2f9ae6;          /* dodgerblue border */
+  color: #0b2a2a;
+  box-shadow: 0 0 0 3px rgba(32, 224, 98, 0.35); /* spring green glow */
+}
+
+/* optional: for missing values */
+.protocol-card.na {
+  background: #EAF7FB;            /* pastel baby blue */
+  border-color: #31b4db;          /* deepskyblue */
+  color: #0b2a2a;
+  opacity: 0.9;
+}
+
+.protocol-group-title{
+  font-weight: 700 !important;
+  font-size: 15px;
+  margin: 14px 0 8px 0;
+  color: #0b2a2a;
+}
+
+/* remove the extra top offset */
+.protocol-details-wrap { margin-top: 0 !important; }
+
+/* only the FIRST section title gets no top margin */
+.protocol-details-wrap .protocol-group-title:first-of-type{
+  margin-top: 0 !important;
+}
+
+/* normal spacing for every section title */
+.protocol-group-title{
+  font-weight: 700;
+  margin: 14px 0 8px 0;   /* <-- this is the separation you lost */
+}
+
+/* but DON'T push the first title down */
+.protocol-details-wrap .protocol-group-title:first-of-type{
+  margin-top: 0;
+}
+
+.protocol-grid { margin-bottom: 10px; }
 
 
