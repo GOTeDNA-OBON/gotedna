@@ -88,13 +88,7 @@ mod_select_figure_ui <- function(id) {
             selectInput(
               ns("prot_id"),
               label = tagList(
-                "Protocol ID ",
-                actionLink(
-                  ns("protocol_info_btn"),
-                  icon("info-circle"),
-                  class = "definition",
-                  title = "Click for protocol details"
-                )
+                "Protocol ID "
               ),
               choices = "Not available",
               selected = NULL
@@ -571,34 +565,6 @@ mod_select_figure_server <- function(id, r) {
 
     observe({ update_protocol_menu() })
 
-    protocol_info_reactive <- reactive({
-      req(input$prot_id)
-      protocol_info |>
-        dplyr::filter(protocol_ID == input$prot_id)
-    })
-
-    observeEvent(input$protocol_info_btn, {
-      showModal(
-        modalDialog(
-          title = paste("Protocol:", input$prot_id),
-          uiOutput(ns("protocol_table")),
-          easyClose = TRUE,
-          footer = modalButton("Close")
-        )
-      )
-    })
-
-    output$protocol_table <- renderUI({
-      info <- protocol_info_reactive()
-
-      tagList(
-        strong("Primer:"), info$primer, br(),
-        strong("Filter:"), info$filter, br(),
-        strong("Threshold:"), info$threshold, br(),
-        strong("Notes:"), info$notes
-      )
-    })
-
     selected_protocol_rows <- reactive({
       req(input$prot_id)
 
@@ -712,7 +678,8 @@ mod_select_figure_server <- function(id, r) {
                     )
                   )
                 })
-              )
+              ),
+              tags$hr(style="border: 0; border-bottom: 1px solid #444; margin: 10px 0;")
             )
           })
         )

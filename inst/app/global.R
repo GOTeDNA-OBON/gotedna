@@ -265,14 +265,14 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
 protocol_info <- readRDS("data/protocol_sheet.rds")
 
 protocol_labels <- c(
-  samp_size = "Sample Size (L)",
-  size_frac = "Size Fraction",
+  samp_size = "Sample Volume (L)",
+  size_frac = "Filter Pore Size",
   filter_material = "Filter Material",
   samp_mat_process = "Sample Processing Method",
   minimumDepthInMeters = "Minimum Depth (m)",
   maximumDepthInMeters = "Maximum Depth (m)",
 
-  samp_store_temp = "Storage Temperature",
+  samp_store_temp = "Storage Temperature (°C)",
   samp_store_sol = "Storage Solution",
 
   target_gene = "Target Gene",

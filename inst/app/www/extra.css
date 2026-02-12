@@ -421,7 +421,7 @@ h6 {
 
 /* #AreaCSS*/
 #area_selection {
-  background-color: #75f9c6;
+  background-color: #e8e8e8;
 }
 
 
@@ -955,7 +955,7 @@ shiny-plot-output {
 
 .protocol-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
@@ -1003,7 +1003,7 @@ shiny-plot-output {
 }
 
 /* remove the extra top offset */
-.protocol-details-wrap { margin-top: 0 !important; }
+.protocol-details-wrap { margin-top: 0 !important; width: 50%; }
 
 /* only the FIRST section title gets no top margin */
 .protocol-details-wrap .protocol-group-title:first-of-type{
