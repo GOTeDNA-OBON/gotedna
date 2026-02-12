@@ -93,13 +93,17 @@ mod_select_figure_ui <- function(id) {
           class = "control-panel",
           div(
             id = "fig_left_panel",
-            selectInput(
-              ns("prot_id"),
+            shinyWidgets::pickerInput(
+              inputId = ns("prot_id"),
               label = tagList(
                 "Protocol ID "
               ),
               choices = "Not available",
-              selected = NULL
+              multiple = TRUE,
+              options = list(
+                `actions-box` = TRUE,      # select all / deselect all
+                `live-search` = FALSE       # search bar (nice if we have lots of protocols)
+              )
             )
           )
         ),
@@ -269,7 +273,7 @@ mod_select_figure_server <- function(id, r) {
         )
 
         r$data_ready <- prepare_data(r) |>
-          filter(protocol_ID == input$prot_id)
+          filter(protocol_ID %in% input$prot_id)
 
         if (nrow(r$data_ready)) {
           showNotification(
@@ -558,15 +562,16 @@ mod_select_figure_server <- function(id, r) {
 
         selected_prot <- names(sorted_prot)[1]  # value with most observations
 
-        updateSelectInput(
+        shinyWidgets::updatePickerInput(
           session,
           "prot_id",
           choices = l_prot,
           selected = selected_prot
         )
+
       } else {
         # No data → empty the menu
-        updateSelectInput(
+        shinyWidgets::updatePickerInput(
           session,
           "prot_id",
           choices = list(),
