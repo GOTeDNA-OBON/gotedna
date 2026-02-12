@@ -73,16 +73,24 @@ mod_select_figure_ui <- function(id) {
     ),
     div(
       id = "observation_protocol",
+      div(
+        id = "protocol_panel",
+        class = "title-container",
+        h1("Protocol Selection"),
+        div(
+          class = "buttons-container",
+          actionButton(ns("hide_prots"), "Hide/Show Protocols",
+                       title = "Hide or show fields"
+          )
+        )
+      ),
+
       fluidRow(
+        id = ns("protocol_section"),
         class = "",
         column(
           3,
           class = "control-panel",
-          div(
-            id = "protocol_panel",
-            class = "section_header",
-            h1("Protocol")
-          ),
           div(
             id = "fig_left_panel",
             selectInput(
@@ -186,6 +194,10 @@ mod_select_figure_server <- function(id, r) {
 
     observeEvent(input$hide_figs, {
       shinyjs::toggle("figure_selection_main")
+    })
+
+    observeEvent(input$hide_prots, {
+      shinyjs::toggle("protocol_section")
     })
 
     observeEvent(input$select_all, {
