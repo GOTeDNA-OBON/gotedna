@@ -63,13 +63,21 @@ read_data_test <- function(
     }
 
     # ---- 1b. Pull occurrence records with DNADerivedData + filters ----
-    rec <- robis::occurrence(
+    rec_with_absences <- robis::occurrence(
       datasetid      = ds,
       scientificname = scientificname,
       taxonid        = worms_id,
       areaid         = areaid,
       geometry       = geometry,
       absence        = "include",
+    )
+    rec_with_extensions <- robis::occurrence(
+      datasetid      = ds,
+      scientificname = scientificname,
+      taxonid        = worms_id,
+      areaid         = areaid,
+      geometry       = geometry,
+      extensions  = c("DNADerivedData", "MeasurementOrFact")
       hasextensions  = c("DNADerivedData", "MeasurementOrFact")
     )
     browser()
@@ -78,7 +86,7 @@ read_data_test <- function(
       return(NULL)
     }
     # ---- 1c. Build core_occ and filter on occurrenceStatus ----
-    core_occ <- rec %>%
+    core_occ <- rec_with_extensions %>%
       distinct(occurrenceID, .keep_all = TRUE)
     if (!"occurrenceStatus" %in% names(core_occ)) {
       warning("Dataset ", ds, " has no occurrenceStatus column; skipping.")
@@ -97,13 +105,15 @@ read_data_test <- function(
       }
     }
     # Keep also an id-based core for joining if needed
-    core_id <- rec %>%
+    core_id <- rec_with_absences %>%
       distinct(id, .keep_all = TRUE)
+
+
     # DNADerivedData extension (includes `id` by default)
-    dna_only <- robis::unnest_extension(rec, "DNADerivedData")
+    dna_only <- robis::unnest_extension(rec_with_extensions, "DNADerivedData")
     browser()
     #MeasurementOfFact extension
-    mof_only <- unnest_extension(rec, "MeasurementOrFact")
+    mof_only <- unnest_extension(rec_with_extensions, "MeasurementOrFact")
     browser()
     mof_only <- mof_only %>%
       group_by(occurrenceID, measurementType) %>%
