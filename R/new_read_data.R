@@ -5,7 +5,8 @@ read_data_test <- function(
     areaid         = 34,                               #Canada: North Atlantic
     geometry       = "POLYGON ((-67.72 40.614, -56.821 40.614, -56.821 47.279, -67.72 47.279, -67.72 40.614))",
     join_by        = c("auto", "occurrenceID", "id"),
-    require_absences = TRUE
+    require_absences = TRUE,
+    require_dna_sequence = FALSE
 ) {
   library(robis)
   library(dplyr)
@@ -15,6 +16,28 @@ read_data_test <- function(
   library(dbscan)
   library(geosphere)
   library(sf)
+
+
+  cols_not_needed_at_pull <- c(
+    "eventDate_clean", "year","month","datasetID_obis"
+  )
+
+  extra_cols_needed_at_pull <- c("dna", "mof", "absence", "occurrenceStatus", "materialSampleID", "eventDate")
+  need_cols <- c(
+    "samp_name","target_gene","pcr_primer_name_forward","pcr_primer_name_reverse",
+    "occurrenceID", "id", "occurrenceStatus","basisOfRecord","scientificName","scientificNameID",
+    "kingdom","phylum","class","order","family","genus",
+    "eventDate_clean","LClabel","decimalLatitude","decimalLongitude","year","month",
+    "organismQuantity","samp_size","size_frac","filter_material","samp_mat_process",
+    "samp_store_temp","samp_store_sol","nucl_acid_ext_kit",
+    "platform","instrument","seq_kit","otu_db","tax_assign_cat","otu_seq_comp_appr",
+    "minimumDepthInMeters","maximumDepthInMeters","project_contact","bibliographicCitation",
+    "datasetID_obis","category","hab", "samp_name", "target_subfragment", "target_gene"
+  )
+
+  keep_at_pull_cols <- setdiff(need_cols, cols_not_needed_at_pull)
+  keep_at_pull_cols <- c(keep_at_pull_cols, extra_cols_needed_at_pull)
+
   join_by <- match.arg(join_by)
   ## 0. If dataset_ids is NULL, discover them via robis::dataset() ----
   if (is.null(dataset_ids)) {
@@ -69,31 +92,16 @@ read_data_test <- function(
       taxonid        = worms_id,
       areaid         = areaid,
       geometry       = geometry,
-      absence        = "include",
-    )
-    rec_with_extensions <- robis::occurrence(
-      datasetid      = ds,
-      scientificname = scientificname,
-      taxonid        = worms_id,
-      areaid         = areaid,
-      geometry       = geometry,
-      extensions  = c("DNADerivedData", "MeasurementOrFact")
-      hasextensions  = c("DNADerivedData", "MeasurementOrFact")
-    )
-    browser()
-    if (nrow(rec) == 0L) {
+      absence        = "include"
+    ) %>%
+      select(any_of(keep_at_pull_cols))
+
+    if (nrow(rec_with_absences) == 0L) {
       warning("No occurrence records returned for dataset ", ds, " with these filters.")
       return(NULL)
     }
-    # ---- 1c. Build core_occ and filter on occurrenceStatus ----
-    core_occ <- rec_with_extensions %>%
-      distinct(occurrenceID, .keep_all = TRUE)
-    if (!"occurrenceStatus" %in% names(core_occ)) {
-      warning("Dataset ", ds, " has no occurrenceStatus column; skipping.")
-      return(NULL)
-    }
     # Unique non-NA status values
-    status_vals <- unique(na.omit(core_occ$occurrenceStatus))
+    status_vals <- unique(na.omit(rec_with_absences$occurrenceStatus))
     # Require BOTH "present" and "absent"
     if (require_absences) {
       if (!all(c("present", "absent") %in% status_vals)) {
@@ -104,17 +112,47 @@ read_data_test <- function(
         return(NULL)
       }
     }
-    # Keep also an id-based core for joining if needed
-    core_id <- rec_with_absences %>%
-      distinct(id, .keep_all = TRUE)
+    rec_with_absences <- rec_with_absences %>% filter(absence == TRUE)
 
+
+    rec_with_extensions <- robis::occurrence(
+      datasetid      = ds,
+      scientificname = scientificname,
+      taxonid        = worms_id,
+      areaid         = areaid,
+      geometry       = geometry,
+      extensions  = c("DNADerivedData", "MeasurementOrFact"),
+      hasextensions  = c("DNADerivedData", "MeasurementOrFact")
+    ) %>%
+      select(any_of(keep_at_pull_cols))
+    if (nrow(rec_with_extensions) == 0L) {
+      warning("No extension records returned for dataset ", ds, " with these filters.")
+      return(NULL)
+    }
+
+    # ---- 1c. Build core_occ and filter on occurrenceStatus ----
+    core_occ <- rec_with_extensions %>%
+      distinct(occurrenceID, .keep_all = TRUE)
+    if (!"occurrenceStatus" %in% names(core_occ)) {
+      warning("Dataset ", ds, " has no occurrenceStatus column; skipping.")
+      return(NULL)
+    }
+
+    # Keep also an id-based core for joining if needed
+    core_id <- rec_with_extensions %>%
+      distinct(id, .keep_all = TRUE)
+    core_id <- core_id %>% select(-mof, -dna)
 
     # DNADerivedData extension (includes `id` by default)
-    dna_only <- robis::unnest_extension(rec_with_extensions, "DNADerivedData")
-    browser()
+    dna_only <- robis::unnest_extension(core_occ, "DNADerivedData")
+
+    dna_only <- dna_only %>%
+      select(any_of(keep_at_pull_cols))
+
     #MeasurementOfFact extension
-    mof_only <- unnest_extension(rec_with_extensions, "MeasurementOrFact")
-    browser()
+    mof_only <- robis::unnest_extension(core_occ, "MeasurementOrFact")
+
+    core_occ <- core_occ %>% select(-mof, -dna)
     mof_only <- mof_only %>%
       group_by(occurrenceID, measurementType) %>%
       slice(1) %>%
@@ -125,7 +163,8 @@ read_data_test <- function(
         id_cols = c(occurrenceID, id),
         names_from = measurementType,
         values_from = measurementValue
-      )
+      )%>%
+      select(any_of(keep_at_pull_cols))
 
     mof_and_dna <- wide_mof %>% left_join(dna_only, by = "id")
 
@@ -150,20 +189,67 @@ read_data_test <- function(
       }
     }
     if (join_choice == "occurrenceID") {
-      core_and_extensions <- core_occ %>% left_join(mof_and_dna, by = "occurrenceID")
+      core_and_extensions <- core_occ %>% left_join(mof_and_dna %>% select(-id), by = "occurrenceID")
     } else {  # "id"
       core_and_extensions <- core_id %>%
-        left_join(mof_and_dna, by = "id")
+        left_join(mof_and_dna %>% select(-occurrenceID), by = "id")
     }
+
+    core_and_extensions <- core_and_extensions %>%
+      mutate(organismQuantity = as.numeric(organismQuantity))
+    rec_with_absences <- rec_with_absences %>%
+      mutate(organismQuantity = as.numeric(organismQuantity))
+    if (!require_dna_sequence) {
+
+      group_cols <- c("materialSampleID", "scientificName")
+
+      # columns to summarise with first(), excluding group_cols, organismQuantity, id, occurrenceID
+      candidate_cols <- setdiff(
+        names(core_and_extensions),
+        c(group_cols, "organismQuantity", "id", "occurrenceID")
+      )
+
+      # Only keep columns that are atomic (vector) types to avoid list-columns causing errors
+      safe_cols <- candidate_cols[sapply(core_and_extensions[candidate_cols], is.atomic)]
+
+      core_and_extensions <- core_and_extensions %>%
+        group_by(across(all_of(group_cols))) %>%
+        summarise(
+          organismQuantity = sum(as.numeric(organismQuantity), na.rm = TRUE),
+          across(all_of(safe_cols), first),
+          .groups = "drop"
+        )
+    }
+
+
+
+    #HERE WE JOIN THE ABSENCES TO THE WIDER EXTENSIONS DF THAT HAS ONLY POSITIVE DETECTIONS
+    extra_cols <- setdiff(names(core_and_extensions), names(rec_with_absences))
+
+    # Exclude columns that are per-row (DNA, organismQuantity, id, etc.)
+    metadata_cols <- setdiff(extra_cols, c("DNA_sequence"))
+
+    metadata_ref <- core_and_extensions %>%
+      select(materialSampleID, scientificName, all_of(metadata_cols)) %>%
+      group_by(materialSampleID, scientificName) %>%
+      summarise(across(everything(), first), .groups = "drop")
+    with_absence_df_filled <- rec_with_absences %>%
+      left_join(metadata_ref, by = c("materialSampleID", "scientificName"))
+
+    dna_cols <- setdiff(names(core_and_extensions), names(with_absence_df_filled))
+    if (length(dna_cols) > 0) {
+      with_absence_df_filled[dna_cols] <- NA
+    }
+    core_and_extensions <- bind_rows(core_and_extensions, with_absence_df_filled)
+
     # ---- 3. Basic cleaning & derived fields ----
     core_and_extensions <- core_and_extensions %>%
       filter(!is.na(samp_name)) %>%  # keep only real samples
       mutate(
         datasetID_obis = ds,
         # eventDate usually ISO; strip time & parse
-        eventDate_chr   = as.character(eventDate),
         eventDate_clean = suppressWarnings(
-          ymd(substr(eventDate_chr, 1, 10))
+          ymd(substr(as.character(eventDate), 1, 10))
         ),
         year  = year(eventDate_clean),
         month = month(eventDate_clean),
@@ -198,66 +284,16 @@ read_data_test <- function(
       df
     }
 
-    need_cols <- c(
-      "samp_name","target_gene","pcr_primer_name_forward","pcr_primer_name_reverse",
-      "occurrenceID","occurrenceStatus","basisOfRecord","scientificName","scientificNameID",
-      "kingdom","phylum","class","order","family","genus",
-      "eventDate_clean","LClabel","decimalLatitude","decimalLongitude","year","month",
-      "organismQuantity","samp_size","size_frac","filter_material","samp_mat_process",
-      "samp_store_temp","samp_store_sol","nucl_acid_ext_kit",
-      "platform","instrument","seq_kit","otu_db","tax_assign_cat","otu_seq_comp_appr",
-      "minimumDepthInMeters","maximumDepthInMetres","project_contact","bibliographicCitation",
-      "datasetID_obis","category","hab"
-    )
-
     core_and_extensions <- ensure_cols(core_and_extensions, need_cols)
 
     out <- core_and_extensions %>%
-      transmute(
-
-        samp_name             = as.character(samp_name),
-        #primer                = sprintf("%s | %s / %s", target_gene, pcr_primer_name_forward, pcr_primer_name_reverse),
-        target_gene           = target_gene,
-        pcr_primer_name_forward = pcr_primer_name_forward,
-        pcr_primer_name_reverse = pcr_primer_name_reverse,
-        occurrenceID          = occurrenceID,
-        occurrenceStatus      = occurrenceStatus,
-        basisOfRecord         = basisOfRecord,
-        scientificName        = scientificName,
-        scientificNameID      = scientificNameID,
-        kingdom               = kingdom,
-        phylum                = phylum,
-        class                 = class,
-        order                 = order,
-        family                = family,
-        genus                 = genus,
-        eventDate             = eventDate_clean,
-        LClabel               = LClabel,
-        decimalLatitude       = decimalLatitude,
-        decimalLongitude      = decimalLongitude,
-        year                  = year,
-        month                 = month,
-        organismQuantity      = organismQuantity,
-        samp_size             = samp_size,
-        size_frac             = size_frac,
-        filter_material       = filter_material,
-        samp_mat_process      = samp_mat_process,
-        samp_store_temp       = samp_store_temp,
-        samp_store_sol        = samp_store_sol,
-        nucl_acid_ext_kit     = nucl_acid_ext_kit,
-        platform              = platform,
-        instrument            = instrument,
-        seq_kit               = seq_kit,
-        otu_db                = otu_db,
-        tax_assign_cat        = tax_assign_cat,
-        otu_seq_comp_appr     = otu_seq_comp_appr,
-        minimumDepthInMeters  = minimumDepthInMeters,
-        maximumDepthInMetres  = maximumDepthInMetres,
-        ownerContact          = project_contact,
-        bibliographicCitation = bibliographicCitation,
-        datasetID_obis        = datasetID_obis,
-        category              = category,
-        hab                   = hab
+      mutate(
+        samp_name = as.character(samp_name)
+      ) %>%
+      select(all_of(need_cols)) %>%
+      rename(
+        eventDate = eventDate_clean,
+        ownerContact = project_contact
       )
     out
   })
@@ -270,10 +306,10 @@ read_data_test <- function(
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
   # saveRDS(GOTeDNA_df, "inst/app/data/temp_obis_data.rds")
-  GOTeDNA_df_with_assigned_stations <- update_location_clusters(GOTeDNA_df)
+  # GOTeDNA_df_with_assigned_stations <- update_location_clusters(GOTeDNA_df)
 
-  GOTeDNA_df_with_assigned_stations
-
+  # GOTeDNA_df_with_assigned_stations
+  GOTeDNA_df
 }
 
 
@@ -283,3 +319,5 @@ read_data_test <- function(
 
 #does work
 #1952bb10-d56f-40c6-abd3-33dc1362bda9
+
+
