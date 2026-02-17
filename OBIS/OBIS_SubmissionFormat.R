@@ -170,8 +170,6 @@ GOT_joined <- GOT_joined %>%
 occurrence <- GOT_joined %>%
   mutate(
     materialSampleID = as.character(materialSampleID),
-    protocol_ID = protocol_ID.x,
-    protocolVersion = protocolVersion.x,
     project_contact = ownerContact,
     bibliographicCitation = bibliographicCitation,
     basisOfRecord = basisOfRecord.x,
@@ -245,7 +243,10 @@ occurrence <- GOT_joined %>%
     samp_category = "sample",
     samp_collec_device = samp_collect_device,
     project_id = "DFO-GRDI-BoF-COI",
-    pcr_0_1 = "1"
+    pcr_0_1 = "1",
+    platform = "ILLUMINA",
+    instrument = "Illumina HiSeq 1500 [OBI_0003386]", 
+    tax_assign_cat = "sequence similarity"
   ) %>%
   filter(
     !is.na(minimumDepthInMeters),
@@ -391,7 +392,7 @@ dna_df <- occurrence %>%
 #NOTE: problems in quality control checks likely occur from repeating occurrenceIDs resulting from empty values at the bottom of a dataframe (happens if there is not a clean merge between the GOTeDNA "sample metadata" and "sample metabarcoding" sheets)
 
 occur <- occurrence #change name of dataframe in case quality control checks fail and you would like to view the original dataframe for problems (Using the code: View("occurrence") )
-dna <- dna_df
+dna <- dna_df       #if you do not include the dna sequences using the code above, you can use "dna <- occurrence" instead - seems odd but it will be used for the cleaned_dna object later
 
 #Check that the coordinates are in the correct locations
 plot_map(occur)
@@ -460,8 +461,6 @@ emof <- dna_df %>%
 #Map the URL to the origin of each term name
 
 url_map <- c(
-  protocol_ID              = "https://github.com/GOTeDNA-OBON",
-  protocolVersion          = "https://github.com/GOTeDNA-OBON",
   LClabel                  = "https://github.com/GOTeDNA-OBON",
   ownerContact             = "https://github.com/GOTeDNA-OBON",
   samplingStation          = "https://github.com/GOTeDNA-OBON",
@@ -480,7 +479,7 @@ emof <- dna_df %>%
     seq_id, samp_category, filter_passive_active_0_1, checkls_ver, seq_kit,
     assay_name, assay_type, targetTaxonomicAssay, samp_collect_device, samp_size_unit, filtrationType, filter_material,
     filter_name, samp_store_sol, samp_store_temp, nucl_acid_ext_kit, nucl_acid_ext_modify, geo_loc_name, technical_rep_id,
-    project_contact, protocol_ID, protocolVersion, totalDNAconc, unitsDNAconc, dateFiltration, timeFiltration, volumeFiltered,
+    project_contact, totalDNAconc, unitsDNAconc, dateFiltration, timeFiltration, volumeFiltered, platform, instrument, tax_assign_cat,
     depthWaterTemp, samplingStation, LClabel, ownerContact, occurrenceID, seq_run_id, lib_id, project_id, pcr_0_1
   ) %>%
   distinct() %>%
@@ -504,3 +503,4 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
