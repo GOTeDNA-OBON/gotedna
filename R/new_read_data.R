@@ -200,23 +200,16 @@ read_data_test <- function(
     rec_with_absences <- rec_with_absences %>%
       mutate(organismQuantity = as.numeric(organismQuantity))
     if (!require_dna_sequence) {
-
       group_cols <- c("materialSampleID", "scientificName")
 
-      # columns to summarise with first(), excluding group_cols, organismQuantity, id, occurrenceID
-      candidate_cols <- setdiff(
-        names(core_and_extensions),
-        c(group_cols, "organismQuantity", "id", "occurrenceID")
-      )
-
-      # Only keep columns that are atomic (vector) types to avoid list-columns causing errors
-      safe_cols <- candidate_cols[sapply(core_and_extensions[candidate_cols], is.atomic)]
+      # all other columns that will take first() — includes occurrenceID and id
+      first_cols <- setdiff(names(core_and_extensions), c(group_cols, "organismQuantity"))
 
       core_and_extensions <- core_and_extensions %>%
         group_by(across(all_of(group_cols))) %>%
         summarise(
           organismQuantity = sum(as.numeric(organismQuantity), na.rm = TRUE),
-          across(all_of(safe_cols), first),
+          across(all_of(first_cols), first),
           .groups = "drop"
         )
     }
