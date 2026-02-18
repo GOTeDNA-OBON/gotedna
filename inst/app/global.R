@@ -288,3 +288,31 @@ protocol_labels <- c(
   tax_assign_cat = "Taxonomic Assignment Method",
   otu_seq_comp_appr = "OTU/ASV Approach"
 )
+
+
+
+
+# Mock protocol sheet
+protocol_test_sheet <- tibble(
+  protocol_ID = 1:10,
+  nucl_acid_ext_kit = c(
+    rep("DNeasy® Blood & Tissue Kit (Qiagen)", 5),
+    rep("Zymo Quick-DNA Kit", 5)
+  ),
+  platform = NA_character_,  # all NA to test missing column handling
+  instrument = sample(c("MiSeq", "NextSeq", NA), 10, replace = TRUE),
+  seq_kit = c(
+    rep("MiSeq Reagent Kit v3 (Illumina)", 6),
+    rep("NextSeq 2000 Kit", 4)
+  ),
+  otu_db = c(
+    rep("barque v1.7.2 (Mathon et al. 2021)", 7),
+    rep("custom_db v2.0", 3)
+  ),
+  tax_assign_cat = sample(c("SINTAX", "RDP", NA), 10, replace = TRUE),
+  otu_seq_comp_appr = sample(c(
+    "blastn (NCBI)", "vsearch", "usearch", NA
+  ), 10, replace = TRUE),
+  minimumDepthInMeters = sample(1:5, 10, replace = TRUE),
+  maximumDepthInMeters = sample(2:6, 10, replace = TRUE)
+)
