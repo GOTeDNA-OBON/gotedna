@@ -186,7 +186,7 @@ occurrence <- GOT_joined %>%
     decimalLongitude = decimalLongitude,
     minimumDepthInMeters = "2",
     maximumDepthInMeters = "3",
-    samp_mat_process = "Following a protocol adapted from Walsh et al. (2009), all samples were peristaltically filtered within an hour of collection through a 0.22 μm Sterivex PVDF pressure filter (Millipore)",
+    samp_mat_process = "filtration; Following a protocol adapted from Walsh et al. (2009), all samples were peristaltically filtered within an hour of collection through a 0.22 μm Sterivex PVDF pressure filter (Millipore)",
     size_frac = "0.22",
     samp_size = "1",
     samp_size_unit = "L",
@@ -223,7 +223,6 @@ occurrence <- GOT_joined %>%
     assay_name = "COI-1 (metabarcoding)",
     assay_type = "metabarcoding",
     target_gene = target_gene,
-    target_subfragment = target_subfragment,
     seq_meth = "Illumina MiSeq [OBI_0002003]",
     seq_kit = "MiSeq Reagent Kit v3 (Illumina)",
     ref_db = "BOLD database that came with the barque download",
@@ -430,8 +429,8 @@ cleaned_occ <- occur %>%
 
 cleaned_dna <- dna %>%
   select(
-    target_gene, target_subfragment, samp_name, samp_mat_process, size_frac, samp_size, project_name, env_broad_scale, env_local_scale, env_medium,
-    seq_meth, ref_db, otu_seq_comp_appr, otu_db, pcr_primer_forward, pcr_primer_reverse, pcr_primer_name_forward, pcr_primer_name_reverse,
+    target_gene, samp_name, samp_mat_process, size_frac, samp_size, project_name, env_broad_scale, env_local_scale, env_medium,
+    ref_db, otu_seq_comp_appr, otu_db, pcr_primer_forward, pcr_primer_reverse, pcr_primer_name_forward, pcr_primer_name_reverse,
     pcr_primer_reference, dna_sequence, occurrenceID, nucl_acid_ext, samp_collec_device
   )
 
@@ -503,4 +502,5 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
