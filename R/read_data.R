@@ -65,6 +65,8 @@ read_data <- function(
   library(dbscan)
   library(geosphere)
   library(sf)
+
+
   join_by <- match.arg(join_by)
   ## 0. If dataset_ids is NULL, discover them via robis::dataset() ----
   if (is.null(dataset_ids)) {
@@ -98,6 +100,7 @@ read_data <- function(
 
   ## 1. Loop over datasets and pull DNADerivedData occurrences ----
   obis_list <- purrr::map(dataset_ids, function(ds) {
+    Sys.sleep(3)
     message("Pulling OBIS dataset: ", ds)
     # ---- 1a. Check dataset has DNADerivedData extension (defensive) ----
     ds_meta <- robis::dataset(datasetid = ds)
@@ -112,15 +115,27 @@ read_data <- function(
       return(NULL)
     }
     # ---- 1b. Pull occurrence records with DNADerivedData + filters ----
-    rec <- robis::occurrence(
-      datasetid      = ds,
-      scientificname = scientificname,
-      taxonid        = worms_id,
-      areaid         = areaid,
-      absence        = "include",
-      extensions     = c("DNADerivedData", "MeasurementOrFact"),
-      hasextensions  = c("DNADerivedData", "MeasurementOrFact")
+    rec <- tryCatch(
+      {
+        robis::occurrence(
+          datasetid      = ds,
+          scientificname = scientificname,
+          taxonid        = worms_id,
+          areaid         = areaid,
+          absence        = "include",
+          extensions     = c("DNADerivedData", "MeasurementOrFact"),
+          hasextensions  = c("DNADerivedData", "MeasurementOrFact")
+        )
+      },
+      error = function(e) {
+        warning("Failed to fetch dataset ", ds, ": ", conditionMessage(e))
+        return(NULL)
+      }
     )
+    # skip iteration if rec is NULL
+    if (is.null(rec)) {
+      return(NULL)
+    }
 
     if (nrow(rec) == 0L) {
       warning("No occurrence records returned for dataset ", ds, " with these filters.")
@@ -474,7 +489,9 @@ optional_columns <- c(
 'tax_assign_cat',
 'otu_seq_comp_appr',
 'minimumDepthInMeters',
-'maximumDepthInMeters'
+'maximumDepthInMeters',
+'category',
+'hab'
 )
 
 protocol_columns <- c(

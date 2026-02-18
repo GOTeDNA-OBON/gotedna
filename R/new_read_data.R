@@ -19,7 +19,7 @@ read_data_test <- function(
 
 
   cols_not_needed_at_pull <- c(
-    "eventDate_clean", "year","month","datasetID_obis"
+    "eventDate_clean", "year","month","datasetID_obis", "primer"
   )
 
   extra_cols_needed_at_pull <- c("dna", "mof", "absence", "occurrenceStatus", "materialSampleID", "eventDate")
@@ -32,7 +32,7 @@ read_data_test <- function(
     "samp_store_temp","samp_store_sol","nucl_acid_ext_kit",
     "platform","instrument","seq_kit","otu_db","tax_assign_cat","otu_seq_comp_appr",
     "minimumDepthInMeters","maximumDepthInMeters","project_contact","bibliographicCitation",
-    "datasetID_obis","category","hab", "samp_name", "target_subfragment", "target_gene"
+    "datasetID_obis","category","hab", "samp_name", "target_subfragment", "target_gene", "primer"
   )
 
   keep_at_pull_cols <- setdiff(need_cols, cols_not_needed_at_pull)
@@ -200,7 +200,12 @@ read_data_test <- function(
     rec_with_absences <- rec_with_absences %>%
       mutate(organismQuantity = as.numeric(organismQuantity))
     if (!require_dna_sequence) {
-      group_cols <- c("materialSampleID", "scientificName")
+      group_cols <- c(
+        "materialSampleID",
+        "scientificName",
+        "target_gene",
+        "pcr_primer_name_forward",
+        "pcr_primer_name_reverse")
 
       # all other columns that will take first() — includes occurrenceID and id
       first_cols <- setdiff(names(core_and_extensions), c(group_cols, "organismQuantity"))
@@ -223,8 +228,8 @@ read_data_test <- function(
     metadata_cols <- setdiff(extra_cols, c("DNA_sequence"))
 
     metadata_ref <- core_and_extensions %>%
-      select(materialSampleID, scientificName, all_of(metadata_cols)) %>%
-      group_by(materialSampleID, scientificName) %>%
+      select(all_of(group_cols), all_of(metadata_cols)) %>%
+      group_by(across(all_of(group_cols))) %>%
       summarise(across(everything(), first), .groups = "drop")
     with_absence_df_filled <- rec_with_absences %>%
       left_join(metadata_ref, by = c("materialSampleID", "scientificName"))
@@ -312,5 +317,26 @@ read_data_test <- function(
 
 #does work
 #1952bb10-d56f-40c6-abd3-33dc1362bda9
+
+
+find_variation <- function(df, group_cols = c("samp_name", "scientificName")) {
+
+  df %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      across(
+        everything(),
+        ~ n_distinct(.x, na.rm = TRUE)
+      ),
+      .groups = "drop"
+    ) %>%
+    pivot_longer(
+      cols = -all_of(group_cols),
+      names_to = "column",
+      values_to = "n_distinct"
+    ) %>%
+    filter(n_distinct > 1) %>%
+    arrange(desc(n_distinct))
+}
 
 
