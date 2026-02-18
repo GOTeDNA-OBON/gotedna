@@ -1003,7 +1003,7 @@ shiny-plot-output {
 }
 
 /* remove the extra top offset */
-.protocol-details-wrap { margin-top: 0 !important; width: 50%; }
+.protocol-details-wrap { margin-top: 0 !important; width: 100%; }
 
 /* only the FIRST section title gets no top margin */
 .protocol-details-wrap .protocol-group-title:first-of-type{

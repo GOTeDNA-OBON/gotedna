@@ -108,8 +108,13 @@ mod_select_figure_ui <- function(id) {
           )
         ),
         column(
-          width = 8,
+          width = 4,
           uiOutput(ns("protocol_details"))
+        ),
+        column(
+          width = 4,
+          plotOutput(ns("protocol_nmds_plot")),
+          uiOutput(ns("nmds_message"))
         )
       )
     ),
@@ -202,6 +207,12 @@ mod_select_figure_server <- function(id, r) {
 
     observeEvent(input$hide_prots, {
       shinyjs::toggle("protocol_details")
+    })
+    observeEvent(input$hide_prots, {
+      shinyjs::toggle("protocol_nmds_plot")
+    })
+    observeEvent(input$hide_prots, {
+      shinyjs::toggle("nmds_message")
     })
 
     observeEvent(input$select_all, {
@@ -568,6 +579,7 @@ mod_select_figure_server <- function(id, r) {
           choices = l_prot,
           selected = selected_prot
         )
+        r$protocol_ids_sorted <- names(sorted_prot)
 
       } else {
         # No data → empty the menu
@@ -597,7 +609,7 @@ mod_select_figure_server <- function(id, r) {
     # live details card
     output$protocol_details <- renderUI({
       if (length(input$prot_id) > 1) {
-        return(tags$div(style="margin-top:10px;", HTML('Protocol information cards are only shown when <strong>one</strong> protocol ID is selected.<br>Figures below combine all selected protocol IDs.')))
+        return(tags$div(style="margin-top:10px;", HTML('Protocol information cards are only shown when exactly <strong>one</strong> protocol ID is selected.<br>However, observation figures below still combine selected protocol IDs.')))
       }
       df <- selected_protocol_rows()
 
@@ -706,9 +718,25 @@ mod_select_figure_server <- function(id, r) {
       )
     })
 
+    output$protocol_nmds_plot <- renderPlot({
+      req(protocol_test_sheet)
+      req(r$protocol_ids_sorted)
+      if (length(r$protocol_ids_sorted) > 2) {
+        filtered_protocol_sheet <- protocol_test_sheet %>% filter(protocol_ID %in% r$protocol_ids_sorted)
+        protocol_nmds(filtered_protocol_sheet)
+      } else {
+        NULL
+      }
 
+    })
 
-
+    output$nmds_message <- renderUI({
+      if (length(r$protocol_ids_sorted) <= 2) {
+        tags$div(style="margin-top:10px;", "NMDS requires more than two protocol IDs in the selected data.")
+      } else {
+        NULL
+      }
+    })
 
 
 
