@@ -79,7 +79,7 @@ mod_select_figure_ui <- function(id) {
         h1("Protocol Selection"),
         div(
           class = "buttons-container",
-          actionButton(ns("hide_prots"), "Hide/Show Protocols",
+          actionButton(ns("hide_prots"), "Hide/Show Protocol Info",
                        title = "Hide or show fields"
           )
         )
@@ -201,7 +201,7 @@ mod_select_figure_server <- function(id, r) {
     })
 
     observeEvent(input$hide_prots, {
-      shinyjs::toggle("protocol_section")
+      shinyjs::toggle("protocol_details")
     })
 
     observeEvent(input$select_all, {
@@ -596,6 +596,9 @@ mod_select_figure_server <- function(id, r) {
 
     # live details card
     output$protocol_details <- renderUI({
+      if (length(input$prot_id) > 1) {
+        return(tags$div(style="margin-top:10px;", HTML('Protocol information cards are only shown when <strong>one</strong> protocol ID is selected.<br>Figures below combine all selected protocol IDs.')))
+      }
       df <- selected_protocol_rows()
 
       if (nrow(df) == 0) {
