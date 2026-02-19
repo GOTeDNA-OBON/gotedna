@@ -70,6 +70,7 @@ GOT_joined <- GOT %>%
   )
 
 #Fix the values in eventDate - This code standardizes dates in case they change format from excel after being opened in R
+#NOTE: If dates are formatted as month/day/year prior to running this code, they will come out as NA and won't show up in the GOTeDNA app
 
 GOT_joined <- GOT_joined %>%
   mutate(
@@ -502,5 +503,6 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
 
