@@ -91,28 +91,19 @@ mod_select_figure_ui <- function(id) {
         column(
           3,
           class = "control-panel",
-          div(
-            id = "fig_left_panel",
-            shinyWidgets::pickerInput(
-              inputId = ns("prot_id"),
-              label = tagList(
-                "Protocol ID "
-              ),
-              choices = "Not available",
-              multiple = TRUE,
-              options = list(
-                `actions-box` = TRUE,      # select all / deselect all
-                `live-search` = FALSE       # search bar (nice if we have lots of protocols)
-              )
-            )
-          )
+          selectInput(
+            ns("explore_prot_id"),
+            "View a Protocol's Details",
+            choices = "Not available",
+            selected = NULL
+          ),
         ),
         column(
           width = 4,
           uiOutput(ns("protocol_details"))
         ),
         column(
-          width = 4,
+          width = 5,
           plotOutput(ns("protocol_nmds_plot")),
           uiOutput(ns("nmds_message"))
         )
@@ -131,8 +122,21 @@ mod_select_figure_ui <- function(id) {
             class = "section_header",
             h1("Observation")
           ),
+
           div(
             id = "fig_left_panel",
+            shinyWidgets::pickerInput(
+              inputId = ns("prot_id"),
+              label = tagList(
+                "Select Protocol IDs"
+              ),
+              choices = "Not available",
+              multiple = TRUE,
+              options = list(
+                `actions-box` = TRUE,      # select all / deselect all
+                `live-search` = FALSE       # search bar (nice if we have lots of protocols)
+              )
+            ),
             selectInput(
               ns("threshold"),
               "Threshold",
@@ -204,16 +208,10 @@ mod_select_figure_server <- function(id, r) {
     observeEvent(input$hide_figs, {
       shinyjs::toggle("figure_selection_main")
     })
+    observeEvent(input$hide_prots, {
+      shinyjs::toggle("protocol_section")
+    })
 
-    observeEvent(input$hide_prots, {
-      shinyjs::toggle("protocol_details")
-    })
-    observeEvent(input$hide_prots, {
-      shinyjs::toggle("protocol_nmds_plot")
-    })
-    observeEvent(input$hide_prots, {
-      shinyjs::toggle("nmds_message")
-    })
 
     observeEvent(input$select_all, {
       for (i in c("fig_smooth", "fig_detect", "fig_effort", "fig_heatmap", "fig_samples")) {
@@ -573,6 +571,13 @@ mod_select_figure_server <- function(id, r) {
 
         selected_prot <- names(sorted_prot)[1]  # value with most observations
 
+        updateSelectInput(
+          session,
+          "explore_prot_id",
+          choices = l_prot,
+          selected = selected_prot
+        )
+
         shinyWidgets::updatePickerInput(
           session,
           "prot_id",
@@ -589,17 +594,23 @@ mod_select_figure_server <- function(id, r) {
           choices = list(),
           selected = NULL
         )
+        updateSelectInput(
+          session,
+          "explore_prot_id",
+          choices = list(),
+          selected = NULL
+        )
       }
     }
 
     observe({ update_protocol_menu() })
 
     selected_protocol_rows <- reactive({
-      req(input$prot_id)
+      req(input$explore_prot_id)
 
       protocol_info %>%
         dplyr::filter(
-          protocol_ID == input$prot_id
+          protocol_ID == input$explore_prot_id
         )
     })
 
@@ -608,9 +619,7 @@ mod_select_figure_server <- function(id, r) {
 
     # live details card
     output$protocol_details <- renderUI({
-      if (length(input$prot_id) > 1) {
-        return(tags$div(style="margin-top:10px;", HTML('Protocol information cards are only shown when exactly <strong>one</strong> protocol ID is selected.<br>However, observation figures below still combine selected protocol IDs.')))
-      }
+
       df <- selected_protocol_rows()
 
       if (nrow(df) == 0) {
@@ -711,7 +720,7 @@ mod_select_figure_server <- function(id, r) {
                   )
                 })
               ),
-              tags$hr(style="border: 0; border-bottom: 1px solid #444; margin: 10px 0;")
+              tags$hr(style="border: 0; border-bottom: 1px solid #222; margin: 10px 0;")
             )
           })
         )
