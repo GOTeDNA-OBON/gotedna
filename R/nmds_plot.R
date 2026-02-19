@@ -4,7 +4,7 @@ library(forcats)
 set.seed(123)  # for reproducibility
 
 # Mock protocol sheet
-protocol_test_sheet <- tibble(
+protocol_test_sheet <- tibble::tibble(
   protocol_ID = 1:10,
   nucl_acid_ext_kit = c(
     rep("DNeasy® Blood & Tissue Kit (Qiagen)", 5),

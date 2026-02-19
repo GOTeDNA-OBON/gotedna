@@ -95,6 +95,12 @@ read_data <- function(
       stop("Could not find dataset id column in dataset() output.")
     }
     message("Found ", length(dataset_ids), " dataset(s) with DNADerivedData.")
+    dataset_ids <- as.character(dataset_ids)
+    existing_files <- list.files("inst/app/data", pattern = "^dataset-.*\\.rds$")
+
+    saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
+
+    dataset_ids <- setdiff(dataset_ids, saved_ds)
   }
   dataset_ids <- as.character(dataset_ids)
 
@@ -272,6 +278,7 @@ read_data <- function(
         ),
         eventDate = eventDate_clean
       )
+    saveRDS(out, paste("inst/app/data/dataset-", ds, ".rds"))
     out
   })
   obis_list <- Filter(Negate(is.null), obis_list)
