@@ -93,10 +93,16 @@ mod_select_figure_ui <- function(id) {
           class = "control-panel",
           selectInput(
             ns("explore_prot_id"),
-            "View a Protocol's Details",
+            "Protocol ID",
             choices = "Not available",
             selected = NULL
           ),
+          selectInput(
+            ns("explore_prot_version"),
+            "Protocol Version",
+            choices = "Not available",
+            selected = NULL
+          )
         ),
         column(
           width = 4,
@@ -104,7 +110,12 @@ mod_select_figure_ui <- function(id) {
         ),
         column(
           width = 5,
-          plotOutput(ns("protocol_nmds_plot")),
+          h5(
+            "NMDS Plot for Selection Protocols",
+            icon("info-circle", class = "definition",
+            title = "Protocols that are more similar appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
+          ),
+          plotlyOutput(ns("protocol_nmds_plot"), height = "400px"),
           uiOutput(ns("nmds_message"))
         )
       )
@@ -605,6 +616,55 @@ mod_select_figure_server <- function(id, r) {
 
     observe({ update_protocol_menu() })
 
+    observeEvent(selected_protocol_rows(), {
+
+      rows <- selected_protocol_rows()
+
+      if (nrow(rows) > 0) {
+
+        # Get unique versions
+        versions <- rows %>%
+          dplyr::pull(protocol_version) %>%
+          unique() %>%
+          sort()
+
+        # Remove NA if needed
+        versions <- versions[!is.na(versions)]
+
+        if (length(versions) > 0) {
+
+          updateSelectInput(
+            session,
+            "explore_prot_version",
+            choices = versions,
+            selected = versions[1]   # lowest version (after sort)
+          )
+
+        } else {
+
+          updateSelectInput(
+            session,
+            "explore_prot_version",
+            choices = "Not available",
+            selected = "Not available"
+          )
+
+        }
+
+      } else {
+
+        updateSelectInput(
+          session,
+          "explore_prot_version",
+          choices = "Not available",
+          selected = "Not available"
+        )
+
+      }
+
+    })
+
+
     selected_protocol_rows <- reactive({
       req(input$explore_prot_id)
 
@@ -727,7 +787,7 @@ mod_select_figure_server <- function(id, r) {
       )
     })
 
-    output$protocol_nmds_plot <- renderPlot({
+    output$protocol_nmds_plot <- renderPlotly({
       req(protocol_test_sheet)
       req(r$protocol_ids_sorted)
       if (length(r$protocol_ids_sorted) > 2) {

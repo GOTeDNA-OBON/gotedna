@@ -31,6 +31,47 @@ protocol_test_sheet <- tibble::tibble(
 
 
 
+plot_nmds_interactive <- function(nmds_points, stress_val) {
+
+  # Create hover text for each point
+  nmds_points <- nmds_points %>%
+    mutate(
+      hover_text = paste0(
+        "Protocol: ", protocol_id, "<br>",
+        "NMDS1: ", round(NMDS1, 3), "<br>",
+        "NMDS2: ", round(NMDS2, 3), "<br>",
+        "Stress: ", round(stress_val, 3)
+      )
+    )
+
+  # Create interactive plot
+  plot_ly(
+    data = nmds_points,
+    x = ~NMDS1,
+    y = ~NMDS2,
+    type = 'scatter',
+    mode = 'markers+text',
+    text = ~protocol_id,
+    textposition = 'top center',
+    hoverinfo = 'text',
+    hovertext = ~hover_text,
+    marker = list(
+      size = 8,
+      color = '#2241a7',
+      line = list(width = 1, color = 'black')
+    )
+  ) %>%
+    layout(
+      title = list(
+        text = paste0("Stress = ", round(stress_val, 3)),
+        x = 0.05,
+        xanchor = "left"
+        ),
+      xaxis = list(title = "NMDS1", zeroline = FALSE, showgrid = TRUE, automargin = TRUE),
+      yaxis = list(title = "NMDS2", zeroline = FALSE, showgrid = TRUE, automargin = TRUE),
+      margin = list(l = 60, r = 20, t = 50, b = 60)  # padding around plot
+    )
+}
 
 
 
@@ -68,16 +109,10 @@ protocol_nmds <- function(df) {
   # Stress
   stress_val <- round(nmds_res$stress, 3)
 
-  # Plot
-  ggplot(nmds_points, aes(NMDS1, NMDS2, label = protocol_id)) +
-    geom_point(size = 4, color = "#440154") +
-    geom_text(vjust = -0.7) +
-    theme_minimal() +
-    labs(
-      title = "NMDS of Protocols (Gower distance)",
-      subtitle = paste("Stress =", stress_val)
-    )
+  plot_nmds_interactive(nmds_points, stress_val)
+
 }
+
 
 
 # protocol_nmds(protocol_test_sheet)
