@@ -560,6 +560,36 @@ enforce_schema <- function(df, required, optional) {
 }
 
 
+add_quantitative_bins_for_protocol_cols <- function(df) {
+  df <- df %>%
+    mutate(
+      # depth bin anchors (numeric)
+      min_depth_floor = floor(round(minimumDepthInMeters, 6) / 5) * 5,
+      max_depth_floor = floor(round(maximumDepthInMeters, 6) / 5) * 5,
+
+      min_depth_bin = paste0(min_depth_floor, "-", min_depth_floor + 5, "m"),
+      max_depth_bin = paste0(max_depth_floor, "-", max_depth_floor + 5, "m"),
+
+      # sample size bin anchor (numeric)
+      samp_size_floor = pmax(
+        0,
+        floor((samp_size - 0.125) / 0.25) * 0.25 + 0.125
+      ),
+
+      samp_size_upper = samp_size_floor + 0.25,
+
+      samp_size_bin = sprintf(
+        "%.3f-%.3fL",
+        round(samp_size_floor, 3),
+        round(samp_size_upper, 3)
+      )
+    ) %>%
+    select(-samp_size_upper)
+
+
+  df
+}
+
 assign_protocol_ID <- function(df,
                                protocol_columns,
                                version_columns,
