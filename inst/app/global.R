@@ -290,29 +290,247 @@ protocol_labels <- c(
 )
 
 
+library(tibble)
 
+raw_protocol_test_sheet <- tibble(
 
-# Mock protocol sheet
-protocol_test_sheet <- tibble(
-  protocol_ID = 1:10,
-  nucl_acid_ext_kit = c(
-    rep("DNeasy® Blood & Tissue Kit (Qiagen)", 5),
-    rep("Zymo Quick-DNA Kit", 5)
+  # --------------------------
+  # PROTOCOL 1 (3 versions)
+  # --------------------------
+  nucl_acid_ext_kit = c(rep("Qiagen", 9),
+                        rep("Zymo", 8),
+                        rep("Macherey-Nagel", 7),
+                        rep("Invitrogen", 6),
+                        rep("Promega", 8)),
+
+  platform = NA_character_,
+
+  instrument = c(rep("MiSeq", 9),
+                 rep("NextSeq", 8),
+                 rep("MiSeq", 7),
+                 rep("NovaSeq", 6),
+                 rep("NextSeq", 8)),
+
+  seq_kit = c(rep("KitA", 9),
+              rep("KitB", 8),
+              rep("KitC", 7),
+              rep("KitD", 6),
+              rep("KitE", 8)),
+
+  otu_db = c(rep("DB1", 9),
+             rep("DB2", 8),
+             rep("DB3", 7),
+             rep("DB4", 6),
+             rep("DB5", 8)),
+
+  tax_assign_cat = c(rep("SINTAX", 9),
+                     rep("RDP", 8),
+                     rep("SINTAX", 7),
+                     rep("BLAST", 6),
+                     rep("RDP", 8)),
+
+  otu_seq_comp_appr = c(rep("vsearch", 9),
+                        rep("blastn", 8),
+                        rep("usearch", 7),
+                        rep("vsearch", 6),
+                        rep("blastn", 8)),
+
+  minimumDepthInMeters = c(rep(5, 9),
+                           rep(10, 8),
+                           rep(20, 7),
+                           rep(15, 6),
+                           rep(30, 8)),
+
+  maximumDepthInMeters = c(rep(15, 9),
+                           rep(20, 8),
+                           rep(30, 7),
+                           rep(25, 6),
+                           rep(40, 8)),
+
+  # --------------------------
+  # VERSION COLUMNS
+  # --------------------------
+
+  # Protocol 1 → 3 versions
+  # Protocol 2 → 2 versions
+  # Protocol 3 → 4 versions
+  # Protocol 4 → 2 versions
+  # Protocol 5 → 3 versions
+
+  samp_size = c(
+    # Protocol 1 (3 versions)
+    rep(0.25, 3), rep(0.50, 3), rep(1.00, 3),
+
+    # Protocol 2 (2 versions)
+    rep(0.25, 4), rep(0.75, 4),
+
+    # Protocol 3 (4 versions)
+    rep(0.10, 2), rep(0.25, 2),
+    rep(0.50, 2), rep(1.00, 1),
+
+    # Protocol 4 (2 versions)
+    rep(0.50, 3), rep(1.50, 3),
+
+    # Protocol 5 (3 versions)
+    rep(0.25, 3), rep(0.75, 3), rep(1.25, 2)
   ),
-  platform = NA_character_,  # all NA to test missing column handling
-  instrument = sample(c("MiSeq", "NextSeq", NA), 10, replace = TRUE),
-  seq_kit = c(
-    rep("MiSeq Reagent Kit v3 (Illumina)", 6),
-    rep("NextSeq 2000 Kit", 4)
-  ),
-  otu_db = c(
-    rep("barque v1.7.2 (Mathon et al. 2021)", 7),
-    rep("custom_db v2.0", 3)
-  ),
-  tax_assign_cat = sample(c("SINTAX", "RDP", NA), 10, replace = TRUE),
-  otu_seq_comp_appr = sample(c(
-    "blastn (NCBI)", "vsearch", "usearch", NA
-  ), 10, replace = TRUE),
-  minimumDepthInMeters = sample(1:5, 10, replace = TRUE),
-  maximumDepthInMeters = sample(2:6, 10, replace = TRUE)
+
+  size_frac = sample(c("0.2 µm", "0.45 µm", "0.8 µm"), 38, replace = TRUE),
+  filter_material = sample(c("GF/F", "Cellulose", "Polycarbonate"), 38, replace = TRUE),
+  samp_mat_process = sample(c("Frozen", "Ethanol", "Lyophilized"), 38, replace = TRUE),
+  samp_store_temp = sample(c("-20C", "-80C", "4C"), 38, replace = TRUE),
+  samp_store_sol = sample(c("None", "RNAlater", "Buffer"), 38, replace = TRUE)
 )
+
+
+assign_protocol_ID <- function(df,
+                               protocol_columns,
+                               version_columns,
+                               protocol_sheet = NULL) {
+
+  # Remove existing IDs if present
+  df <- df %>%
+    select(-any_of(c("protocol_ID", "protocol_version")))
+
+  # Distinct combinations at full granularity
+  new_full_combos <- df %>%
+    select(all_of(c(protocol_columns, version_columns))) %>%
+    distinct()
+
+  # ------------------------------------------------------------------
+  # CASE 1: No existing protocol_sheet → build from scratch
+  # ------------------------------------------------------------------
+  if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
+
+    protocol_sheet <- new_full_combos %>%
+      group_by(across(all_of(protocol_columns))) %>%
+      mutate(
+        protocol_ID = cur_group_id(),
+        protocol_version = row_number()
+      ) %>%
+      ungroup()
+
+  } else {
+
+    # Ensure sheet has required structure
+    required_cols <- c(protocol_columns, version_columns,
+                       "protocol_ID", "protocol_version")
+
+    missing_cols <- setdiff(required_cols, names(protocol_sheet))
+    if (length(missing_cols) > 0) {
+      stop("protocol_sheet is missing required columns: ",
+           paste(missing_cols, collapse = ", "))
+    }
+
+    # --------------------------------------------------------------
+    # STEP 1: Add new protocol_IDs if needed
+    # --------------------------------------------------------------
+
+    new_protocols <- anti_join(
+      new_full_combos %>% select(all_of(protocol_columns)) %>% distinct(),
+      protocol_sheet %>% select(all_of(protocol_columns)) %>% distinct(),
+      by = protocol_columns
+    )
+
+    if (nrow(new_protocols) > 0) {
+
+      max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
+
+      new_protocols <- new_protocols %>%
+        mutate(protocol_ID = row_number() + max_id)
+
+      # give them version 1 initially (will expand below if needed)
+      new_protocols <- new_protocols %>%
+        left_join(new_full_combos, by = protocol_columns) %>%
+        group_by(protocol_ID) %>%
+        mutate(protocol_version = row_number()) %>%
+        ungroup()
+
+      protocol_sheet <- bind_rows(protocol_sheet, new_protocols)
+    }
+
+    # --------------------------------------------------------------
+    # STEP 2: Handle new versions within existing protocol_IDs
+    # --------------------------------------------------------------
+
+    # attach protocol_ID to incoming combos
+    new_full_combos_with_id <- new_full_combos %>%
+      left_join(
+        protocol_sheet %>%
+          select(all_of(protocol_columns), protocol_ID) %>%
+          distinct(),
+        by = protocol_columns
+      )
+
+    # find unseen full combinations
+    unseen_versions <- anti_join(
+      new_full_combos_with_id,
+      protocol_sheet %>%
+        select(all_of(c(protocol_columns,
+                        version_columns,
+                        "protocol_ID"))),
+      by = c(protocol_columns, version_columns, "protocol_ID")
+    )
+
+    if (nrow(unseen_versions) > 0) {
+
+      unseen_versions <- unseen_versions %>%
+        group_by(protocol_ID) %>%
+        mutate(
+          protocol_version =
+            row_number() +
+            max(protocol_sheet$protocol_version[
+              protocol_sheet$protocol_ID == first(protocol_ID)
+            ])
+        ) %>%
+        ungroup()
+
+      protocol_sheet <- bind_rows(protocol_sheet, unseen_versions)
+    }
+  }
+
+  # ------------------------------------------------------------------
+  # FINAL: Assign IDs + versions back to df
+  # ------------------------------------------------------------------
+
+  df_with_ids <- df %>%
+    left_join(
+      protocol_sheet,
+      by = c(protocol_columns, version_columns)
+    )
+
+  return(list(
+    data = df_with_ids,
+    protocol_sheet = protocol_sheet
+  ))
+}
+
+protocol_columns <- c(
+  'nucl_acid_ext_kit',
+  'platform',
+  'instrument',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr',
+  'minimumDepthInMeters',
+  'maximumDepthInMeters'
+)
+
+version_columns <- c(
+  'samp_size',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol'
+)
+
+result <- assign_protocol_ID(
+  df = raw_protocol_test_sheet,
+  protocol_columns = protocol_columns,
+  version_columns = version_columns
+)
+
+protocol_dummy_data <- result$data
+protocol_test_sheet <- result$protocol_sheet

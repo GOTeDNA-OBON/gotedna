@@ -278,7 +278,7 @@ read_data <- function(
         ),
         eventDate = eventDate_clean
       )
-    saveRDS(out, paste("inst/app/data/dataset-", ds, ".rds"))
+    saveRDS(out, paste0("inst/app/data/dataset-", ds, ".rds"))
     out
   })
   obis_list <- Filter(Negate(is.null), obis_list)
@@ -467,7 +467,6 @@ required_cols <- c(
   "family",
   "genus",
   "eventDate_clean",
-  "LClabel",
   "decimalLatitude",
   "decimalLongitude",
   "organismQuantity",
@@ -491,6 +490,7 @@ optional_columns <- c(
 # 'pcr_primer_reverse',
 'nucl_acid_ext_kit',
 'platform',
+'LClabel',
 'instrument',
 'seq_kit',
 'otu_db',
@@ -554,7 +554,7 @@ enforce_schema <- function(df, required, optional) {
   }
 
   # Strict allow-list: only include each column once
-  df <- df[, c(required, optional_to_add), drop = FALSE]
+  df <- df[, c(required, optional), drop = FALSE]
 
   df
 }
