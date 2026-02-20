@@ -17,8 +17,6 @@ datasets <- lapply(existing_files, readRDS)
 names(datasets) <- dataset_ids
 
 required_cols <- c(
-  # "protocol_ID",
-  # "protocolVersion",
   "samp_name",
   "target_gene",
   "pcr_primer_name_forward",
@@ -46,10 +44,7 @@ optional_columns <- c(
   'samp_mat_process',
   'samp_store_temp',
   'samp_store_sol',
-  # 'target_gene',
   'project_contact',
-  # 'pcr_primer_forward',
-  # 'pcr_primer_reverse',
   'nucl_acid_ext_kit',
   'platform',
   'LClabel',
@@ -81,7 +76,7 @@ enforce_schema <- function(df, required, optional) {
   }
 
   # Strict allow-list: only include each column once
-  df <- df[, c(required, optional), drop = FALSE]
+  # df <- df[, c(required, optional), drop = FALSE]
 
   df
 }
@@ -478,7 +473,7 @@ saveRDS(protocol_result$protocol_sheet, 'inst/app/data/protocol_sheet.rds')
 #DETECTION CALCULATION AND FILTERS
 ################################################
 
-
+#THIS REMOVES ALL 1-10 READ DATA
 combined_data <- combined_data %>%
   dplyr::mutate(msct = case_when(
     organismQuantity == 0 ~ TRUE,
@@ -486,6 +481,7 @@ combined_data <- combined_data %>%
   )) |>
   tidyr::drop_na(msct)
 
+#NOW DETECTED IS ADDED
 combined_data <- combined_data %>%
   mutate(
     detected = dplyr::case_when(
@@ -494,6 +490,7 @@ combined_data <- combined_data %>%
     )
   )
 
+#THIS IS REMOVING ROWS, FOR OLD FUNCTIONALITY, REMOVE!
 D_mb_nodetect <- combined_data %>%
   dplyr::group_by(
     protocol_ID, protocolVersion, scientificName, primer, station) %>%
@@ -509,6 +506,50 @@ D_mb_clean <- dplyr::anti_join(combined_data, D_mb_nodetect,
 #REMOVE UNNEEDED COLUMNS
 ################################################
 
+
+protocol_columns <- c(
+  'nucl_acid_ext_kit',
+  'platform',
+  'instrument',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr',
+  'min_depth_floor',
+  'max_depth_floor'
+)
+
+version_columns <- c(
+  'samp_size_floor',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol'
+)
+
+added_columns <- c(
+  "protocol_ID",
+  "protocolVersion",
+  "detected",
+  "datasetID_obis",
+  "year",
+  "month",
+  "stationLabel",
+  "ownerContact",
+  "eventDate",
+  "bibliographicCitation",
+  "ownerContact",
+  "max_depth_bin",
+  "min_depth_bin",
+  "samp_size_bin",
+
+)
+
+all_cols <- c(required_cols, optional_columns, protocol_columns, version_columns, added_columns)
+final_cols <- intersect(all_cols, names(D_mb_clean))
+
+D_mb_clean <- D_mb_clean[, final_cols, drop = FALSE]
 
 
 ################################################################################################
@@ -653,3 +694,34 @@ for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientifi
 }
 
 saveRDS(gotedna_primer, "inst/app/data/gotedna_primer.rds")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+# test_bf <- readRDS("inst/app/data/raw_OBIS/dataset-e596c238-1aa1-4d56-a26c-aac622c0c246.rds")
+#
+# test_sm <-readRDS("inst/app/data/dataset-e596c238-1aa1-4d56-a26c-aac622c0c246.rds")
+#
+
+
+
+
+
+
