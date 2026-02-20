@@ -81,7 +81,7 @@ protocol_nmds <- function(df) {
   df_labels <- df
 
   # Columns to exclude from NMDS (just the label)
-  exclude_cols <- "protocol_ID"
+  exclude_cols <- c("protocol_ID", "protocolVersion")
 
   # Fill NAs and convert characters to factors for NMDS
   df_nmds <- df %>%

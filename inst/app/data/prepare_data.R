@@ -10,6 +10,11 @@
 # n_duplicates
 
 
+#GRABS THE SEPARATE FILES COMING OUT OF READ DATA, but need to still add location clusters (in read_data)
+existing_files <- list.files("inst/app/data", pattern = "^dataset-.*\\.rds$")
+D_mb <- existing_files %>%
+  map_dfr(~ readRDS(file.path("inst/app/data", .x)))
+D_mb <- update_location_clusters(D_mb)
 
 #PULLS ALL SUITABLE DATA FROM OBIS
 D_mb <- read_data(
@@ -21,6 +26,13 @@ D_mb <- read_data(
   require_absences = TRUE
 )
 
+D_mb <- add_quantitative_bins_for_protocol_cols(D_mb)
+
+result <- assign_protocol_ID(df = D_mb, protocol_columns, version_columns)
+D_mb <- result$data
+
+saveRDS(result$protocol_sheet, 'inst/app/data/protocol_sheet.rds')
+
 #Reduce false positives (metabarcoding detections < 10 reads/station/primer excluded)
 D_mb_msct <- D_mb %>%
   dplyr::mutate(msct = case_when(
@@ -28,6 +40,15 @@ D_mb_msct <- D_mb %>%
     organismQuantity > 10 ~ TRUE
   )) |>
   tidyr::drop_na(msct)
+
+D_mb_msct <- D_mb_msct %>%
+  mutate(
+    detected = dplyr::case_when(
+      !is.na(organismQuantity) & organismQuantity > 0 ~ 1L,
+      TRUE ~ 0L
+    )
+  )
+
 
 D_mb_nodetect <- D_mb_msct %>%
   dplyr::group_by(
@@ -40,19 +61,19 @@ D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
                                       "primer", "station"))
 
 # make a list of two data frames
-gotedna_data <- list(
-  metabarcoding = D_mb_clean |>
-    dplyr::filter(!is.na(decimalLongitude),
-                  !class %in% c("Aves","Insecta", "Hexapoda"),
-                  !order %in% c("Primates","Artiodactyla","Perissodactyla","Rodentia"),
-                  !family %in% c("Felidae","Canidae","Procyonidae")) |>
-    dplyr::ungroup() |>
-    as.data.frame(),
-  qPCR = D_qPCR |>
-    dplyr::filter(!is.na(decimalLongitude), !is.na(phylum)) |>
-    dplyr::ungroup() |>
-    as.data.frame()
-)
+# gotedna_data <- list(
+#   metabarcoding = D_mb_clean |>
+#     dplyr::filter(!is.na(decimalLongitude),
+#                   !class %in% c("Aves","Insecta", "Hexapoda"),
+#                   !order %in% c("Primates","Artiodactyla","Perissodactyla","Rodentia"),
+#                   !family %in% c("Felidae","Canidae","Procyonidae")) |>
+#     dplyr::ungroup() |>
+#     as.data.frame(),
+#   qPCR = D_qPCR |>
+#     dplyr::filter(!is.na(decimalLongitude), !is.na(phylum)) |>
+#     dplyr::ungroup() |>
+#     as.data.frame()
+# )
 
 # Data
 ## import glossary
@@ -63,9 +84,9 @@ gloss$Definition <- trimws(gloss$Definition)
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
 
-gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
+# gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
 
-
+gotedna_data$metabarcoding <- D_mb_clean
 
 writeLines(
   format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
@@ -159,17 +180,27 @@ gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   mutate(primer = coalesce(final_primer, primer)) %>%
   select(-final_primer)
 
-saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
+
 
 #### Need to do for both qPCR and metabarcoding
 # Prepare primer data
 # gotedna_data <- readRDS("inst/app/data/gotedna_data.rds")
+gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
+  mutate(
+    year  = year(eventDate),
+    month = month(eventDate),
+    ownerContact = project_contact,
+    bibliographicCitation = if ("bibliographicCitation" %in% names(.)) bibliographicCitation else NA_character_
+  )
+
+
+saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
 
 newprob_mb <- calc_det_prob(gotedna_data$metabarcoding)
-newprob_q <- calc_det_prob(gotedna_data$qPCR)
+# newprob_q <- calc_det_prob(gotedna_data$qPCR)
 
 scaledprobs_mb <- scale_newprob(gotedna_data$metabarcoding, newprob_mb)
-scaledprobs_q <- scale_newprob(gotedna_data$qPCR, newprob_q)
+# scaledprobs_q <- scale_newprob(gotedna_data$qPCR, newprob_q)
 scaledprobs_q <- NULL
 
 gotedna_primer <- list()
