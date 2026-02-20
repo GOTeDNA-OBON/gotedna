@@ -11,9 +11,9 @@
 
 
 #GRABS THE SEPARATE FILES COMING OUT OF READ DATA, but need to still add location clusters (in read_data)
-existing_files <- list.files("inst/app/data", pattern = "^dataset-.*\\.rds$")
+existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
 D_mb <- existing_files %>%
-  map_dfr(~ readRDS(file.path("inst/app/data", .x)))
+  map_dfr(~ readRDS(file.path("inst/app/data/raw_OBIS", .x)))
 D_mb <- update_location_clusters(D_mb)
 
 #PULLS ALL SUITABLE DATA FROM OBIS
@@ -83,8 +83,6 @@ gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
 gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
-
-# gotedna_data$metabarcoding <- readRDS("./inst/app/data/test_obis_animalia.rds")
 
 gotedna_data$metabarcoding <- D_mb_clean
 
