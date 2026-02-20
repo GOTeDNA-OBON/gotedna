@@ -492,6 +492,8 @@ optional_columns <- c(
 'platform',
 'LClabel',
 'instrument',
+'month',
+'year',
 'seq_kit',
 'otu_db',
 'tax_assign_cat',
@@ -510,12 +512,12 @@ protocol_columns <- c(
   'otu_db',
   'tax_assign_cat',
   'otu_seq_comp_appr',
-  'minimumDepthInMeters',
-  'maximumDepthInMeters'
+  'min_depth_floor',
+  'max_depth_floor'
 )
 
 version_columns <- c(
-  'samp_size',
+  'samp_size_floor',
   'size_frac',
   'filter_material',
   'samp_mat_process',
@@ -537,7 +539,6 @@ has_required_cols <- function(df, required_cols) {
 
   TRUE
 }
-
 
 enforce_schema <- function(df, required, optional) {
   # Check required columns exist
@@ -561,31 +562,44 @@ enforce_schema <- function(df, required, optional) {
 
 
 add_quantitative_bins_for_protocol_cols <- function(df) {
+
   df <- df %>%
     mutate(
-      # depth bin anchors (numeric)
+      # ---- Coerce samp_size safely ----
+      samp_size_num = suppressWarnings(
+        as.numeric(gsub("[^0-9.]", "", samp_size))
+      ),
+
+      # ---- Depth bins ----
       min_depth_floor = floor(round(minimumDepthInMeters, 6) / 5) * 5,
       max_depth_floor = floor(round(maximumDepthInMeters, 6) / 5) * 5,
 
       min_depth_bin = paste0(min_depth_floor, "-", min_depth_floor + 5, "m"),
       max_depth_bin = paste0(max_depth_floor, "-", max_depth_floor + 5, "m"),
 
-      # sample size bin anchor (numeric)
-      samp_size_floor = pmax(
-        0,
-        floor((samp_size - 0.125) / 0.25) * 0.25 + 0.125
+      # ---- Sample size bins ----
+      samp_size_floor = if_else(
+        is.na(samp_size_num),
+        NA_real_,
+        pmax(
+          0,
+          floor((samp_size_num - 0.125) / 0.25) * 0.25 + 0.125
+        )
       ),
 
       samp_size_upper = samp_size_floor + 0.25,
 
-      samp_size_bin = sprintf(
-        "%.3f-%.3fL",
-        round(samp_size_floor, 3),
-        round(samp_size_upper, 3)
+      samp_size_bin = if_else(
+        is.na(samp_size_floor),
+        NA_character_,
+        sprintf(
+          "%.3f-%.3fL",
+          round(samp_size_floor, 3),
+          round(samp_size_upper, 3)
+        )
       )
     ) %>%
     select(-samp_size_upper)
-
 
   df
 }
@@ -597,7 +611,7 @@ assign_protocol_ID <- function(df,
 
   # Remove existing IDs if present
   df <- df %>%
-    select(-any_of(c("protocol_ID", "protocol_version")))
+    select(-any_of(c("protocol_ID", "protocolVersion")))
 
   # Distinct combinations at full granularity
   new_full_combos <- df %>%
@@ -613,7 +627,7 @@ assign_protocol_ID <- function(df,
       group_by(across(all_of(protocol_columns))) %>%
       mutate(
         protocol_ID = cur_group_id(),
-        protocol_version = row_number()
+        protocolVersion = row_number()
       ) %>%
       ungroup()
 
@@ -621,7 +635,7 @@ assign_protocol_ID <- function(df,
 
     # Ensure sheet has required structure
     required_cols <- c(protocol_columns, version_columns,
-                       "protocol_ID", "protocol_version")
+                       "protocol_ID", "protocolVersion")
 
     missing_cols <- setdiff(required_cols, names(protocol_sheet))
     if (length(missing_cols) > 0) {
@@ -650,7 +664,7 @@ assign_protocol_ID <- function(df,
       new_protocols <- new_protocols %>%
         left_join(new_full_combos, by = protocol_columns) %>%
         group_by(protocol_ID) %>%
-        mutate(protocol_version = row_number()) %>%
+        mutate(protocolVersion = row_number()) %>%
         ungroup()
 
       protocol_sheet <- bind_rows(protocol_sheet, new_protocols)
@@ -684,9 +698,9 @@ assign_protocol_ID <- function(df,
       unseen_versions <- unseen_versions %>%
         group_by(protocol_ID) %>%
         mutate(
-          protocol_version =
+          protocolVersion =
             row_number() +
-            max(protocol_sheet$protocol_version[
+            max(protocol_sheet$protocolVersion[
               protocol_sheet$protocol_ID == first(protocol_ID)
             ])
         ) %>%

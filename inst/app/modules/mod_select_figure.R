@@ -580,20 +580,20 @@ mod_select_figure_server <- function(id, r) {
           " (", sorted_prot, " samples)"
         )
 
-        selected_prot <- names(sorted_prot)[1]  # value with most observations
+        r$selected_prot <- names(sorted_prot)[1]  # value with most observations
 
         updateSelectInput(
           session,
           "explore_prot_id",
           choices = l_prot,
-          selected = selected_prot
+          selected = r$selected_prot
         )
 
         shinyWidgets::updatePickerInput(
           session,
           "prot_id",
           choices = l_prot,
-          selected = selected_prot
+          selected = r$selected_prot
         )
         r$protocol_ids_sorted <- names(sorted_prot)
 
@@ -616,51 +616,35 @@ mod_select_figure_server <- function(id, r) {
 
     observe({ update_protocol_menu() })
 
-    observeEvent(selected_protocol_rows(), {
+    observeEvent(input$explore_prot_id, {
 
-      rows <- selected_protocol_rows()
+      req(r$data_active)
+      req(input$explore_prot_id)
 
-      if (nrow(rows) > 0) {
+      versions <- r$data_active %>%
+        dplyr::filter(protocol_ID == input$explore_prot_id) %>%
+        dplyr::distinct(protocolVersion) %>%
+        dplyr::pull(protocolVersion) %>%
+        na.omit()
 
-        # Get unique versions
-        versions <- rows %>%
-          dplyr::pull(protocol_version) %>%
-          unique() %>%
-          sort()
+      if (length(versions) > 0) {
 
-        # Remove NA if needed
-        versions <- versions[!is.na(versions)]
+        # Force numeric sort (safe given your guarantee)
+        versions <- sort(as.numeric(versions))
 
-        if (length(versions) > 0) {
-
-          updateSelectInput(
-            session,
-            "explore_prot_version",
-            choices = versions,
-            selected = versions[1]   # lowest version (after sort)
-          )
-
-        } else {
-
-          updateSelectInput(
-            session,
-            "explore_prot_version",
-            choices = "Not available",
-            selected = "Not available"
-          )
-
-        }
+        # Convert back to character for selectInput
+        versions <- as.character(versions)
 
       } else {
-
-        updateSelectInput(
-          session,
-          "explore_prot_version",
-          choices = "Not available",
-          selected = "Not available"
-        )
-
+        versions <- character(0)
       }
+
+      updateSelectInput(
+        session,
+        "explore_prot_version",
+        choices = versions,
+        selected = if (length(versions) > 0) versions[1] else NULL
+      )
 
     })
 
@@ -670,12 +654,12 @@ mod_select_figure_server <- function(id, r) {
 
       protocol_info %>%
         dplyr::filter(
-          protocol_ID == input$explore_prot_id
+          protocol_ID == input$explore_prot_id,
+          protocolVersion == input$explore_prot_version
         )
     })
 
-    # --- base protocol per Location (the "starting choice") ---
-    base_protocol <- reactiveVal(4)
+
 
     # live details card
     output$protocol_details <- renderUI({
@@ -687,8 +671,9 @@ mod_select_figure_server <- function(id, r) {
       }
 
       method_groups <- list(
-        "Field Methods" = c("samp_size","size_frac","filter_material","samp_mat_process",
-                            "minimumDepthInMeters","maximumDepthInMeters"),
+        "Field Methods" = c("samp_size_floor","size_frac","filter_material","samp_mat_process",
+                            # "minimumDepthInMeters","maximumDepthInMeters"),
+                            "min_depth_floor", "max_depth_floor"),
         "Storage Methods" = c("samp_store_temp","samp_store_sol"),
         "Lab Methods" = c("target_gene","pcr_primer_forward","pcr_primer_reverse","nucl_acid_ext_kit"),
         "Library Preparation" = c("platform","instrument","seq_kit"),
@@ -704,7 +689,7 @@ mod_select_figure_server <- function(id, r) {
       }
 
       # Build base df (for comparison)
-      bp <- base_protocol()
+      bp <- r$selected_prot
       df_base <- NULL
       if (!is.null(bp) && nzchar(bp)) {
         df_base <- protocol_info %>%
@@ -788,10 +773,11 @@ mod_select_figure_server <- function(id, r) {
     })
 
     output$protocol_nmds_plot <- renderPlotly({
-      req(protocol_test_sheet)
+      req(protocol_info)
       req(r$protocol_ids_sorted)
       if (length(r$protocol_ids_sorted) > 2) {
-        filtered_protocol_sheet <- protocol_test_sheet %>% filter(protocol_ID %in% r$protocol_ids_sorted)
+        filtered_protocol_sheet <- protocol_info %>% filter(protocol_ID %in% r$protocol_ids_sorted)
+        browser()
         protocol_nmds(filtered_protocol_sheet)
       } else {
         NULL
