@@ -777,7 +777,6 @@ mod_select_figure_server <- function(id, r) {
       req(r$protocol_ids_sorted)
       if (length(r$protocol_ids_sorted) > 2) {
         filtered_protocol_sheet <- protocol_info %>% filter(protocol_ID %in% r$protocol_ids_sorted)
-        browser()
         protocol_nmds(filtered_protocol_sheet)
       } else {
         NULL
