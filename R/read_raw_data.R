@@ -49,6 +49,7 @@
 #' )
 #' }
 
+
 read_raw_data <- function(
     dataset_ids    = NULL,
     scientificname = NULL,
@@ -65,6 +66,91 @@ read_raw_data <- function(
   library(dbscan)
   library(geosphere)
   library(sf)
+
+  occurrence_cols <- c(
+    "recordedBy",
+    "bibliographicCitation",
+    "materialSampleID",
+    "organismQuantity",
+    "organismQuantityType",
+    "sampleSizeValue",
+    "sampleSizeUnit",
+    "associatedSequences",
+    "minimumDepthInMeters",
+    "maximumDepthInMeters",
+    "month",
+    "year",
+    "scientificNameID",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus"
+  )
+
+  dna_cols <- c(
+    "dna_sequence",
+    "target_gene",
+    "pcr_primer_forward",
+    "pcr_primer_forward",   # appears twice in your list
+    "samp_name",
+    "env_broad_scale",
+    "env_local_scale",
+    "env_medium",
+    "samp_mat_process",
+    "size_frac",
+    "samp_size",
+    "samp_size_unit",
+    "otu_db",
+    "seq_kit",
+    "otu_seq_comp_appr",
+    "pcr_primer_name_forward",
+    "pcr_primer_name_reverse",
+    "pcr_primer_reference",
+    "occurrenceID"
+  )
+
+
+  mof_cols <- c(
+    "seq_id",
+    "samp_category",
+    "checkls_ver",
+    "assay_name",
+    "assay_type",
+    "targetTaxonomicAssay",
+    "geo_loc_name",
+    "technical_rep_id",
+    "project_contact",
+    "seq_run_id",
+    "lib_id",
+    "project_id",
+    "pcr_0_1",
+    "samp_store_sol",
+    "samp_store_temp",
+    "platform",
+    "instrument",
+    "tax_assign_cat",
+    "LClabel",
+    "occurrenceID",
+    "nucl_acid_ext",
+    "nucl_acid_ext_kit",
+    "filter_material"
+  )
+
+  added_cols <- c("category", "flags")
+
+  mandatory_obis <- c(
+    "occurrenceID",
+    "eventDate",
+    "decimalLongitude",
+    "decimalLatitude",
+    "scientificName",
+    "occurrenceStatus",
+    "basisOfRecord"
+  )
+
+  cols_included_from_OBIS <- unique(c(occurrence_cols, dna_cols, mof_cols, added_cols, mandatory_obis))
 
 
   join_by <- match.arg(join_by)
@@ -156,6 +242,8 @@ read_raw_data <- function(
       warning("No occurrence records returned for dataset ", ds, " with these filters.")
       return(NULL)
     }
+
+
     # ---- 1c. Build core_occ and filter on occurrenceStatus ----
     core_occ <- rec %>%
       distinct(occurrenceID, .keep_all = TRUE)
@@ -669,76 +757,5 @@ assign_protocol_ID <- function(df,
 
 #columns from the flow chart
 #Occurrence
-occurrence_cols <- c(
-  "recordedBy",
-  "bibliographicCitation",
-  "materialSampleID",
-  "organismQuantity",
-  "organismQuantityType",
-  "sampleSizeValue",
-  "sampleSizeUnit",
-  "associatedSequences",
-  "minimumDepthInMeters",
-  "maximumDepthInMeters",
-  "month",
-  "year",
-  "scientificNameID",
-  "kingdom",
-  "phylum",
-  "class",
-  "order",
-  "family",
-  "genus"
-)
 
-dna_cols <- c(
-  "dna_sequence",
-  "target_gene",
-  "pcr_primer_forward",
-  "pcr_primer_forward",   # appears twice in your list
-  "samp_name",
-  "env_broad_scale",
-  "env_local_scale",
-  "env_medium",
-  "samp_mat_process",
-  "size_frac",
-  "samp_size",
-  "samp_size_unit",
-  "otu_db",
-  "seq_kit",
-  "otu_seq_comp_appr",
-  "pcr_primer_name_forward",
-  "pcr_primer_name_reverse",
-  "pcr_primer_reference",
-  "occurrenceID"
-)
-
-
-mof_cols <- c(
-  "seq_id",
-  "samp_category",
-  "checkls_ver",
-  "assay_name",
-  "assay_type",
-  "targetTaxonomicAssay",
-  "geo_loc_name",
-  "technical_rep_id",
-  "project_contact",
-  "seq_run_id",
-  "lib_id",
-  "project_id",
-  "pcr_0_1",
-  "samp_store_sol",
-  "samp_store_temp",
-  "platform",
-  "instrument",
-  "tax_assign_cat",
-  "LClabel",
-  "occurrenceID",
-  "nucl_acid_ext",
-  "nucl_acid_ext_kit",
-  "filter_material"
-)
-
-cols_in_flowchart <- unique(c(occurrence_cols, dna_cols, mof_cols))
 

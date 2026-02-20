@@ -453,8 +453,6 @@ check_station_distances_unique <- function(df,
 
 
 required_cols <- c(
-  # "protocol_ID",
-  # "protocolVersion",
   "samp_name",
   "target_gene",
   "pcr_primer_name_forward",
@@ -592,7 +590,6 @@ dna_cols <- c(
   "dna_sequence",
   "target_gene",
   "pcr_primer_forward",
-  "pcr_primer_forward",   # appears twice in your list
   "samp_name",
   "env_broad_scale",
   "env_local_scale",
