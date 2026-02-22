@@ -58,14 +58,7 @@ read_raw_data <- function(
     join_by        = c("auto", "occurrenceID", "id"),
     require_absences = TRUE
 ) {
-  library(robis)
   library(dplyr)
-  library(tidyr)
-  library(lubridate)
-  library(purrr)
-  library(dbscan)
-  library(geosphere)
-  library(sf)
 
   occurrence_cols <- c(
     "recordedBy",
@@ -94,7 +87,6 @@ read_raw_data <- function(
     "dna_sequence",
     "target_gene",
     "pcr_primer_forward",
-    "pcr_primer_forward",   # appears twice in your list
     "samp_name",
     "env_broad_scale",
     "env_local_scale",
@@ -202,12 +194,12 @@ read_raw_data <- function(
     exts <- tolower(unlist(ds_meta$extensions))
     if (!"dnaderiveddata" %in% exts) {
       warning("Dataset ", ds, " has no DNADerivedData extension; skipping.")
-      return(NULL)
+      next
     }
 
     if (!"measurementorfact" %in% exts) {
       warning("Dataset ", ds, " has no MeasurementOrFact extension; skipping.")
-      return(NULL)
+      next
     }
     exclude_list <- c("NO_COORD",
       "ZERO_COORD",
@@ -237,12 +229,12 @@ read_raw_data <- function(
     )
     # skip iteration if rec is NULL
     if (is.null(rec)) {
-      return(NULL)
+      next
     }
 
     if (nrow(rec) == 0L) {
       warning("No occurrence records returned for dataset ", ds, " with these filters.")
-      return(NULL)
+      next
     }
 
 
@@ -252,7 +244,7 @@ read_raw_data <- function(
       distinct(occurrenceID, .keep_all = TRUE)
     if (!"occurrenceStatus" %in% names(core_occ)) {
       warning("Dataset ", ds, " has no occurrenceStatus column; skipping.")
-      return(NULL)
+      next
     }
     # Unique non-NA status values
     status_vals <- unique(na.omit(core_occ$occurrenceStatus))
@@ -263,7 +255,7 @@ read_raw_data <- function(
           "Dataset ", ds,
           " does not contain both 'present' and 'absent' in occurrenceStatus; skipping."
         )
-        return(NULL)
+        next
       }
     }
     # Keep also an id-based core for joining if needed
@@ -273,34 +265,36 @@ read_raw_data <- function(
     dna_only <- robis::unnest_extension(rec, "DNADerivedData")
 
     shared_dna_cols <- intersect(cols_included_from_OBIS, names(dna_only))
-    print("dna shared cols: ")
-    print(shared_dna_cols)
+
     dna_only <- dna_only %>% select(shared_dna_cols)
     #MeasurementOfFact extension
-    mof_only <- unnest_extension(rec, "MeasurementOrFact")
+    mof_only <- robis::unnest_extension(rec, "MeasurementOrFact")
 
     mof_only <- mof_only %>%
       group_by(occurrenceID, measurementType) %>%
       slice(1) %>%
-      ungroup(1)
+      ungroup()
     # ---- 2. Decide how to join core + extension ----
     wide_mof <- mof_only %>%
-      pivot_wider(
+      tidyr::pivot_wider(
         id_cols = c(occurrenceID, id),
         names_from = measurementType,
         values_from = measurementValue
       )
 
-    shared_mof_cols <- intersect(cols_included_from_OBIS, names(mof_only))
-    print("mof shared cols: ")
-    print(shared_mof_cols)
-    mof_only <- mof_only %>% select(shared_mof_cols)
+    shared_mof_cols <- intersect(cols_included_from_OBIS, names(wide_mof))
+
+    wide_mof <- wide_mof %>% select(shared_mof_cols)
     mof_and_dna <- wide_mof %>% left_join(dna_only, by = "id")
 
     shared_cols <- intersect(cols_included_from_OBIS, names(rec))
-    print("rec shared cols: ")
-    print(shared_cols)
+
     rec <- rec %>% select(shared_cols)
+
+    shared_cols <- intersect(cols_included_from_OBIS, names(core_id))
+
+    core_id <- core_id %>% select(shared_cols)
+
     join_choice <- join_by
     if (join_choice == "auto") {
       # avoid vector-recycling warning by checking non-NA separately
@@ -329,16 +323,17 @@ read_raw_data <- function(
     }
     # ---- 3. Basic cleaning & derived fields ----
 
-    if (!has_required_cols(core_and_extensions, required_cols)) {
-      return(NULL)
-    }
+    # if (!has_required_cols(core_and_extensions, required_cols)) {
+    #   return(NULL)
+    # }
 
     if (is.null(core_and_extensions)) {
-      return(NULL)
+      next
     }
+    all_shared_cols <- intersect(names(core_and_extensions), cols_included_from_OBIS)
+
+    core_and_extensions <- core_and_extensions %>% select(all_shared_cols)
     dup_names <- names(core_and_extensions)[duplicated(names(core_and_extensions))]
-    all_shared_cols <- intersect(core_and_extensions, cols_included_from_OBIS)
-    core_and_extensions <- select(all_shared_cols)
     if (length(dup_names) > 0) {
       message("Duplicate column names detected:")
       print(unique(dup_names))
