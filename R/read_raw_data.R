@@ -90,6 +90,7 @@ read_raw_data <- function(
   )
 
   dna_cols <- c(
+    "id",
     "dna_sequence",
     "target_gene",
     "pcr_primer_forward",
@@ -113,6 +114,7 @@ read_raw_data <- function(
 
 
   mof_cols <- c(
+    "id",
     "seq_id",
     "samp_category",
     "checkls_ver",
@@ -244,6 +246,7 @@ read_raw_data <- function(
     }
 
 
+
     # ---- 1c. Build core_occ and filter on occurrenceStatus ----
     core_occ <- rec %>%
       distinct(occurrenceID, .keep_all = TRUE)
@@ -269,6 +272,10 @@ read_raw_data <- function(
     # DNADerivedData extension (includes `id` by default)
     dna_only <- robis::unnest_extension(rec, "DNADerivedData")
 
+    shared_dna_cols <- intersect(cols_included_from_OBIS, names(dna_only))
+    print("dna shared cols: ")
+    print(shared_dna_cols)
+    dna_only <- dna_only %>% select(shared_dna_cols)
     #MeasurementOfFact extension
     mof_only <- unnest_extension(rec, "MeasurementOrFact")
 
@@ -284,8 +291,16 @@ read_raw_data <- function(
         values_from = measurementValue
       )
 
+    shared_mof_cols <- intersect(cols_included_from_OBIS, names(mof_only))
+    print("mof shared cols: ")
+    print(shared_mof_cols)
+    mof_only <- mof_only %>% select(shared_mof_cols)
     mof_and_dna <- wide_mof %>% left_join(dna_only, by = "id")
 
+    shared_cols <- intersect(cols_included_from_OBIS, names(rec))
+    print("rec shared cols: ")
+    print(shared_cols)
+    rec <- rec %>% select(shared_cols)
     join_choice <- join_by
     if (join_choice == "auto") {
       # avoid vector-recycling warning by checking non-NA separately
@@ -322,7 +337,8 @@ read_raw_data <- function(
       return(NULL)
     }
     dup_names <- names(core_and_extensions)[duplicated(names(core_and_extensions))]
-
+    all_shared_cols <- intersect(core_and_extensions, cols_included_from_OBIS)
+    core_and_extensions <- select(all_shared_cols)
     if (length(dup_names) > 0) {
       message("Duplicate column names detected:")
       print(unique(dup_names))

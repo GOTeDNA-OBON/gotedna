@@ -287,7 +287,7 @@ check_station_distances_unique <- function(df,
   return(violations)
 }
 
-combined_data <- update_location_clusters(combined_data)
+# combined_data <- update_location_clusters(combined_data)
 
 
 ################################################
