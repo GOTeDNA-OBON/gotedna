@@ -42,12 +42,7 @@
 #' @author Anais Lacoursiere-Roussel \email{Anais.Lacoursiere@@dfo-mpo.gc.ca}
 #' @rdname read_data
 #' @export
-#' @examples
-#' \dontrun{
-#' D_mb <- read_data(
-#'  choose.method = "metabarcoding", path.folder = "./inst/testdata"
-#' )
-#' }
+
 
 read_data <- function(
     dataset_ids    = NULL,
@@ -57,14 +52,92 @@ read_data <- function(
     join_by        = c("auto", "occurrenceID", "id"),
     require_absences = TRUE
 ) {
-  library(robis)
-  library(dplyr)
-  library(tidyr)
-  library(lubridate)
-  library(purrr)
-  library(dbscan)
-  library(geosphere)
-  library(sf)
+
+  occurrence_cols <- c(
+    "recordedBy",
+    "bibliographicCitation",
+    "materialSampleID",
+    "organismQuantity",
+    "organismQuantityType",
+    "sampleSizeValue",
+    "sampleSizeUnit",
+    "associatedSequences",
+    "minimumDepthInMeters",
+    "maximumDepthInMeters",
+    "month",
+    "year",
+    "scientificNameID",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus"
+  )
+
+  dna_cols <- c(
+    "id",
+    "dna_sequence",
+    "target_gene",
+    "pcr_primer_forward",
+    "samp_name",
+    "env_broad_scale",
+    "env_local_scale",
+    "env_medium",
+    "samp_mat_process",
+    "size_frac",
+    "samp_size",
+    "samp_size_unit",
+    "otu_db",
+    "seq_kit",
+    "otu_seq_comp_appr",
+    "pcr_primer_name_forward",
+    "pcr_primer_name_reverse",
+    "pcr_primer_reference",
+    "occurrenceID"
+  )
+
+
+  mof_cols <- c(
+    "id",
+    "seq_id",
+    "samp_category",
+    "checkls_ver",
+    "assay_name",
+    "assay_type",
+    "targetTaxonomicAssay",
+    "geo_loc_name",
+    "technical_rep_id",
+    "project_contact",
+    "seq_run_id",
+    "lib_id",
+    "project_id",
+    "pcr_0_1",
+    "samp_store_sol",
+    "samp_store_temp",
+    "platform",
+    "instrument",
+    "tax_assign_cat",
+    "LClabel",
+    "occurrenceID",
+    "nucl_acid_ext",
+    "nucl_acid_ext_kit",
+    "filter_material"
+  )
+
+  added_cols <- c("category", "flags")
+
+  mandatory_obis <- c(
+    "occurrenceID",
+    "eventDate",
+    "decimalLongitude",
+    "decimalLatitude",
+    "scientificName",
+    "occurrenceStatus",
+    "basisOfRecord"
+  )
+
+  cols_included_from_OBIS <- unique(c(occurrence_cols, dna_cols, mof_cols, added_cols, mandatory_obis))
 
 
   join_by <- match.arg(join_by)
@@ -95,12 +168,6 @@ read_data <- function(
       stop("Could not find dataset id column in dataset() output.")
     }
     message("Found ", length(dataset_ids), " dataset(s) with DNADerivedData.")
-    dataset_ids <- as.character(dataset_ids)
-    existing_files <- list.files("inst/app/data", pattern = "^dataset-.*\\.rds$")
-
-    saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
-
-    dataset_ids <- setdiff(dataset_ids, saved_ds)
   }
   dataset_ids <- as.character(dataset_ids)
 
@@ -120,6 +187,12 @@ read_data <- function(
       warning("Dataset ", ds, " has no MeasurementOrFact extension; skipping.")
       return(NULL)
     }
+    exclude_list <- c("NO_COORD",
+                      "ZERO_COORD",
+                      "LON_OUT_OF_RANGE",
+                      "LAT_OUT_OF_RANGE",
+                      "NO_MATCH"
+    )
     # ---- 1b. Pull occurrence records with DNADerivedData + filters ----
     rec <- tryCatch(
       {
@@ -130,7 +203,9 @@ read_data <- function(
           areaid         = areaid,
           absence        = "include",
           extensions     = c("DNADerivedData", "MeasurementOrFact"),
-          hasextensions  = c("DNADerivedData", "MeasurementOrFact")
+          hasextensions  = c("DNADerivedData", "MeasurementOrFact"),
+          dropped = "include",
+          exclude = exclude_list
         )
       },
       error = function(e) {
@@ -147,6 +222,9 @@ read_data <- function(
       warning("No occurrence records returned for dataset ", ds, " with these filters.")
       return(NULL)
     }
+
+
+
     # ---- 1c. Build core_occ and filter on occurrenceStatus ----
     core_occ <- rec %>%
       distinct(occurrenceID, .keep_all = TRUE)
@@ -172,22 +250,34 @@ read_data <- function(
     # DNADerivedData extension (includes `id` by default)
     dna_only <- robis::unnest_extension(rec, "DNADerivedData")
 
+    shared_dna_cols <- intersect(cols_included_from_OBIS, names(dna_only))
+
+    dna_only <- dna_only %>% select(shared_dna_cols)
     #MeasurementOfFact extension
-    mof_only <- unnest_extension(rec, "MeasurementOrFact")
+    mof_only <- robis::unnest_extension(rec, "MeasurementOrFact")
 
     mof_only <- mof_only %>%
       group_by(occurrenceID, measurementType) %>%
       slice(1) %>%
-      ungroup(1)
+      ungroup()
     # ---- 2. Decide how to join core + extension ----
     wide_mof <- mof_only %>%
-      pivot_wider(
+      tidyr::pivot_wider(
         id_cols = c(occurrenceID, id),
         names_from = measurementType,
         values_from = measurementValue
       )
 
+    shared_mof_cols <- intersect(cols_included_from_OBIS, names(wide_mof))
+
+    wide_mof <- wide_mof %>% select(shared_mof_cols)
     mof_and_dna <- wide_mof %>% left_join(dna_only, by = "id")
+
+    shared_cols <- intersect(cols_included_from_OBIS, names(rec))
+    rec <- rec %>% select(shared_cols)
+
+    shared_cols <- intersect(cols_included_from_OBIS, names(core_id))
+    core_id <- core_id %>% select(shared_cols)
 
     join_choice <- join_by
     if (join_choice == "auto") {
@@ -216,52 +306,14 @@ read_data <- function(
         left_join(mof_and_dna, by = "id")
     }
     # ---- 3. Basic cleaning & derived fields ----
-    core_and_extensions <- core_and_extensions %>%
-      filter(!is.na(samp_name)) %>%  # keep only real samples
-      mutate(
-        datasetID_obis = ds,
-        # eventDate usually ISO; strip time & parse
-        eventDate_chr   = as.character(eventDate),
-        eventDate_clean = suppressWarnings(
-          ymd(substr(eventDate_chr, 1, 10))
-        ),
-        year  = year(eventDate_clean),
-        month = month(eventDate_clean),
-        decimalLatitude  = suppressWarnings(as.numeric(decimalLatitude)),
-        decimalLongitude = suppressWarnings(as.numeric(decimalLongitude))
-      )
-    if (!has_required_cols(core_and_extensions, required_cols)) {
-      return(NULL)
-    }
-    # Safe versions if fields are missing
-    core_and_extensions <- core_and_extensions %>%
-      mutate(
-        station = if ("samplingStation" %in% names(.)) samplingStation else NA_character_,
-        ownerContact = if ("ownerInstitutionCode" %in% names(.)) ownerInstitutionCode else NA_character_,
-        bibliographicCitation = if ("bibliographicCitation" %in% names(.)) bibliographicCitation else NA_character_
-      )
-    # ---- 4. Metabarcoding detection + primer ----
-    core_and_extensions <- core_and_extensions %>%
-      mutate(
-        organismQuantity = suppressWarnings(as.numeric(organismQuantity)),
-        detected = dplyr::case_when(
-          !is.na(organismQuantity) & organismQuantity > 0 ~ 1L,
-          TRUE ~ 0L
-        ),
-        primer = dplyr::coalesce(target_subfragment, target_gene)
-      )
 
-    #select the necessary columns
-    core_and_extensions <- enforce_schema(
-      core_and_extensions,
-      required = required_cols,
-      optional = optional_columns
-    )
     if (is.null(core_and_extensions)) {
       return(NULL)
     }
-    dup_names <- names(core_and_extensions)[duplicated(names(core_and_extensions))]
+    all_shared_cols <- intersect(names(core_and_extensions), cols_included_from_OBIS)
 
+    core_and_extensions <- core_and_extensions %>% select(all_shared_cols)
+    dup_names <- names(core_and_extensions)[duplicated(names(core_and_extensions))]
     if (length(dup_names) > 0) {
       message("Duplicate column names detected:")
       print(unique(dup_names))
@@ -270,17 +322,13 @@ read_data <- function(
     out <- core_and_extensions %>%
       mutate(
         samp_name = as.character(samp_name),
-        primer = sprintf(
-          "%s | %s / %s",
-          target_gene,
-          pcr_primer_name_forward,
-          pcr_primer_name_reverse
-        ),
-        eventDate = eventDate_clean
       )
-    saveRDS(out, paste0("inst/app/data/dataset-", ds, ".rds"))
+
+    out <- calculate_and_enforce_columns(out)
+
     out
   })
+
   obis_list <- Filter(Negate(is.null), obis_list)
   ## 6. Bind everything together ----
 
@@ -291,348 +339,11 @@ read_data <- function(
     return(tibble::tibble())
   }
 
+  #add and manage columns
+
+
   GOTeDNA_df <- dplyr::bind_rows(obis_list)
   rownames(GOTeDNA_df) <- NULL
-  GOTeDNA_df_with_assigned_stations <-
-    update_location_clusters(GOTeDNA_df)
-
-  GOTeDNA_df_with_assigned_stations
+  GOTeDNA_df
 
 }
-
-
-###########################
-#Code below here is for adding locations to the data based on efficient clustering
-###########################
-
-# ----------------------------
-# Complete-linkage helper
-# ----------------------------
-run_complete_linkage <- function(df, threshold_m, cluster_prefix = "C") {
-  if (nrow(df) == 1) return(tibble(cluster = paste0(cluster_prefix, "_1")))
-
-  coords <- df[, c("lon", "lat")]
-  dist_mat <- geosphere::distm(coords)
-
-  hc <- hclust(as.dist(dist_mat), method = "complete")
-  clusters <- cutree(hc, h = threshold_m)
-
-  tibble(cluster = paste0(cluster_prefix, "_", clusters))
-}
-
-# ----------------------------
-# Recursive hybrid clustering
-# ----------------------------
-hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_prefix = "S") {
-
-  if (nrow(df_unique) <= max_hc_size) {
-    return(run_complete_linkage(df_unique, threshold_m, cluster_prefix))
-  }
-
-  # Compute approximate max distance for coarse DBSCAN
-  coords <- df_unique[, c("lon", "lat")]
-  dist_mat <- geosphere::distm(coords)
-  max_dist <- max(dist_mat)
-  eps <- max_dist / 2
-
-  db <- dbscan(coords, eps = eps, minPts = 1)
-  df_unique$coarse_cluster <- db$cluster
-
-  result_clusters <- df_unique %>%
-    group_by(coarse_cluster) %>%
-    group_modify(~{
-      if (nrow(.x) > max_hc_size) {
-        hybrid_cluster_unique(.x %>% select(-coarse_cluster), threshold_m, max_hc_size,
-                              cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
-      } else {
-        run_complete_linkage(.x %>% select(-coarse_cluster), threshold_m,
-                             cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
-      }
-    }) %>%
-    ungroup()
-
-  return(result_clusters)
-}
-
-# ----------------------------
-# Main function
-# ----------------------------
-update_location_clusters <- function(df,
-                                           lat_col = "decimalLatitude",
-                                           long_col = "decimalLongitude",
-                                           distance_threshold = 50,
-                                           max_hc_size = 500) {
-
-  # ---- 1. Ensure stationLabel exists ----
-  if (!"stationLabel" %in% names(df)) {
-    if ("station" %in% names(df)) {
-      df$stationLabel <- df$station
-    } else {
-      df$stationLabel <- NA_character_
-    }
-  }
-
-  # ---- 2. Keep only valid coordinates ----
-  valid_df <- df %>%
-    filter(!is.na(.data[[lat_col]]), !is.na(.data[[long_col]]))
-
-  if (nrow(valid_df) == 0) {
-    df$station <- NA_character_
-    return(df)
-  }
-
-  # ---- 3. Reduce to unique coordinates ----
-  coords_unique <- valid_df %>%
-    distinct(.data[[lat_col]], .data[[long_col]]) %>%
-    rename(lat = all_of(lat_col), lon = all_of(long_col))
-
-  # ---- 4. Run hybrid clustering on unique coordinates ----
-  station_map <- hybrid_cluster_unique(coords_unique,
-                                       threshold_m = distance_threshold,
-                                       max_hc_size = max_hc_size,
-                                       cluster_prefix = "Location")
-
-  # ---- 5. Map station IDs back to full dataset ----
-  coords_unique$station <- as.integer(factor(station_map$cluster))
-
-  df$station <- NULL
-  df <- df %>%
-    left_join(coords_unique, by = setNames(c("lat", "lon"), c(lat_col, long_col)))
-
-  df
-}
-
-
-
-# df: dataset with lon/lat and station column
-# lon_col / lat_col: coordinate columns
-# station_col: station IDs
-# threshold_m: maximum allowed distance
-check_station_distances_unique <- function(df,
-                                           lon_col = "decimalLongitude",
-                                           lat_col = "decimalLatitude",
-                                           station_col = "station",
-                                           threshold_m = 500) {
-
-  violations <- df %>%
-    group_by(.data[[station_col]]) %>%
-    group_modify(~{
-      # ---- 1. Reduce to unique coordinates for efficiency ----
-      pts <- .x %>%
-        distinct(.data[[lon_col]], .data[[lat_col]]) %>%
-        select(all_of(c(lon_col, lat_col)))
-
-      n <- nrow(pts)
-      if (n <= 1) return(tibble())
-
-      # ---- 2. Compute pairwise distance matrix ----
-      dmat <- geosphere::distm(pts)
-
-      # ---- 3. Check for distances exceeding threshold ----
-      idx <- which(dmat > threshold_m, arr.ind = TRUE)
-      idx <- idx[idx[,1] < idx[,2], , drop = FALSE]  # upper triangle only
-      if (nrow(idx) == 0) return(tibble())
-
-      tibble(
-        station = unique(.x[[station_col]]),
-        point1 = idx[,1],
-        point2 = idx[,2],
-        distance_m = dmat[idx]
-      )
-    }) %>%
-    ungroup()
-
-  if (nrow(violations) == 0) {
-    message("✅ All stations pass: no pair of points exceeds ", threshold_m, " meters.")
-  } else {
-    warning("⚠️ Found ", nrow(violations), " pairs exceeding ", threshold_m, " meters.")
-  }
-
-  return(violations)
-}
-
-
-required_cols <- c(
-  "samp_name",
-  "target_gene",
-  "pcr_primer_name_forward",
-  "pcr_primer_name_reverse",
-  "scientificName",
-  "kingdom",
-  "phylum",
-  "class",
-  "order",
-  "family",
-  "genus",
-  "eventDate_clean",
-  "decimalLatitude",
-  "decimalLongitude",
-  "organismQuantity",
-  "concentration",
-  "pcr_primer_lod",
-  "datasetID_obis"
-)
-
-
-
-optional_columns <- c(
-'samp_size',
-'size_frac',
-'filter_material',
-'samp_mat_process',
-'samp_store_temp',
-'samp_store_sol',
-# 'target_gene',
-'project_contact',
-# 'pcr_primer_forward',
-# 'pcr_primer_reverse',
-'nucl_acid_ext_kit',
-'platform',
-'LClabel',
-'instrument',
-'month',
-'year',
-'seq_kit',
-'otu_db',
-'tax_assign_cat',
-'otu_seq_comp_appr',
-'minimumDepthInMeters',
-'maximumDepthInMeters',
-'category',
-'hab'
-)
-
-protocol_columns <- c(
-  'nucl_acid_ext_kit',
-  'platform',
-  'instrument',
-  'seq_kit',
-  'otu_db',
-  'tax_assign_cat',
-  'otu_seq_comp_appr',
-  'min_depth_floor',
-  'max_depth_floor'
-)
-
-version_columns <- c(
-  'samp_size_floor',
-  'size_frac',
-  'filter_material',
-  'samp_mat_process',
-  'samp_store_temp',
-  'samp_store_sol'
-)
-
-
-has_required_cols <- function(df, required_cols) {
-  missing <- setdiff(required_cols, colnames(df))
-
-  if (length(missing) > 0) {
-    message(
-      "Skipping dataset — missing columns: ",
-      paste(missing, collapse = ", ")
-    )
-    return(FALSE)
-  }
-
-  TRUE
-}
-
-enforce_schema <- function(df, required, optional) {
-  # Check required columns exist
-  missing_required <- setdiff(required, names(df))
-  if (length(missing_required)) {
-    message("Missing required columns: ", paste(missing_required, collapse = ", "))
-    return(NULL)
-  }
-
-  # Only add optional columns that aren't already in df
-  optional_to_add <- setdiff(optional, names(df))
-  if (length(optional_to_add)) {
-    df[optional_to_add] <- NA
-  }
-
-  # Strict allow-list: only include each column once
-  df <- df[, c(required, optional), drop = FALSE]
-
-  df
-}
-
-
-
-
-
-#columns from the flow chart
-#Occurrence
-occurrence_cols <- c(
-  "recordedBy",
-  "bibliographicCitation",
-  "materialSampleID",
-  "organismQuantity",
-  "organismQuantityType",
-  "sampleSizeValue",
-  "sampleSizeUnit",
-  "associatedSequences",
-  "minimumDepthInMeters",
-  "maximumDepthInMeters",
-  "month",
-  "year",
-  "scientificNameID",
-  "kingdom",
-  "phylum",
-  "class",
-  "order",
-  "family",
-  "genus"
-)
-
-dna_cols <- c(
-  "dna_sequence",
-  "target_gene",
-  "pcr_primer_forward",
-  "samp_name",
-  "env_broad_scale",
-  "env_local_scale",
-  "env_medium",
-  "samp_mat_process",
-  "size_frac",
-  "samp_size",
-  "samp_size_unit",
-  "otu_db",
-  "seq_kit",
-  "otu_seq_comp_appr",
-  "pcr_primer_name_forward",
-  "pcr_primer_name_reverse",
-  "pcr_primer_reference",
-  "occurrenceID"
-)
-
-
-mof_cols <- c(
-  "seq_id",
-  "samp_category",
-  "checkls_ver",
-  "assay_name",
-  "assay_type",
-  "targetTaxonomicAssay",
-  "geo_loc_name",
-  "technical_rep_id",
-  "project_contact",
-  "seq_run_id",
-  "lib_id",
-  "project_id",
-  "pcr_0_1",
-  "samp_store_sol",
-  "samp_store_temp",
-  "platform",
-  "instrument",
-  "tax_assign_cat",
-  "LClabel",
-  "occurrenceID",
-  "nucl_acid_ext",
-  "nucl_acid_ext_kit",
-  "filter_material"
-)
-
-cols_in_flowchart <- unique(c(occurrence_cols, dna_cols, mof_cols))
-
