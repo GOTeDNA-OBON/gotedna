@@ -671,7 +671,7 @@ mod_select_figure_server <- function(id, r) {
       }
 
       method_groups <- list(
-        "Field Methods" = c("samp_size_floor","size_frac","filter_material","samp_mat_process",
+        "Field Methods" = c("samp_size_mid","size_frac","filter_material","samp_mat_process",
                             # "minimumDepthInMeters","maximumDepthInMeters"),
                             "min_depth_floor", "max_depth_floor"),
         "Storage Methods" = c("samp_store_temp","samp_store_sol"),
