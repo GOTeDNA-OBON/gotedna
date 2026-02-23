@@ -31,10 +31,7 @@ required_cols <- c(
   "eventDate_clean",
   "decimalLatitude",
   "decimalLongitude",
-  "organismQuantity",
-  "concentration",
-  "pcr_primer_lod",
-  "datasetID_obis"
+  "organismQuantity"
 )
 
 optional_columns <- c(
@@ -287,7 +284,7 @@ check_station_distances_unique <- function(df,
   return(violations)
 }
 
-# combined_data <- update_location_clusters(combined_data)
+combined_data <- update_location_clusters(combined_data)
 
 
 ################################################
@@ -303,7 +300,11 @@ add_quantitative_bins_for_protocol_cols <- function(df) {
       samp_size_num = suppressWarnings(
         as.numeric(gsub("[^0-9.]", "", samp_size))
       ),
-
+      samp_size_num = dplyr::if_else(
+        samp_size_unit == "mL",
+        samp_size_num / 1000,
+        samp_size_num
+      ),
       # ---- Depth bins ----
       min_depth_floor = floor(round(minimumDepthInMeters, 6) / 5) * 5,
       max_depth_floor = floor(round(maximumDepthInMeters, 6) / 5) * 5,
@@ -322,6 +323,12 @@ add_quantitative_bins_for_protocol_cols <- function(df) {
       ),
 
       samp_size_upper = samp_size_floor + 0.25,
+
+      samp_size_mid = if_else(
+        is.na(samp_size_floor),
+        NA_real_,
+        round(samp_size_floor + 0.125, 3)
+      ),
 
       samp_size_bin = if_else(
         is.na(samp_size_floor),
@@ -462,8 +469,29 @@ assign_protocol_ID <- function(df,
 }
 
 
+protocol_columns <- c(
+  'nucl_acid_ext_kit',
+  'platform',
+  'instrument',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr',
+  'min_depth_floor',
+  'max_depth_floor'
+)
+
+version_columns <- c(
+  'samp_size_mid',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol'
+)
+
 combined_data <- add_quantitative_bins_for_protocol_cols(combined_data)
-protocol_result <- assign_protocol_ID(combined_data)
+protocol_result <- assign_protocol_ID(combined_data, protocol_columns, version_columns)
 combined_data <- protocol_result$data
 
 saveRDS(protocol_result$protocol_sheet, 'inst/app/data/protocol_sheet.rds')
@@ -489,17 +517,17 @@ combined_data <- combined_data %>%
       TRUE ~ 0L
     )
   )
-
-#THIS IS REMOVING ROWS, FOR OLD FUNCTIONALITY, REMOVE!
-D_mb_nodetect <- combined_data %>%
-  dplyr::group_by(
-    protocol_ID, protocolVersion, scientificName, primer, station) %>%
-  dplyr::summarise(num_detected = sum(detected)) %>%
-  dplyr::filter(num_detected == 0)
-
-D_mb_clean <- dplyr::anti_join(combined_data, D_mb_nodetect,
-                               by = c("protocol_ID","protocolVersion","scientificName",
-                                      "primer", "station"))
+#
+# #THIS IS REMOVING ROWS, FOR OLD FUNCTIONALITY, REMOVE!
+# D_mb_nodetect <- combined_data %>%
+#   dplyr::group_by(
+#     protocol_ID, protocolVersion, scientificName, primer, station) %>%
+#   dplyr::summarise(num_detected = sum(detected)) %>%
+#   dplyr::filter(num_detected == 0)
+#
+# D_mb_clean <- dplyr::anti_join(combined_data, D_mb_nodetect,
+#                                by = c("protocol_ID","protocolVersion","scientificName",
+#                                       "primer", "station"))
 
 
 ################################################
@@ -507,26 +535,6 @@ D_mb_clean <- dplyr::anti_join(combined_data, D_mb_nodetect,
 ################################################
 
 
-protocol_columns <- c(
-  'nucl_acid_ext_kit',
-  'platform',
-  'instrument',
-  'seq_kit',
-  'otu_db',
-  'tax_assign_cat',
-  'otu_seq_comp_appr',
-  'min_depth_floor',
-  'max_depth_floor'
-)
-
-version_columns <- c(
-  'samp_size_floor',
-  'size_frac',
-  'filter_material',
-  'samp_mat_process',
-  'samp_store_temp',
-  'samp_store_sol'
-)
 
 added_columns <- c(
   "protocol_ID",
@@ -543,13 +551,15 @@ added_columns <- c(
   "max_depth_bin",
   "min_depth_bin",
   "samp_size_bin",
-
+  "station",
+  "stationLabel",
+  "primer"
 )
 
 all_cols <- c(required_cols, optional_columns, protocol_columns, version_columns, added_columns)
-final_cols <- intersect(all_cols, names(D_mb_clean))
+final_cols <- intersect(all_cols, names(combined_data))
 
-D_mb_clean <- D_mb_clean[, final_cols, drop = FALSE]
+D_mb_clean <- combined_data[, final_cols, drop = FALSE]
 
 
 ################################################################################################

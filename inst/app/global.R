@@ -221,7 +221,7 @@ protocol_info <- readRDS("data/protocol_sheet.rds")
 
 protocol_labels <- c(
   samp_size = "Sample Volume (L)",
-  samp_size_floor = "Sample Volume (L)",
+  samp_size_mid = "Sample Volume (L)",
   size_frac = "Filter Pore Size",
   filter_material = "Filter Material",
   samp_mat_process = "Sample Processing Method",
