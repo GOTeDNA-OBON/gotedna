@@ -63,12 +63,6 @@ install.packages("path/to/GOTeDNA_{version}.tar.gz")
 
 ## Usage
 
-### Table of Contents:
-
--   Shiny
--   Import data
--   Visualizations
-
 To load the package: 
 
 ``` r
@@ -87,7 +81,7 @@ run_gotedna_app()
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
 
-Please refer to Appendix 2 in the GOTeDNA manuscript to access the sample metadata, qPCR, and metabarcoding templates.
+Please refer to Appendices 1 and 2 in the GOTeDNA manuscript to access the sample metadata and metabarcoding templates.
 
 ### Visualization
 
