@@ -5,6 +5,7 @@ server <- function(input, output, session) {
     geom_slc = NULL,
     station_slc = NULL,
     protocol_slc = NULL,
+    protocol_info = default_protocol_info,
     upload_data = NULL,
     upload_stations = NULL,
     upload_primers = NULL,

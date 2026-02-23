@@ -378,9 +378,16 @@ mod_select_data_server <- function(id, r) {
       ))
       on.exit(removeModal(), add = TRUE)
 
-      df_with_assigned_stations <- update_location_clusters(df)
-      r$upload_data <- df_with_assigned_stations
-      r$upload_stations <- get_station(df_with_assigned_stations)
+      df <- update_location_clusters(df)
+
+      df <- add_quantitative_bins_for_protocol_cols(df)
+      protocol_result <- assign_protocol_ID(df, protocol_columns, version_columns)
+      df <- protocol_result$data
+
+      r$upload_protocol_info <- protocol_result$protocol_sheet
+      r$protocol_info <- r$upload_protocol_info
+      r$upload_data <- df
+      r$upload_stations <- get_station(r$upload_data)
       r$upload_primers <- newprob_mb <- calc_det_prob(r$upload_data)
       scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
       upload_gotedna_primer <- list()
@@ -476,6 +483,7 @@ mod_select_data_server <- function(id, r) {
         r$protocol_ID <- paste0(
           r$cur_data$protocol_ID
         )
+        r$protocol_info <- default_protocol_info
         r$active_primers <- gotedna_primer
         r$primer_choices_all <- get_primer_selection(
           r$taxon_lvl_slc,
@@ -499,6 +507,7 @@ mod_select_data_server <- function(id, r) {
 
         r$cur_data <- r$upload_data
         r$data_station <- r$upload_stations
+        r$protocol_info <- r$upload_protocol_info
         r$active_primers <- r$upload_primers
         r$primer_choices_all <- get_primer_selection(
           r$taxon_lvl_slc,

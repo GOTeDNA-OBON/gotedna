@@ -200,7 +200,7 @@ big_OBIS_data_pull <- function(dataset_ids = c("74b70871-91bd-4b74-91ce-34e9611c
 }
 
 
-protocol_info <- readRDS("data/protocol_sheet.rds")
+default_protocol_info <- readRDS("data/protocol_sheet.rds")
 
 protocol_labels <- c(
   samp_size = "Sample Volume (L)",
@@ -229,6 +229,28 @@ protocol_labels <- c(
   tax_assign_cat = "Taxonomic Assignment Method",
   otu_seq_comp_appr = "OTU/ASV Approach"
 )
+
+protocol_columns <- c(
+  'nucl_acid_ext_kit',
+  'platform',
+  'instrument',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr',
+  'min_depth_floor',
+  'max_depth_floor'
+)
+
+version_columns <- c(
+  'samp_size_mid',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol'
+)
+
 
 #
 # library(tibble)
