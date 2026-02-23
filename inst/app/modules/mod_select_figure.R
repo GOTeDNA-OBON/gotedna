@@ -652,7 +652,7 @@ mod_select_figure_server <- function(id, r) {
     selected_protocol_rows <- reactive({
       req(input$explore_prot_id)
 
-      protocol_info %>%
+      r$protocol_info %>%
         dplyr::filter(
           protocol_ID == input$explore_prot_id,
           protocolVersion == input$explore_prot_version
@@ -692,7 +692,7 @@ mod_select_figure_server <- function(id, r) {
       bp <- r$selected_prot
       df_base <- NULL
       if (!is.null(bp) && nzchar(bp)) {
-        df_base <- protocol_info %>%
+        df_base <- r$protocol_info %>%
           dplyr::filter(protocol_ID == bp)
         if (nrow(df_base) == 0) df_base <- NULL
       }
@@ -773,10 +773,9 @@ mod_select_figure_server <- function(id, r) {
     })
 
     output$protocol_nmds_plot <- renderPlotly({
-      req(protocol_info)
       req(r$protocol_ids_sorted)
       if (length(r$protocol_ids_sorted) > 2) {
-        filtered_protocol_sheet <- protocol_info %>% filter(protocol_ID %in% r$protocol_ids_sorted)
+        filtered_protocol_sheet <- r$protocol_info %>% filter(protocol_ID %in% r$protocol_ids_sorted)
         protocol_nmds(filtered_protocol_sheet)
       } else {
         NULL
