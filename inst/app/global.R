@@ -185,7 +185,7 @@ primer_seqs <- read.csv("data/primers.csv") |>
   )
 
 
-big_OBIS_data_pull <- function(dataset_ids = NULL) {
+big_OBIS_data_pull <- function(dataset_ids = c("74b70871-91bd-4b74-91ce-34e9611ce27d", "858f3eb9-7fee-4764-bf7f-04098922f162")) {
   D_mb <- read_data(
     dataset_ids    = dataset_ids,
     scientificname = NULL,
@@ -195,25 +195,8 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
     require_absences = TRUE
   )
 
-  D_mb_msct <- D_mb %>%
-    dplyr::mutate(msct = case_when(
-      organismQuantity == 0 ~ TRUE,
-      organismQuantity > 10 ~ TRUE
-    )) |>
-    tidyr::drop_na(msct)
-
-  D_mb_nodetect <- D_mb_msct %>%
-    dplyr::group_by(
-      protocol_ID, protocolVersion, scientificName, primer, station) %>%
-    dplyr::summarise(num_detected = sum(detected)) %>%
-    dplyr::filter(num_detected == 0)
-
-  D_mb_clean <- dplyr::anti_join(D_mb_msct, D_mb_nodetect,
-                                 by = c("protocol_ID","protocolVersion","scientificName",
-                                        "primer", "station"))
-
+  D_mb_clean <- add_detected_column(D_mb)
   D_mb_clean
-
 }
 
 

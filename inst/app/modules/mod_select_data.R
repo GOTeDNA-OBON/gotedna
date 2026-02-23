@@ -393,7 +393,6 @@ mod_select_data_server <- function(id, r) {
       r$cur_data <- r$upload_data
       r$data_station <- r$upload_stations
       r$protocol_ID <- paste0(r$cur_data$protocol_ID)
-      browser()
     })
 
 

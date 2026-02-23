@@ -92,7 +92,7 @@ protocol_nmds <- function(df) {
 
   # Compute Gower distance
   gower_dist <- cluster::daisy(df_nmds, metric = "gower")
-  browser()
+
   # Run NMDS
   nmds_res <- vegan::metaMDS(gower_dist, k = 2, trymax = 100)
 
