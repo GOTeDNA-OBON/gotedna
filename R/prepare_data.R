@@ -19,7 +19,7 @@ enforce_schema <- function(df, required, optional) {
   df
 }
 
-calculate_and_enforce_columns <- function(core_and_extensions) {
+calculate_and_enforce_columns <- function(core_and_extensions, ds) {
 
   # Skip if dataset is NULL
   if (is.null(core_and_extensions)) return(NULL)
@@ -30,9 +30,9 @@ calculate_and_enforce_columns <- function(core_and_extensions) {
     mutate(
       datasetID_obis   = ds,  # now comes from filename
       eventDate_chr    = as.character(eventDate),
-      eventDate_clean  = suppressWarnings(ymd(substr(eventDate_chr, 1, 10))),
-      year             = year(eventDate_clean),
-      month            = month(eventDate_clean),
+      eventDate_clean  = suppressWarnings(lubridate::ymd(substr(eventDate_chr, 1, 10))),
+      year             = lubridate::year(eventDate_clean),
+      month            = lubridate::month(eventDate_clean),
       decimalLatitude  = suppressWarnings(as.numeric(decimalLatitude)),
       decimalLongitude = suppressWarnings(as.numeric(decimalLongitude))
     ) %>%
