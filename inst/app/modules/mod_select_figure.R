@@ -566,22 +566,35 @@ mod_select_figure_server <- function(id, r) {
 
     update_protocol_menu <- function() {
       if (!is.null(r$data_active) && nrow(r$data_active) > 0) {
-        protocols_by_sample <- r$data_active %>%
-          dplyr::distinct(protocol_ID, samp_name)  # unique protocol × sample
+        protocol_summary <- r$data_active %>%
+          dplyr::group_by(protocol_ID, samp_name) %>%
+          dplyr::summarise(
+            detected_sample = any(detected == 1, na.rm = TRUE),
+            .groups = "drop"
+          ) %>%
+          dplyr::group_by(protocol_ID) %>%
+          dplyr::summarise(
+            total_samples    = dplyr::n(),
+            total_detections = sum(detected_sample),
+            detection_rate   = 100 * total_detections / total_samples,
+            .groups = "drop"
+          ) %>%
+          dplyr::arrange(dplyr::desc(total_detections))
 
-        v_prot <- protocols_by_sample$protocol_ID |> table()
-        # Sort protocols by decreasing count
-        sorted_prot <- sort(v_prot, decreasing = TRUE)
-        # Create choices: display name -> value
-        l_prot <- as.list(names(sorted_prot))
+        sorted_prot <- protocol_summary$protocol_ID
+
+        l_prot <- as.list(sorted_prot)
+
         names(l_prot) <- paste0(
-          "Protocol ",
-          names(sorted_prot),
-          " (", sorted_prot, " samples)"
+          "Protocol ", sorted_prot,
+          " (",
+          protocol_summary$total_detections, " detections | ",
+          sprintf("%.1f", protocol_summary$detection_rate), "%)"
         )
 
-        r$selected_prot <- names(sorted_prot)[1]  # value with most observations
-
+        r$selected_prot <- sorted_prot[1]
+        r$protocol_ids_sorted <- sorted_prot
+        browser()
         updateSelectInput(
           session,
           "explore_prot_id",
@@ -595,7 +608,6 @@ mod_select_figure_server <- function(id, r) {
           choices = l_prot,
           selected = r$selected_prot
         )
-        r$protocol_ids_sorted <- names(sorted_prot)
 
       } else {
         # No data → empty the menu
