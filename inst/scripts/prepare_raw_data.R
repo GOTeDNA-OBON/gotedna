@@ -160,7 +160,37 @@ writeLines(
   "inst/app/data/last_obis_download_ts.txt"
 )
 
+
+
+#####################################
+#FILTER OUT SPECIES THAT WERE NOT DETECTED WITHIN X METRES
+#####################################
+
+#First remove species and primer/protocol combinations that were not detected anywhere
+gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
+  # Step 1: remove species with no positive detections anywhere
+  group_by(scientificName) %>%
+  filter(any(detected == 1, na.rm = TRUE)) %>%
+  ungroup() %>%
+
+  # Step 2: remove species/primer/protocol combos with no positives
+  group_by(scientificName, primer, protocol_ID) %>%
+  filter(any(detected == 1, na.rm = TRUE)) %>%
+  ungroup()
+
+
+
+#Then use distance function to remove combinations that were not detected within x metres
+print(paste0("rows in data before nondetection distance filter: ", nrow(gotedna_data$metabarcoding)))
+#removing rows for species that have never been detected at that station
+gotedna_data$metabarcoding <- filter_nondetections_all(
+  gotedna_data$metabarcoding,
+  distance = 500
+)
+print(paste0("rows in data after nondetection distance filter: ", nrow(gotedna_data$metabarcoding)))
+
 saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
+
 ################################################
 #ADD STATION FILE FOR MAPPING
 ################################################
