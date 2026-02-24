@@ -1,46 +1,32 @@
 protocol_bargraph <- function(df) {
-  color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE")
+  color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE", "#d3dddc")
 
-  # calculate non-detections
+  # assign a color cycling through bars
   df <- df %>%
     dplyr::mutate(
-      non_detections = total_samples - total_detections,
-      # assign a color from color_vec cycling through rows
-      color = color_vec[(seq_len(n()) - 1) %% length(color_vec) + 1]
+      color = color_vec[(seq_len(n()) - 1) %% length(color_vec) + 1],
+      protocol_ID = factor(protocol_ID, levels = sort(unique(protocol_ID)))  # ensure left-to-right numeric order
     )
 
-  plot_ly() %>%
-    # bottom: detections with cycling colors
-    add_trace(
-      data = df,
-      x = ~factor(protocol_ID),
-      y = ~total_detections,
-      type = 'bar',
-      name = "Detections",
-      marker = list(color = df$color),  # <-- pass vector directly
-      hoverinfo = "y+name"
-    ) %>%
-    # top: non-detections (keep gray)
-    add_trace(
-      data = df,
-      x = ~factor(protocol_ID),
-      y = ~non_detections,
-      type = 'bar',
-      name = "Non-Detections",
-      marker = list(color = '#d3dddc'),
-      hoverinfo = "y+name"
-    ) %>%
+  plot_ly(
+    data = df,
+    x = ~protocol_ID,
+    y = ~detection_rate,
+    type = 'bar',
+    marker = list(color = df$color),
+    hoverinfo = "text",
+    name = "Detection Rate"
+  ) %>%
     layout(
-      barmode = 'stack',
       xaxis = list(title = "Protocol ID"),
-      yaxis = list(title = "Total Samples", showgrid = FALSE),
+      yaxis = list(title = "Detection Rate (%)", showgrid = FALSE),
       margin = list(l = 60, r = 20, t = 50, b = 60),
-      legend = list(title = list(text = "Status")),
+      legend = list(title = list(text = "")),
       shapes = list(
         list(
           type = "line",
-          x0 = -0.5, x1 = -0.5,       # just before the first bar
-          y0 = 0, y1 = max(df$total_samples), # full height of y-axis
+          x0 = -0.5, x1 = -0.5,
+          y0 = 0, y1 = 100,  # detection rate is 0–100%
           line = list(color = "black", width = 1)
         )
       )
