@@ -64,7 +64,7 @@ optional_columns <- c(
 
 processed_datasets <- lapply(names(datasets), function(ds) {
   core_and_extensions <- datasets[[ds]]
-  core_and_extensions <- calculate_and_enforce_columns(core_and_extensions)
+  core_and_extensions <- calculate_and_enforce_columns(core_and_extensions, ds)
   core_and_extensions
 })
 
@@ -165,6 +165,19 @@ writeLines(
 #####################################
 #FILTER OUT SPECIES THAT WERE NOT DETECTED WITHIN X METRES
 #####################################
+
+#remove duplicate rows
+gotedna_data$metabarcoding <- unique(gotedna_data$metabarcoding)
+
+#remove nondetections if there is a detection for that species, primer, protocol_ID, protocolVersion, and samp_name
+gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
+  group_by(samp_name, primer, protocol_ID, protocolVersion, scientificName) %>%
+  filter(
+    !(any(detected == 1, na.rm = TRUE) &
+        any(detected == 0, na.rm = TRUE) &
+        detected == 0)
+  ) %>%
+  ungroup()
 
 #First remove species and primer/protocol combinations that were not detected anywhere
 gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
