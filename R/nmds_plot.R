@@ -35,7 +35,7 @@ plot_nmds_interactive <- function(nmds_points, stress_val) {
     mutate(protocol_id = as.character(protocol_id))
 
   shape_vec <- c("circle", "square", "diamond", "triangle-up", "triangle-down")
-  color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE", "#d3dddc")
+  color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE")
 
   p <- plotly::plot_ly()
   prots_present <- sort(unique(nmds_points$protocol_id))
@@ -98,7 +98,7 @@ protocol_nmds <- function(df) {
   df_labels <- df
 
   # Columns to exclude from NMDS (just the label)
-  exclude_cols <- c("protocol_ID", "protocolVersion")
+  exclude_cols <- c("protocol_ID")
 
   # Fill NAs and convert characters to factors for NMDS
   df_nmds <- df %>%

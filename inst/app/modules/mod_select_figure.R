@@ -113,10 +113,18 @@ mod_select_figure_ui <- function(id) {
           h5(
             "Similarity Between Top 10 Protocols for this Selection",
             icon("info-circle", class = "definition",
-            title = "Protocols that are more similar appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
+            title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
           ),
           plotlyOutput(ns("protocol_nmds_plot"), height = "400px"),
-          uiOutput(ns("nmds_message"))
+          uiOutput(ns("nmds_message")),
+
+          tags$div(style = "margin-top: 20px;"),
+
+          h5(
+            "Detection Rates for Top 10 Protocols for this Selection"
+          ),
+          plotlyOutput(ns("protocol_bargraph"), height = "300px"),
+          # uiOutput(ns("protocol_bargraph_message"))
         )
       )
     ),
@@ -566,7 +574,7 @@ mod_select_figure_server <- function(id, r) {
 
     update_protocol_menu <- function() {
       if (!is.null(r$data_active) && nrow(r$data_active) > 0) {
-        protocol_summary <- r$data_active %>%
+        r$protocol_summary <- r$data_active %>%
           dplyr::group_by(protocol_ID, samp_name) %>%
           dplyr::summarise(
             detected_sample = any(detected == 1, na.rm = TRUE),
@@ -581,17 +589,16 @@ mod_select_figure_server <- function(id, r) {
           ) %>%
           dplyr::arrange(dplyr::desc(total_detections))
 
-        sorted_prot <- protocol_summary$protocol_ID
+        sorted_prot <- r$protocol_summary$protocol_ID
 
         l_prot <- as.list(sorted_prot)
 
         names(l_prot) <- paste0(
           "Protocol ", sorted_prot,
           " (",
-          protocol_summary$total_detections, " detections | ",
-          sprintf("%.1f", protocol_summary$detection_rate), "%)"
+          r$protocol_summary$total_detections, " detections | ",
+          sprintf("%.1f", r$protocol_summary$detection_rate), "%)"
         )
-
         r$selected_prot <- sorted_prot[1]
         r$protocol_ids_sorted <- sorted_prot
         updateSelectInput(
@@ -806,7 +813,21 @@ mod_select_figure_server <- function(id, r) {
       }
     })
 
+    output$protocol_bargraph <- renderPlotly({
+      req(r$protocol_ids_sorted)
+      req(r$protocol_summary)
+      if (length(r$protocol_ids_sorted) > 0) {
+        top_protocols <- r$protocol_summary %>%
+          # keep top 10 by total_detections (or fewer if <10)
+          slice_max(order_by = total_detections, n = 10, with_ties = FALSE) %>%
+          # sort by protocol_ID for bargraph x-axis
+          arrange(protocol_ID)
+        protocol_bargraph(top_protocols)
+      } else {
+        NULL
+      }
 
+    })
 
     # FIGURES
     ## DETECTION part 1
