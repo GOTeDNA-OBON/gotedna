@@ -594,7 +594,6 @@ mod_select_figure_server <- function(id, r) {
 
         r$selected_prot <- sorted_prot[1]
         r$protocol_ids_sorted <- sorted_prot
-        browser()
         updateSelectInput(
           session,
           "explore_prot_id",

@@ -33,19 +33,6 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", selecte
   # reset option on exit
   on.exit(options(dplyr.summarise.inform = oop))
 
-
-  print(paste0("rows in data before nondetection distance filter: ", nrow(data)))
-  #removing rows for species that have never been detected at that station
-  data <- filter_nondetections_all(
-       data,
-       distance = 500,
-       selected_taxon_level,
-       selected_taxon_id
-    )
-  print(paste0("rows in data after nondetection distance filter: ", nrow(data)))
-
-
-
   data <- data %>%
     dplyr::group_by(
       protocol_ID,
@@ -153,96 +140,8 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", selecte
   list(newP_agg = newP_agg, newP_yr = newP_yr)
 }
 
-drop_all_zero_taxa <- function(df, taxon_col) {
-  df %>%
-    group_by(
-      station,
-      protocol_ID,
-      .data[[taxon_col]]
-    ) %>%
-    filter(any(detected == 1)) %>%
-    ungroup()
-}
 
 
 
 
-filter_nondetections_specifics <- function(df_subset, distance = 500) {
-  sf::sf_use_s2(TRUE)
 
-  if (nrow(df_subset) == 0) return(df_subset)
-
-  # 1) Coordinate-level detection flag (keep ALL rows after join)
-  coord_detection_summary <- df_subset %>%
-    group_by(decimalLongitude, decimalLatitude) %>%
-    summarise(
-      coord_has_detection = any(detected == 1),
-      .groups = "drop"
-    )
-
-  df_subset <- df_subset %>%
-    left_join(coord_detection_summary,
-              by = c("decimalLongitude", "decimalLatitude"))
-
-  # 2) Unique coordinates with coord_id
-  coords <- df_subset %>%
-    distinct(decimalLongitude, decimalLatitude, coord_has_detection) %>%
-    mutate(coord_id = row_number())
-
-  df_subset <- df_subset %>%
-    left_join(coords, by = c("decimalLongitude", "decimalLatitude", "coord_has_detection"))
-
-  # If only one coordinate, the only way to be "within distance of a detection"
-  # is if that coordinate itself has a detection.
-  if (nrow(coords) == 1) {
-    return(df_subset %>% filter(coord_has_detection))
-  }
-
-  # 3) sf points in lon/lat (global-safe)
-  coords_sf <- sf::st_as_sf(
-    coords,
-    coords = c("decimalLongitude", "decimalLatitude"),
-    crs = 4326
-  )
-
-  # 4) Neighbor list within distance (meters)
-  nbrs <- sf::st_is_within_distance(coords_sf, coords_sf, dist = distance)
-
-  # 5) Propagate coord_has_detection through neighbor lists
-  coord_detected_within_dist <- vapply(
-    seq_along(nbrs),
-    function(i) any(coords$coord_has_detection[nbrs[[i]]]),
-    logical(1)
-  )
-
-  # 6) Attach to all rows + final filter rule:
-  # keep rows if:
-  #   - taxon was ever detected at that coordinate (coord_has_detection)
-  #   OR
-  #   - taxon detected within distance of that coordinate (detected_within_dist)
-  df_subset %>%
-    mutate(detected_within_dist = coord_detected_within_dist[coord_id]) %>%
-    filter(coord_has_detection | detected_within_dist)
-}
-
-
-filter_nondetections_all <- function(df,
-                                     distance = 500,
-                                     selected_taxon_level = "scientificName",
-                                     selected_taxon_id = "All") {
-
-  stopifnot(selected_taxon_level %in% names(df))
-  stopifnot(all(c("protocol_ID", "decimalLongitude", "decimalLatitude", "detected") %in% names(df)))
-
-  # # Optional filter to one taxon
-  # if (!identical(selected_taxon_id, "All")) {
-  #   df <- df %>% filter(.data[[selected_taxon_level]] == selected_taxon_id)
-  # }
-  print(nrow(df))
-  if (nrow(df) == 0) return(df)
-
-  df %>%
-    group_by(protocol_ID, primer, .data[[selected_taxon_level]]) %>%
-    group_modify(~ filter_nondetections_specifics(.x, distance = distance)) %>%
-    ungroup()
-}
