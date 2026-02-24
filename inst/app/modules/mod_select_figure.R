@@ -111,7 +111,7 @@ mod_select_figure_ui <- function(id) {
         column(
           width = 5,
           h5(
-            "NMDS Plot for Selection Protocols",
+            "Similarity Between Top 10 Protocols for this Selection",
             icon("info-circle", class = "definition",
             title = "Protocols that are more similar appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
           ),
@@ -786,7 +786,11 @@ mod_select_figure_server <- function(id, r) {
     output$protocol_nmds_plot <- renderPlotly({
       req(r$protocol_ids_sorted)
       if (length(r$protocol_ids_sorted) > 2) {
-        filtered_protocol_sheet <- r$protocol_info %>% filter(protocol_ID %in% r$protocol_ids_sorted)
+        filtered_protocol_sheet <- r$protocol_info %>%
+          filter(protocol_ID %in% r$protocol_ids_sorted[1:10]) %>%
+          group_by(protocol_ID) %>%
+          slice_head(n = 1) %>%   # keep the first row per group
+          ungroup()
         protocol_nmds(filtered_protocol_sheet)
       } else {
         NULL
