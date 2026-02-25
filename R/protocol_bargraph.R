@@ -1,3 +1,9 @@
+
+#' Run bargraph for protocol data and return interactive plot
+#'
+#' @param df data.frame with protocol info
+#' @return plotly object
+#' @export
 protocol_bargraph <- function(df) {
   color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE", "#d3dddc")
 

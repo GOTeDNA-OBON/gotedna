@@ -8,6 +8,7 @@ with read_data()}
 calc_det_prob(
   data,
   selected_taxon_level = "scientificName",
+  selected_taxon_id = "All",
   pool_primers = FALSE
 )
 }

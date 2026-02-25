@@ -58,13 +58,6 @@ and data).
 (DwC-A) using Darwin Core (DwC) data standards where possible.
 }
 }
-\examples{
-\dontrun{
-D_mb <- read_data(
- choose.method = "metabarcoding", path.folder = "./inst/testdata"
-)
-}
-}
 \author{
 Anais Lacoursiere-Roussel \email{Anais.Lacoursiere@dfo-mpo.gc.ca}
 }

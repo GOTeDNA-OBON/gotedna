@@ -1,6 +1,5 @@
 library(forcats)
 
-
 set.seed(123)  # for reproducibility
 
 # Mock protocol sheet
@@ -91,8 +90,11 @@ plot_nmds_interactive <- function(nmds_points, stress_val) {
     )
 }
 
-
-
+#' Run NMDS on protocol data and return interactive plot
+#'
+#' @param df data.frame with protocol info
+#' @return plotly object
+#' @export
 protocol_nmds <- function(df) {
   # Make a copy for labeling
   df_labels <- df
