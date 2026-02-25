@@ -49,6 +49,7 @@ remotes::install_git(
   dependencies = TRUE
 )
 ```
+*Download could take 10-20 minutes.
 
 ## Usage
 
