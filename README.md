@@ -42,8 +42,12 @@ R.version.string
 You can install the development version of GOTeDNA from [GitHub](https://github.com/) with:
 
 ``` r
-install.packages("devtools")
-devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA", dependencies = TRUE)
+install.packages("remotes")
+remotes::install_git(
+  "https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git",
+  force = TRUE,
+  dependencies = TRUE
+)
 ```
 
 ## Usage
