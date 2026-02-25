@@ -113,15 +113,7 @@ GOT_joined <- GOT_joined %>%
     !is.na(decimalLongitude)
   ) %>%
 
-  # 3) Work within each original eventID.x
-  group_by(eventID.x) %>%
-  mutate(
-    row_suffix = row_number(),
-
-    # eventID for every remaining row (all have coords now)
-    eventID = paste0(eventID.x, "-", row_suffix),
-
-    # occurrenceID for every remaining row (present + absent)
+  # 3) occurrenceID for every remaining row (present + absent)
     occurrenceID = if_else(
       is.na(occurrenceID),
       paste0("DFO-GRDI-BoF:", materialSampleID, "-", row_suffix),
@@ -224,7 +216,7 @@ occurrence <- GOT_joined %>%
     assay_name = "COI-1 (metabarcoding)",
     assay_type = "metabarcoding",
     target_gene = target_gene,
-    seq_meth = "Illumina MiSeq [OBI_0002003]",
+    instrument = "Illumina MiSeq [OBI_0002003]",
     seq_kit = "MiSeq Reagent Kit v3 (Illumina)",
     ref_db = "BOLD database that came with the barque download",
     otu_seq_comp_appr = "[vsearch](https://github.com/torognes/vsearch/releases) v2.14.2+",
@@ -245,7 +237,6 @@ occurrence <- GOT_joined %>%
     project_id = "DFO-GRDI-BoF-COI",
     pcr_0_1 = "1",
     platform = "ILLUMINA",
-    instrument = "Illumina HiSeq 1500 [OBI_0003386]", 
     tax_assign_cat = "sequence similarity"
   ) %>%
   filter(
@@ -423,16 +414,17 @@ length(occur$occurrenceID) == length(unique(occur$occurrenceID))
 cleaned_occ <- occur %>%
   select(
     occurrenceID, bibliographicCitation, materialSampleID, eventDate, decimalLatitude, decimalLongitude, scientificName,
-    organismQuantity, organismQuantityType, sampleSizeValue, sampleSizeUnit,  associatedSequences,  eventID,
+    organismQuantity, organismQuantityType, sampleSizeValue, sampleSizeUnit,  associatedSequences,
     basisOfRecord, locationID,  recordedBy, country, datasetID, occurrenceStatus, minimumDepthInMeters, maximumDepthInMeters,
-    language,  month, year, scientificNameAuthorship, taxonID, scientificNameID, kingdom, phylum, class, order, family, genus
+    language,  month, year, taxonID, scientificNameID, kingdom, phylum, class, order, family, genus
   )
 
 cleaned_dna <- dna %>%
   select(
-    target_gene, samp_name, samp_mat_process, size_frac, samp_size, project_name, env_broad_scale, env_local_scale, env_medium,
-    ref_db, otu_seq_comp_appr, otu_db, pcr_primer_forward, pcr_primer_reverse, pcr_primer_name_forward, pcr_primer_name_reverse,
-    pcr_primer_reference, dna_sequence, occurrenceID, nucl_acid_ext, samp_collec_device
+    project_name, dna_sequence, target_gene, pcr_primer_forward, pcr_primer_reverse, samp_name,
+    env_broad_scale, env_local_scale, env_medium, samp_mat_process, size_frac, samp_size,
+    samp_size_unit, otu_db, seq_kit, otu_seq_comp_appr, pcr_primer_name_forward, pcr_primer_name_reverse,
+    pcr_primer_reference,  occurrenceID
   )
 
 #write csv file and submit to OBIS
@@ -463,24 +455,19 @@ emof <- dna_df %>%
 url_map <- c(
   LClabel                  = "https://github.com/GOTeDNA-OBON",
   ownerContact             = "https://github.com/GOTeDNA-OBON",
-  samplingStation          = "https://github.com/GOTeDNA-OBON",
-  filtrationType           = "https://github.com/GOTeDNA-OBON",
   totalDNAconc             = "https://github.com/GOTeDNA-OBON",
   unitsDNAconc             = "https://github.com/GOTeDNA-OBON",
   dateFiltration           = "https://github.com/GOTeDNA-OBON",
   timeFiltration           = "https://github.com/GOTeDNA-OBON",
-  volumeFiltered           = "https://github.com/GOTeDNA-OBON",
-  depthWaterTemp           = "https://github.com/GOTeDNA-OBON",
   occurrenceID             = "https://manual.obis.org/darwin_core.html"
 )
 
 emof <- dna_df %>%
   select(
-    seq_id, samp_category, filter_passive_active_0_1, checkls_ver, seq_kit,
-    assay_name, assay_type, targetTaxonomicAssay, samp_collect_device, samp_size_unit, filtrationType, filter_material,
-    filter_name, samp_store_sol, samp_store_temp, nucl_acid_ext_kit, nucl_acid_ext_modify, geo_loc_name, technical_rep_id,
-    project_contact, totalDNAconc, unitsDNAconc, dateFiltration, timeFiltration, volumeFiltered, platform, instrument, tax_assign_cat,
-    depthWaterTemp, samplingStation, LClabel, ownerContact, occurrenceID, seq_run_id, lib_id, project_id, pcr_0_1
+    seq_id, samp_category, checkls_ver, assay_name, assay_type, targetTaxonomicAssay,
+    geo_loc_name, technical_rep_id, project_contact, seq_run_id, lib_id, project_id,
+    pcr_0_1, samp_store_sol, samp_store_temp, platform, instrument, tax_assign_cat,
+    LClabel, occurrenceID, nucl_acid_ext_kit, filter_material
   ) %>%
   distinct() %>%
   mutate(across(-occurrenceID, as.character)) %>%
@@ -503,6 +490,7 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
 
 
