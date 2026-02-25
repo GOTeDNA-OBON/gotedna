@@ -49,32 +49,6 @@ gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
 last_obis_download_ts <- as.POSIXct(readLines("data/last_obis_download_ts.txt"), tz = Sys.timezone())
 
 
-# #Code for testing LClabel text ASDF
-# gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
-#   # create a numeric label for each unique datasetID_obis
-#   group_by(datasetID_obis) %>%
-#   mutate(dataset_idx = cur_group_id()) %>%
-#   ungroup() %>%
-#   # create the LClabel text without wrapping <div>
-#   mutate(LClabel =
-#     "<p>We acknowledge that this research was conducted on the unceded and unsurrendered traditional territories of the
-#             Mi'kmaq, Passamaquoddy, Wabanaki (Bay of Fundy ecodistrict); Mi’kmaq, Wabanaki (Magdalen Shallows, Scotian Shelf);
-#             Métis peoples (Churchill Estuary-Hudson Bay); and the Inuit homelands of Inuit Nunangat including: Nunatsiavut
-#             (NL-Labrador Shelves), Nunavik (Southern Hudson Strait), and Nunavut (Baffin Bay/Davis Strait, North Baffin Fjords).</p>
-#     <p>Arctic data collections were funded by ArcticNet, Polar Knowledge Canada, DFO (Aquatic Invasive Species Monitoring
-#             Program, Strategic Program for Ecosystem-Based Research and Advice [SPERA], Ocean Protection Plan [OPP] Coastal
-#             Environmental Baseline Program, Arctic Science Funds, GRDI), Nunavut Wildlife Management Board, Nunavik Marine
-#             Region Wildlife Board, and World Wildlife Funds to KH and ALR. Field accommodations and/or logistic support during
-#             Arctic field campaigns were provided by Churchill Northern Studies Centre, Glencore-Raglan, Baffinland Iron and Vale
-#             Mines, NRCan (Polar Continental Shelf program), Nunatsiavut Government, Environment and Climate Change Canada, and
-#             Government of Nunavut MV Nuliajuk.</p>"
-#   ) %>%
-#   select(-dataset_idx)
-#
-# gotedna_data0 <- gotedna_data
-
-#gotedna_data$metabarcoding <- readRDS("data/test_obis_animalia.rds")
-
 gotedna_station <- gotedna_station0 <- readRDS("data/gotedna_station.rds")
 gotedna_primer <- readRDS("data/gotedna_primer.rds")
 
@@ -252,6 +226,47 @@ version_columns <- c(
 )
 
 
+required_cols <- c(
+  "samp_name",
+  "target_gene",
+  "pcr_primer_name_forward",
+  "pcr_primer_name_reverse",
+  "scientificName",
+  "kingdom",
+  "phylum",
+  "class",
+  "order",
+  "family",
+  "genus",
+  "eventDate_clean",
+  "decimalLatitude",
+  "decimalLongitude",
+  "organismQuantity"
+)
+
+optional_columns <- c(
+  'samp_size',
+  'size_frac',
+  'filter_material',
+  'samp_mat_process',
+  'samp_store_temp',
+  'samp_store_sol',
+  'project_contact',
+  'nucl_acid_ext_kit',
+  'platform',
+  'LClabel',
+  'instrument',
+  'month',
+  'year',
+  'seq_kit',
+  'otu_db',
+  'tax_assign_cat',
+  'otu_seq_comp_appr',
+  'minimumDepthInMeters',
+  'maximumDepthInMeters',
+  'category',
+  'hab'
+)
 #
 # library(tibble)
 #
