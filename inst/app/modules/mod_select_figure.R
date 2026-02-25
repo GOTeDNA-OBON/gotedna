@@ -116,7 +116,6 @@ mod_select_figure_ui <- function(id) {
             title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
           ),
           plotlyOutput(ns("protocol_nmds_plot"), height = "400px"),
-          uiOutput(ns("nmds_message")),
 
           tags$div(style = "margin-top: 20px;"),
 
@@ -792,25 +791,21 @@ mod_select_figure_server <- function(id, r) {
 
     output$protocol_nmds_plot <- renderPlotly({
       req(r$protocol_ids_sorted)
-      if (length(r$protocol_ids_sorted) > 2) {
-        filtered_protocol_sheet <- r$protocol_info %>%
-          filter(protocol_ID %in% r$protocol_ids_sorted[1:10]) %>%
-          group_by(protocol_ID) %>%
-          slice_head(n = 1) %>%   # keep the first row per group
-          ungroup()
-        protocol_nmds(filtered_protocol_sheet)
-      } else {
-        NULL
-      }
+      validate(
+        need(
+          length(r$protocol_ids_sorted) > 2,
+          "NMDS requires more than two protocol IDs in the selected data."
+        )
+      )
 
-    })
+      filtered_protocol_sheet <- r$protocol_info %>%
+        filter(protocol_ID %in% r$protocol_ids_sorted[1:10]) %>%
+        group_by(protocol_ID) %>%
+        slice_head(n = 1) %>%   # keep the first row per group
+        ungroup()
+      protocol_nmds(filtered_protocol_sheet)
 
-    output$nmds_message <- renderUI({
-      if (length(r$protocol_ids_sorted) <= 2) {
-        tags$div(style="margin-top:10px;", "NMDS requires more than two protocol IDs in the selected data.")
-      } else {
-        NULL
-      }
+
     })
 
     output$protocol_bargraph <- renderPlotly({
