@@ -298,17 +298,17 @@ gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
 # Prepare primer data
 # gotedna_data <- readRDS("inst/app/data/gotedna_data.rds")
 
-newprob_mb <- calc_det_prob(gotedna_data$metabarcoding)
-scaledprobs_mb <- scale_newprob(gotedna_data$metabarcoding, newprob_mb)
-scaledprobs_q <- NULL
+taxon_levels <- c(
+  "kingdom", "phylum", "class",
+  "order", "family", "genus", "scientificName"
+)
 
-gotedna_primer <- list()
-
-# this needs to be based on the area selection
-for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
-  gotedna_primer[[i]] <- primer_sort(i, dplyr::bind_rows(scaledprobs_mb, scaledprobs_q)) |>
-    mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
-}
+gotedna_primer <- setNames(
+  lapply(taxon_levels, function(level) {
+    make_primer_sheet(gotedna_data$metabarcoding, level)
+  }),
+  taxon_levels
+)
 
 saveRDS(gotedna_primer, "inst/app/data/gotedna_primer.rds")
 
