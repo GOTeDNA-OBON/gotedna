@@ -19,16 +19,24 @@ enforce_schema <- function(df, required, optional) {
   df
 }
 
-calculate_and_enforce_columns <- function(core_and_extensions, ds) {
+calculate_and_enforce_columns <- function(core_and_extensions, ds = NULL) {
 
   # Skip if dataset is NULL
   if (is.null(core_and_extensions)) return(NULL)
 
+  core_and_extensions <- core_and_extensions %>%
+    filter(!is.na(samp_name))
+
+  if (!is.null(ds)) {
+    core_and_extensions <- core_and_extensions %>%
+      mutate(
+        datasetID_obis   = ds
+      )
+  }
+
   # --- Core transformations ---
   core_and_extensions <- core_and_extensions %>%
-    filter(!is.na(samp_name)) %>%
     mutate(
-      datasetID_obis   = ds,  # now comes from filename
       eventDate_chr    = as.character(eventDate),
       eventDate_clean  = suppressWarnings(lubridate::ymd(substr(eventDate_chr, 1, 10))),
       year             = lubridate::year(eventDate_clean),

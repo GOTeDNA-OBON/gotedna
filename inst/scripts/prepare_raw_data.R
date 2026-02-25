@@ -166,32 +166,8 @@ writeLines(
 #FILTER OUT SPECIES THAT WERE NOT DETECTED WITHIN X METRES
 #####################################
 
-#remove duplicate rows
-gotedna_data$metabarcoding <- unique(gotedna_data$metabarcoding)
-
-#remove nondetections if there is a detection for that species, primer, protocol_ID, protocolVersion, and samp_name
-gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
-  group_by(samp_name, primer, protocol_ID, protocolVersion, scientificName) %>%
-  filter(
-    !(any(detected == 1, na.rm = TRUE) &
-        any(detected == 0, na.rm = TRUE) &
-        detected == 0)
-  ) %>%
-  ungroup()
-
-#First remove species and primer/protocol combinations that were not detected anywhere
-gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
-  # Step 1: remove species with no positive detections anywhere
-  group_by(scientificName) %>%
-  filter(any(detected == 1, na.rm = TRUE)) %>%
-  ungroup() %>%
-
-  # Step 2: remove species/primer/protocol combos with no positives
-  group_by(scientificName, primer, protocol_ID) %>%
-  filter(any(detected == 1, na.rm = TRUE)) %>%
-  ungroup()
-
-
+#first filter duplicates and undetected
+gotedna_data$metabarcoding <- remove_duplicates_and_undetected(gotedna_data$metabarcoding)
 
 #Then use distance function to remove combinations that were not detected within x metres
 print(paste0("rows in data before nondetection distance filter: ", nrow(gotedna_data$metabarcoding)))

@@ -378,23 +378,42 @@ mod_select_data_server <- function(id, r) {
       ))
       on.exit(removeModal(), add = TRUE)
 
+      df <- calculate_and_enforce_columns(df, ds = NULL)
+
+      df <- add_detected_column(df)
       df <- update_location_clusters(df)
 
       df <- add_quantitative_bins_for_protocol_cols(df)
       protocol_result <- assign_protocol_ID(df, protocol_columns, version_columns)
       df <- protocol_result$data
-
       r$upload_protocol_info <- protocol_result$protocol_sheet
       r$protocol_info <- r$upload_protocol_info
+
+      #Then use distance function to remove combinations that were not detected within x metres
+      print(paste0("rows in data before nondetection distance filter: ", nrow(df)))
+      #removing rows for species that have never been detected within 500m of a location
+      df <- filter_nondetections_all(
+        df,
+        distance = 500
+      )
+      df <- remove_duplicates_and_undetected(df)
+
       r$upload_data <- df
+
+
+
       r$upload_stations <- get_station(r$upload_data)
-      r$upload_primers <- newprob_mb <- calc_det_prob(r$upload_data)
-      scaledprobs_mb <- scale_newprob(r$upload_data, newprob_mb)
-      upload_gotedna_primer <- list()
-      for (i in c("kingdom", "phylum", "class", "order", "family", "genus", "scientificName")) {
-        upload_gotedna_primer[[i]] <- primer_sort(i, scaledprobs_mb) |>
-          mutate(text = paste0(primer, " (", detects, "/", total, " ", perc, "%)"))
-      }
+
+      taxon_levels <- c(
+        "kingdom", "phylum", "class",
+        "order", "family", "genus", "scientificName"
+      )
+      upload_gotedna_primer <- setNames(
+        lapply(taxon_levels, function(level) {
+          make_primer_sheet(r$upload_data, level)
+        }),
+        taxon_levels
+      )
 
       r$upload_primers <- upload_gotedna_primer
       r$cur_data <- r$upload_data

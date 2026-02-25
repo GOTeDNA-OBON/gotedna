@@ -324,7 +324,7 @@ read_data <- function(
         samp_name = as.character(samp_name),
       )
 
-    out <- calculate_and_enforce_columns(out)
+    out <- calculate_and_enforce_columns(out, ds)
 
     out
   })

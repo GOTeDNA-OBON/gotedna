@@ -39,7 +39,25 @@ primer_sort <- function(
 }
 
 
-
+#' Create primer summary table for a given taxonomic level
+#'
+#' @description
+#' Aggregates detection data by taxonomic level and primer,
+#' returning detects, nondetects, total counts, percent detection,
+#' and formatted display text.
+#'
+#' @param data A data.frame containing taxonomic columns, `primer`,
+#'   and `detected` (0/1).
+#' @param taxon_level Character string specifying the taxonomic
+#'   level (e.g. "phylum", "genus", "scientificName").
+#'
+#' @return A tibble with detection summaries by taxon and primer.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' make_primer_sheet(gotedna_data$metabarcoding, "genus")
+#' }
 make_primer_sheet <- function(data, taxon_level) {
 
   # Drop NA only for the level we're building
