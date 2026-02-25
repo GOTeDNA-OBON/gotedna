@@ -46,21 +46,6 @@ install.packages("devtools")
 devtools::install_github("AnaisLacoursiereRoussel/GOTeDNA", dependencies = TRUE)
 ```
 
-Or if you have a local copy of the repo:
-
-``` r
-install.packages("devtools")
-devtools::install_local("path/to/the/repo", dependencies = TRUE)
-```
-
-#### R users with access to the archive 
-
-If you have obtained the archive `GoteDNA_{version}.tar.gz`, you can install the package using:
-
-``` r
-install.packages("path/to/GOTeDNA_{version}.tar.gz")
-```
-
 ## Usage
 
 To load the package: 
