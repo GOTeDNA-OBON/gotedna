@@ -4,7 +4,7 @@
 \alias{field_sample_fig}
 \title{Display actual sampling effort of taxa within specified taxonomic group.}
 \usage{
-field_sample_fig(data)
+field_sample_fig(newprob, year, global_max_size, max_px = 1)
 }
 \arguments{
 \item{data}{(required, data.frame): Data.frame read in with \code{\link[=read_data]{read_data()}}}
