@@ -1,4 +1,3 @@
-library(forcats)
 
 set.seed(123)  # for reproducibility
 
