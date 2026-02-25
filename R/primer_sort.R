@@ -37,3 +37,28 @@ primer_sort <- function(
 
   out
 }
+
+
+
+make_primer_sheet <- function(data, taxon_level) {
+
+  # Drop NA only for the level we're building
+  data_level <- data %>%
+    dplyr::filter(!is.na(.data[[taxon_level]]))
+
+  out <- data_level %>%
+    dplyr::group_by(.data[[taxon_level]], primer) %>%
+    dplyr::summarise(
+      detects     = sum(detected == 1, na.rm = TRUE),
+      nondetects  = sum(detected == 0, na.rm = TRUE),
+      total       = detects + nondetects,
+      perc        = round(100 * detects / total, 1),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(.data[[taxon_level]], dplyr::desc(total), dplyr::desc(perc)) %>%
+    dplyr::mutate(
+      text = paste0(primer, " (", detects, "/", total, " ", perc, "%)")
+    )
+
+  return(out)
+}
