@@ -246,7 +246,8 @@ occurrence <- GOT_joined %>%
     pcr_0_1 = "1",
     platform = "ILLUMINA",
     instrument = "Illumina HiSeq 1500 [OBI_0003386]", 
-    tax_assign_cat = "sequence similarity"
+    tax_assign_cat = "sequence similarity",
+    LClabel = NA_character_
   ) %>%
   filter(
     !is.na(minimumDepthInMeters),
@@ -504,5 +505,6 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
 
