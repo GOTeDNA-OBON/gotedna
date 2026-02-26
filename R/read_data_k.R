@@ -5,7 +5,7 @@ read_data_k <- function(
     areaid            = NULL,
     join_by           = c("auto", "occurrenceID", "id"),
     require_absences  = TRUE,
-    store_datasets    = FALSE,
+    store_datasets    = FALSE
 ) {
 
   join_by <- match.arg(join_by)
