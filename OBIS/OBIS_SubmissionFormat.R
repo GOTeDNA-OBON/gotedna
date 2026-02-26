@@ -431,9 +431,10 @@ cleaned_occ <- occur %>%
 
 cleaned_dna <- dna %>%
   select(
-    target_gene, samp_name, samp_mat_process, size_frac, samp_size, project_name, env_broad_scale, env_local_scale, env_medium,
-    ref_db, otu_seq_comp_appr, otu_db, pcr_primer_forward, pcr_primer_reverse, pcr_primer_name_forward, pcr_primer_name_reverse,
-    pcr_primer_reference, dna_sequence, occurrenceID, nucl_acid_ext, samp_collec_device
+    project_name, dna_sequence, target_gene, pcr_primer_forward, pcr_primer_reverse, samp_name,
+    env_broad_scale, env_local_scale, env_medium, samp_mat_process, size_frac, samp_size,
+    samp_size_unit, otu_db, seq_kit, otu_seq_comp_appr, pcr_primer_name_forward, pcr_primer_name_reverse,
+    pcr_primer_reference,  occurrenceID
   )
 
 #write csv file and submit to OBIS
@@ -478,11 +479,10 @@ url_map <- c(
 #You can remove names below such as "seq_run_id" and "lib_id" if you did not include that information earlier
 emof <- dna_df %>%
   select(
-    seq_id, samp_category, filter_passive_active_0_1, checkls_ver, seq_kit,
-    assay_name, assay_type, targetTaxonomicAssay, samp_collect_device, samp_size_unit, filtrationType, filter_material,
-    filter_name, samp_store_sol, samp_store_temp, nucl_acid_ext_kit, nucl_acid_ext_modify, geo_loc_name, technical_rep_id,
-    project_contact, totalDNAconc, unitsDNAconc, dateFiltration, timeFiltration, volumeFiltered, platform, instrument, tax_assign_cat,
-    depthWaterTemp, samplingStation, LClabel, ownerContact, occurrenceID, project_id, pcr_0_1, seq_run_id, lib_id
+    seq_id, samp_category, checkls_ver, assay_name, assay_type, targetTaxonomicAssay,
+    geo_loc_name, technical_rep_id, project_contact, seq_run_id, lib_id, project_id,
+    pcr_0_1, samp_store_sol, samp_store_temp, platform, instrument, tax_assign_cat,
+    LClabel, occurrenceID, nucl_acid_ext_kit, filter_material, seq_run_id, lib_id
   ) %>%
   distinct() %>%
   mutate(across(-occurrenceID, as.character)) %>%
@@ -505,6 +505,7 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
 
 
