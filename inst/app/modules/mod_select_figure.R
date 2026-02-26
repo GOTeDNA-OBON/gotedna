@@ -971,41 +971,23 @@ mod_select_figure_server <- function(id, r) {
           `# of Locations` = dplyr::n_distinct(station, na.rm = TRUE),
           Contact = paste(unique(ownerContact), collapse = "; "),
           # collapse LClabels with datasetID_obis prepended as links
-          LClabel = {
-            valid <- !is.na(LClabel)
+          DataAccess = {
+            ids <- unique(datasetID_obis[!is.na(datasetID_obis)])
+            ids <- ids[!is.na(ids)]
 
-            if (!any(valid)) {
+            if (length(ids) == 0) {
               NA_character_
             } else {
-              ul <- unique(LClabel[valid])
-              out <- vapply(ul, function(lbl) {
-
-                if (is.na(lbl) || !nzchar(lbl)) return(NA_character_)
-
-                ids <- unique(datasetID_obis[valid & LClabel == lbl])
-                ids <- ids[!is.na(ids)]
-
-                if (length(ids) == 0) return(NA_character_)
-
-                links <- paste0(
-                  '<a href="https://obis.org/dataset/', ids,
-                  '" target="_blank">', ids, '</a>'
-                )
-
-                paste0(
-                  lbl,
-                  '<div style="margin-top:10px; font-size: 0.9em;">',
-                  '<strong>Data available on the Ocean Biodiversity Information System (OBIS):</strong><br>',
-                  paste(links, collapse = ", "),
-                  '</div>'
-                )
-              }, character(1))
-
-
-              out <- out[!is.na(out)]
-
-              if (length(out) == 0) NA_character_ else paste(out, collapse = "<br><br>")
+              links <- paste0(
+                '<a href="https://obis.org/dataset/', ids,
+                '" target="_blank">', ids, '</a>'
+              )
+              paste(links, collapse = "<br>")
             }
+          },
+          LClabel = {
+            valid <- !is.na(LClabel)
+            if (!any(valid)) NA_character_ else paste(unique(LClabel[valid]), collapse = "<br><br>")
           }
 
 
@@ -1039,10 +1021,17 @@ mod_select_figure_server <- function(id, r) {
         dplyr::rename(
           "Protocol ID" = "protocol_ID",
           "Protocol Version" = "protocolVersion",
-          "Publication" = "bibliographicCitation"
+          "Publication" = "bibliographicCitation",
+          "Data Access" = "DataAccess"
         ) |>
         dplyr::relocate(
-          `Protocol ID`, `Protocol Version`, `# of Samples`, `# of Locations`, `Indigenous Contributions`, Publication
+          `Protocol ID`,
+          `Protocol Version`,
+          `# of Samples`,
+          `# of Locations`,
+          `Indigenous Contributions`,
+          `Data Access`,
+          Publication
         )
 
       r$dt_data(dt_data)  # save the current table for observers
@@ -1051,6 +1040,7 @@ mod_select_figure_server <- function(id, r) {
         dt_data,
         escape = FALSE,
         rownames = FALSE,
+        selection = "none",
         options = list(
           columnDefs = list(
             list(className = "dt-center", targets = "_all"),
