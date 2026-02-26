@@ -76,24 +76,24 @@ GOT_joined <- GOT_joined %>%
   mutate(
     # Always work from a character version
     eventDate_chr = as.character(eventDate),
-
+    
     # Try to interpret as numeric (Excel serial)
     eventDate_num = suppressWarnings(as.numeric(eventDate_chr)),
-
+    
     # Fix 2-digit year dates like 21/8/19 -> 21/8/2019
     eventDate_chr_2y = if_else(
       str_detect(eventDate_chr, "^\\d{1,2}/\\d{1,2}/\\d{2}$"),
       sub("(\\d{1,2}/\\d{1,2}/)(\\d{2})$", "\\120\\2", eventDate_chr),
       NA_character_
     ),
-
+    
     eventDate = case_when(
       # 1) Excel numeric serials (42293 etc.)
       !is.na(eventDate_num) ~ as.Date(eventDate_num, origin = "1899-12-30"),
-
+      
       # 2) dd/mm/yy we just expanded to dd/mm/20yy
       !is.na(eventDate_chr_2y) ~ as.Date(eventDate_chr_2y, format = "%d/%m/%Y"),
-
+      
       # 3) Normal dd/mm/yyyy strings
       TRUE ~ as.Date(eventDate_chr, format = "%d/%m/%Y")
     )
@@ -106,14 +106,22 @@ GOT_joined <- GOT_joined %>%
 GOT_joined <- GOT_joined %>%
   # 1) Remove any rows that are controls (controlType not NA/empty)
   filter(is.na(controlType) | controlType == "") %>%
-
+  
   # 2) Drop any rows missing coordinates
   filter(
     !is.na(decimalLatitude),
     !is.na(decimalLongitude)
   ) %>%
-
-  # 3) occurrenceID for every remaining row (present + absent)
+  
+  # 3) Work within each original eventID.x
+  group_by(eventID.x) %>%
+  mutate(
+    row_suffix = row_number(),
+    
+    # eventID for every remaining row (all have coords now)
+    eventID = paste0(eventID.x, "-", row_suffix),
+    
+    # occurrenceID for every remaining row (present + absent)
     occurrenceID = if_else(
       is.na(occurrenceID),
       paste0("DFO-GRDI-BoF:", materialSampleID, "-", row_suffix),
@@ -216,7 +224,7 @@ occurrence <- GOT_joined %>%
     assay_name = "COI-1 (metabarcoding)",
     assay_type = "metabarcoding",
     target_gene = target_gene,
-    instrument = "Illumina MiSeq [OBI_0002003]",
+    seq_meth = "Illumina MiSeq [OBI_0002003]",
     seq_kit = "MiSeq Reagent Kit v3 (Illumina)",
     ref_db = "BOLD database that came with the barque download",
     otu_seq_comp_appr = "[vsearch](https://github.com/torognes/vsearch/releases) v2.14.2+",
@@ -237,7 +245,9 @@ occurrence <- GOT_joined %>%
     project_id = "DFO-GRDI-BoF-COI",
     pcr_0_1 = "1",
     platform = "ILLUMINA",
-    tax_assign_cat = "sequence similarity"
+    instrument = "Illumina HiSeq 1500 [OBI_0003386]", 
+    tax_assign_cat = "sequence similarity",
+    LClabel = NA_character_
   ) %>%
   filter(
     !is.na(minimumDepthInMeters),
@@ -260,12 +270,12 @@ species_lookup <- occurrence %>%
       ~ {
         # Keep NAs as NAs
         if (is.na(.x) || .x == "") return(NA_integer_)
-
+        
         id <- tryCatch(
           wm_name2id(.x, marine_only = FALSE),
           error = function(e) NA
         )
-
+        
         if (is.null(id) || length(id) == 0 || is.na(id[1])) {
           NA_integer_
         } else {
@@ -303,7 +313,7 @@ occurrence <- occurrence %>%
 get_taxonomy_for_id <- function(id) {
   classif <- tryCatch(wm_classification(id), error = function(e) NULL)
   rec     <- tryCatch(wm_record(id),        error = function(e) NULL)
-
+  
   tibble(
     taxonID           = id,
     scientificNameID  = if (!is.null(rec) && "lsid" %in% names(rec))
@@ -414,9 +424,9 @@ length(occur$occurrenceID) == length(unique(occur$occurrenceID))
 cleaned_occ <- occur %>%
   select(
     occurrenceID, bibliographicCitation, materialSampleID, eventDate, decimalLatitude, decimalLongitude, scientificName,
-    organismQuantity, organismQuantityType, sampleSizeValue, sampleSizeUnit,  associatedSequences,
+    organismQuantity, organismQuantityType, sampleSizeValue, sampleSizeUnit,  associatedSequences,  eventID,
     basisOfRecord, locationID,  recordedBy, country, datasetID, occurrenceStatus, minimumDepthInMeters, maximumDepthInMeters,
-    language,  month, year, taxonID, scientificNameID, kingdom, phylum, class, order, family, genus
+    language,  month, year, scientificNameAuthorship, taxonID, scientificNameID, kingdom, phylum, class, order, family, genus
   )
 
 cleaned_dna <- dna %>%
@@ -455,19 +465,24 @@ emof <- dna_df %>%
 url_map <- c(
   LClabel                  = "https://github.com/GOTeDNA-OBON",
   ownerContact             = "https://github.com/GOTeDNA-OBON",
+  samplingStation          = "https://github.com/GOTeDNA-OBON",
+  filtrationType           = "https://github.com/GOTeDNA-OBON",
   totalDNAconc             = "https://github.com/GOTeDNA-OBON",
   unitsDNAconc             = "https://github.com/GOTeDNA-OBON",
   dateFiltration           = "https://github.com/GOTeDNA-OBON",
   timeFiltration           = "https://github.com/GOTeDNA-OBON",
+  volumeFiltered           = "https://github.com/GOTeDNA-OBON",
+  depthWaterTemp           = "https://github.com/GOTeDNA-OBON",
   occurrenceID             = "https://manual.obis.org/darwin_core.html"
 )
 
+#You can remove names below such as "seq_run_id" and "lib_id" if you did not include that information earlier
 emof <- dna_df %>%
   select(
     seq_id, samp_category, checkls_ver, assay_name, assay_type, targetTaxonomicAssay,
     geo_loc_name, technical_rep_id, project_contact, seq_run_id, lib_id, project_id,
     pcr_0_1, samp_store_sol, samp_store_temp, platform, instrument, tax_assign_cat,
-    LClabel, occurrenceID, nucl_acid_ext_kit, filter_material
+    LClabel, occurrenceID, nucl_acid_ext_kit, filter_material, seq_run_id, lib_id
   ) %>%
   distinct() %>%
   mutate(across(-occurrenceID, as.character)) %>%
