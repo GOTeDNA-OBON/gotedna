@@ -444,22 +444,6 @@ write.csv(cleaned_dna, "OBIS_GRDI_BoF_COI_dnaderiveddata.csv")
 
 #Create a dataframe for the extended Measurement or Fact extension
 
-emof <- dna_df %>%
-  mutate(
-    occurrenceID,
-    measurementType = NA_character_, #This column is where all the unique term names from GOTeDNA and FAIRe go
-    measurementValue = NA_character_, #
-    measurementUnit = NA_character_,
-    measurementTypeID = NA_character_, #This is where the URL link to each of the term names go
-    measurementValueID = NA_character_,
-    measurementUnitID = NA_character_,
-    measurementRemarks = NA_character_
-  ) %>%
-  select(
-    occurrenceID, measurementType, measurementValue, measurementUnit, measurementTypeID, measurementValueID, measurementUnitID, measurementUnitID, measurementRemarks
-  )
-
-
 #Map the URL to the origin of each term name
 
 url_map <- c(
@@ -488,11 +472,11 @@ emof <- dna_df %>%
   mutate(across(-occurrenceID, as.character)) %>%
   pivot_longer(
     cols = -occurrenceID,
-    names_to = "measurementType",
+    names_to = "measurementType",        #This column is where all the unique term names from GOTeDNA and FAIRe go
     values_to = "measurementValue"
   ) %>%
   mutate(
-    measurementTypeID = dplyr::recode(
+    measurementTypeID = dplyr::recode(   #This is where the URL link to each of the term names go
       measurementType,
       !!!url_map,
       .default = "https://github.com/FAIR-eDNA/FAIRe_checklist"   #Default URL is FAIRe
@@ -505,6 +489,7 @@ emof <- dna_df %>%
 
 #write csv file and submit to OBIS
 write.csv(emof, "OBIS_GRDI_BoF_COI_emof.csv")
+
 
 
 
