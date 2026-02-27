@@ -73,7 +73,7 @@ make_primer_sheet <- function(data, taxon_level) {
       perc        = round(100 * detects / total, 1),
       .groups = "drop"
     ) %>%
-    dplyr::arrange(.data[[taxon_level]], dplyr::desc(total), dplyr::desc(perc)) %>%
+    dplyr::arrange(.data[[taxon_level]], dplyr::desc(detects), dplyr::desc(perc)) %>%
     dplyr::mutate(
       text = paste0(primer, " (", detects, "/", total, " ", perc, "%)")
     )
