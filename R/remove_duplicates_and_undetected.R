@@ -36,9 +36,9 @@ remove_duplicates_and_undetected <- function(df) {
   #remove duplicate rows
   df <- unique(df)
 
-  #remove nondetections if there is a detection for that species, primer, protocol_ID, protocolVersion, and samp_name
+  #remove nondetections if there is a detection for that species, primer, protocol_ID, and samp_name
   df <- df %>%
-    group_by(samp_name, primer, protocol_ID, protocolVersion, scientificName) %>%
+    group_by(samp_name, primer, protocol_ID, scientificName) %>%
     filter(
       !(any(detected == 1, na.rm = TRUE) &
           any(detected == 0, na.rm = TRUE) &

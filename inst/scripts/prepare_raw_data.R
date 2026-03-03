@@ -80,7 +80,7 @@ combined_data <- dplyr::bind_rows(clean_datasets)
 combined_data <- update_location_clusters(combined_data)
 
 ################################################
-#ADD PROTOCOL_ID AND PROTOCOLVERSION
+#ADD PROTOCOL_ID
 ################################################
 
 protocol_columns <- c(
@@ -92,10 +92,7 @@ protocol_columns <- c(
   'tax_assign_cat',
   'otu_seq_comp_appr',
   'min_depth_floor',
-  'max_depth_floor'
-)
-
-version_columns <- c(
+  'max_depth_floor',
   'samp_size_mid',
   'size_frac',
   'filter_material',
@@ -104,8 +101,9 @@ version_columns <- c(
   'samp_store_sol'
 )
 
+
 combined_data <- add_quantitative_bins_for_protocol_cols(combined_data)
-protocol_result <- assign_protocol_ID(combined_data, protocol_columns, version_columns)
+protocol_result <- assign_protocol_ID(combined_data, protocol_columns)
 combined_data <- protocol_result$data
 
 saveRDS(protocol_result$protocol_sheet, 'inst/app/data/protocol_sheet.rds')
@@ -123,7 +121,6 @@ combined_data <- add_detected_column(combined_data)
 
 added_columns <- c(
   "protocol_ID",
-  "protocolVersion",
   "detected",
   "datasetID_obis",
   "year",
@@ -141,7 +138,7 @@ added_columns <- c(
   "primer"
 )
 
-all_cols <- c(required_cols, optional_columns, protocol_columns, version_columns, added_columns)
+all_cols <- c(required_cols, optional_columns, protocol_columns, added_columns)
 final_cols <- intersect(all_cols, names(combined_data))
 
 D_mb_clean <- combined_data[, final_cols, drop = FALSE]
