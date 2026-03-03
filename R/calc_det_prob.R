@@ -61,8 +61,8 @@ calc_det_prob <- function(data, selected_taxon_level = "scientificName", selecte
   if (pool_primers) {
   data %<>%
     dplyr::mutate(.,
-                  id = paste0(protocol_ID, ";", .data[[selected_taxon_level]]),
-                  id.yr = paste0(protocol_ID, ";", .data[[selected_taxon_level]], ";ALLPRIMERS;", year)
+                  id = paste0("ALLPROTOCOLS", ";", .data[[selected_taxon_level]]),
+                  id.yr = paste0("ALLPROTOCOLS", ";", .data[[selected_taxon_level]], ";ALLPRIMERS;", year)
     )
   } else {
   data %<>%

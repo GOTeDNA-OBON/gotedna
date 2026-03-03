@@ -79,12 +79,6 @@ To import your data within GOTeDNA, it must be formatted within the GOTeDNA temp
 
 Please contact [Anais.Lacoursiere\@dfo-mpo.gc.ca](mailto:Anais.Lacoursiere@dfo-mpo.gc.ca) for access to the latest templates.
 
-```{R eval=TRUE, include=FALSE}
-D_mb_ex <- data("D_mb_ex")
-```
-```{R eval=FALSE, include=TRUE}
-D_mb_ex <- read_data(choose.method = "metabarcoding", path.folder = NULL)
-```
 
 ### Clean/tidy data
 
