@@ -510,6 +510,12 @@ h6 {
   margin: 100px 0;
 }
 
+#recompute_button {
+  text-align: center;
+  margin: 20px 0;
+}
+
+
 /* #ObservationCSS */
 #observation {
   background-color: #e8e8e8;

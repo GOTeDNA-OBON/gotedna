@@ -384,7 +384,7 @@ mod_select_data_server <- function(id, r) {
       df <- update_location_clusters(df)
 
       df <- add_quantitative_bins_for_protocol_cols(df)
-      protocol_result <- assign_protocol_ID(df, protocol_columns, version_columns)
+      protocol_result <- assign_protocol_ID(df, protocol_columns)
       df <- protocol_result$data
       r$upload_protocol_info <- protocol_result$protocol_sheet
       r$protocol_info <- r$upload_protocol_info

@@ -156,6 +156,16 @@ mod_select_figure_ui <- function(id) {
               selected = 75
             ),
             div(
+              class = "d-flex justify-content-center",
+              id = "recompute_button",
+              actionButton(
+                ns("recompute_button"),
+                label = "Recompute",
+                title = "Update Figures after Threshold and Protocols",
+                class = "primary-button"
+              )
+            ),
+            div(
               id = "fig_sampling_info",
               h4("Guidance"),
               div(
@@ -285,17 +295,20 @@ mod_select_figure_server <- function(id, r) {
         req(input$compute_and_visualize)
         r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
         r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
-
+        print("getting started in compute and visualize")
         update_data_active()
+        print("got past update_data_active() in compute and visualize")
         update_protocol_menu()
+        print("got past update_protocol_menu() in compute and visualize")
         req(input$prot_id)
+        print("got past req prot_id")
         validate(
           need(input$prot_id != "Not available", "Protocol not selected yet")
         )
 
         r$data_ready <- prepare_data(r) |>
           filter(protocol_ID %in% input$prot_id)
-
+        print("got to if statement in compute and visualize")
         if (nrow(r$data_ready)) {
           showNotification(
             paste0(
@@ -315,6 +328,7 @@ mod_select_figure_server <- function(id, r) {
           # Compute detection probability
           r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, r$frozen_selected_taxon_id, pool_primers = TRUE)
           # Safely scale probabilities
+          print("got past calc_det_prob() in compute and visualize")
           r$scaledprobs <- tryCatch({
             if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
               cat("calc_det_prob returned empty")
@@ -327,7 +341,7 @@ mod_select_figure_server <- function(id, r) {
             NULL
           })
 
-
+          print("got past scaledprobs in compute and visualize")
           # Do the same for scientificName if level == genus
           if(r$frozen_selected_taxon_level == "genus") {
             r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
@@ -413,7 +427,7 @@ mod_select_figure_server <- function(id, r) {
     #THIS RUNS WHEN WE CHANGE PROTOCOL ID OR THRESHOLD
     observeEvent(
       ignoreInit = TRUE,
-      list(input$threshold, input$prot_id),
+      list(input$recompute_button),
       {
         req(input$compute_and_visualize)
         r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
@@ -425,7 +439,7 @@ mod_select_figure_server <- function(id, r) {
         )
 
         r$data_ready <- prepare_data(r) |>
-          filter(protocol_ID == input$prot_id)
+          filter(protocol_ID %in% input$prot_id)
 
         if (nrow(r$data_ready)) {
           showNotification(
@@ -605,7 +619,7 @@ mod_select_figure_server <- function(id, r) {
           session,
           "prot_id",
           choices = l_prot,
-          selected = r$selected_prot
+          selected = l_prot
         )
 
       } else {
@@ -614,7 +628,7 @@ mod_select_figure_server <- function(id, r) {
           session,
           "prot_id",
           choices = list(),
-          selected = NULL
+          selected = r$selected_prot
         )
         updateSelectInput(
           session,

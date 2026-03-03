@@ -263,7 +263,7 @@ check_station_distances_unique <- function(df,
 }
 
 ################################################
-#ADD PROTOCOL_ID AND PROTOCOLVERSION
+#ADD PROTOCOL_ID
 ################################################
 
 add_quantitative_bins_for_protocol_cols <- function(df) {
@@ -322,119 +322,63 @@ add_quantitative_bins_for_protocol_cols <- function(df) {
 
 assign_protocol_ID <- function(df,
                                protocol_columns,
-                               version_columns,
                                protocol_sheet = NULL) {
 
-  # Remove existing IDs if present
+  # Remove existing protocol_ID if present
   df <- df %>%
-    select(-any_of(c("protocol_ID", "protocolVersion")))
+    select(-any_of("protocol_ID"))
 
-  # Distinct combinations at full granularity
-  new_full_combos <- df %>%
-    select(all_of(c(protocol_columns, version_columns))) %>%
+  # Get distinct protocol definitions from incoming data
+  new_protocol_combos <- df %>%
+    select(all_of(protocol_columns)) %>%
     distinct()
 
-  # ------------------------------------------------------------------
+  # --------------------------------------------------------------
   # CASE 1: No existing protocol_sheet → build from scratch
-  # ------------------------------------------------------------------
+  # --------------------------------------------------------------
   if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
 
-    protocol_sheet <- new_full_combos %>%
-      group_by(across(all_of(protocol_columns))) %>%
-      mutate(
-        protocol_ID = cur_group_id(),
-        protocolVersion = row_number()
-      ) %>%
-      ungroup()
+    protocol_sheet <- new_protocol_combos %>%
+      mutate(protocol_ID = row_number())
 
   } else {
 
-    # Ensure sheet has required structure
-    required_cols <- c(protocol_columns, version_columns,
-                       "protocol_ID", "protocolVersion")
-
+    # Ensure protocol_sheet has required structure
+    required_cols <- c(protocol_columns, "protocol_ID")
     missing_cols <- setdiff(required_cols, names(protocol_sheet))
+
     if (length(missing_cols) > 0) {
       stop("protocol_sheet is missing required columns: ",
            paste(missing_cols, collapse = ", "))
     }
 
     # --------------------------------------------------------------
-    # STEP 1: Add new protocol_IDs if needed
+    # Add new protocol_IDs for unseen combinations
     # --------------------------------------------------------------
 
-    new_protocols <- anti_join(
-      new_full_combos %>% select(all_of(protocol_columns)) %>% distinct(),
-      protocol_sheet %>% select(all_of(protocol_columns)) %>% distinct(),
+    unseen_protocols <- anti_join(
+      new_protocol_combos,
+      protocol_sheet %>% select(all_of(protocol_columns)),
       by = protocol_columns
     )
 
-    if (nrow(new_protocols) > 0) {
+    if (nrow(unseen_protocols) > 0) {
 
       max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
 
-      new_protocols <- new_protocols %>%
+      unseen_protocols <- unseen_protocols %>%
         mutate(protocol_ID = row_number() + max_id)
 
-      # give them version 1 initially (will expand below if needed)
-      new_protocols <- new_protocols %>%
-        left_join(new_full_combos, by = protocol_columns) %>%
-        group_by(protocol_ID) %>%
-        mutate(protocolVersion = row_number()) %>%
-        ungroup()
-
-      protocol_sheet <- bind_rows(protocol_sheet, new_protocols)
-    }
-
-    # --------------------------------------------------------------
-    # STEP 2: Handle new versions within existing protocol_IDs
-    # --------------------------------------------------------------
-
-    # attach protocol_ID to incoming combos
-    new_full_combos_with_id <- new_full_combos %>%
-      left_join(
-        protocol_sheet %>%
-          select(all_of(protocol_columns), protocol_ID) %>%
-          distinct(),
-        by = protocol_columns
-      )
-
-    # find unseen full combinations
-    unseen_versions <- anti_join(
-      new_full_combos_with_id,
-      protocol_sheet %>%
-        select(all_of(c(protocol_columns,
-                        version_columns,
-                        "protocol_ID"))),
-      by = c(protocol_columns, version_columns, "protocol_ID")
-    )
-
-    if (nrow(unseen_versions) > 0) {
-
-      unseen_versions <- unseen_versions %>%
-        group_by(protocol_ID) %>%
-        mutate(
-          protocolVersion =
-            row_number() +
-            max(protocol_sheet$protocolVersion[
-              protocol_sheet$protocol_ID == first(protocol_ID)
-            ])
-        ) %>%
-        ungroup()
-
-      protocol_sheet <- bind_rows(protocol_sheet, unseen_versions)
+      protocol_sheet <- bind_rows(protocol_sheet, unseen_protocols)
     }
   }
 
-  # ------------------------------------------------------------------
-  # FINAL: Assign IDs + versions back to df
-  # ------------------------------------------------------------------
+  # --------------------------------------------------------------
+  # Assign protocol_ID back to df
+  # --------------------------------------------------------------
 
   df_with_ids <- df %>%
-    left_join(
-      protocol_sheet,
-      by = c(protocol_columns, version_columns)
-    )
+    left_join(protocol_sheet, by = protocol_columns)
 
   return(list(
     data = df_with_ids,
