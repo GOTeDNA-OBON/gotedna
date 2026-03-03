@@ -59,7 +59,7 @@ The primer menu is defined in **mod\_select\_data.R** with id “primer”. Prim
 
 ![](man/guide_figs/compute.png)
 
-When a user clicks “Compute & Visualize” a large observeEvent function for **input$compute\_and\_visualize** is run in **mod\_select\_figure.R**. This function filters data, calculates detection probabilities and prepares the output for the Observation Menu (see section 4 below).
+When a user clicks “Compute & Visualize” a cascade of observeEvents are run, starting with **input$compute\_and\_visualize** in **mod\_select\_figure.R**. This function filters data to the current selection. Once the current selection, r$data_selected updates, the protocol menu updates with current protocols, then the detection probabilities and figures are calculated based on the selected protocols (defaults to all) and threshold (defaults to 75%).
 
 * If genus level is selected along with “All” species, detection probabilities are calculated for all individual species in that genus (for comparison in figures) as well as for the entire genus as one taxon. If a broader taxon level is selected along with “All” species, only summarized taxon detection probabilities are calculated.  
 * **calc\_det\_prob()** is defined in **calc\_det\_prob.R** and returns the monthly detection probabilities for specified taxa organized both by year and for years pooled together.  
@@ -71,19 +71,19 @@ When a user clicks “Compute & Visualize” a large observeEvent function for *
 # 4\. Observation Menu (and Explore Protocols)
 
 ![](man/guide_figs/prot_explore.png)
-The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The nmds and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph** live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**. The 
+The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The nmds and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph**. The functions for generating the plots live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**.
 
 ![](man/guide_figs/observation.png)  
-The observation menus are defined in **mod\_select\_figure.R** with ids “threshold” and “prot\_id”. When these selections change, Compute and Visualize (see section 3 above) is rerun.
+The observation menus are defined in **mod\_select\_figure.R** with ids “threshold” and “prot\_id”. When "Update Figures" the calculations for the figures are rerun with the selected protocol Ids and threshold.
 
 
 ## Threshold
 
-* threshold menu options are defined in **global.R** as **ls\_threshold.** The selected threshold, input$threshold, is used in “compute\_and\_visualize” (see section 3 above) to calculate detection probabilities.
+* threshold menu options are defined in **global.R** as **ls\_threshold.** The selected threshold, input$threshold, is used to calculate detection probabilities (see section 3 above).
 
 ## Protocol ID
 
-* protocol ID menu is updated with **update\_protocol\_menu()** defined in **mod\_select\_figure.R**. The selected protocol ID, input$prot\_id is used in “compute\_and\_visualize” (see section 3 above) to filter data.
+* protocol ID menu is updated with **update\_protocol\_menu()** defined in **mod\_select\_figure.R**. The selected protocol ID, input$prot\_id is used to filter data (see section 3 above).
 
 # 5\. Guidance Panel
 
