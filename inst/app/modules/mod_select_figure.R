@@ -96,12 +96,6 @@ mod_select_figure_ui <- function(id) {
             "Protocol ID",
             choices = "Not available",
             selected = NULL
-          ),
-          selectInput(
-            ns("explore_prot_version"),
-            "Protocol Version",
-            choices = "Not available",
-            selected = NULL
           )
         ),
         column(
@@ -633,37 +627,6 @@ mod_select_figure_server <- function(id, r) {
 
     observe({ update_protocol_menu() })
 
-    observeEvent(input$explore_prot_id, {
-
-      req(r$data_active)
-      req(input$explore_prot_id)
-
-      versions <- r$data_active %>%
-        dplyr::filter(protocol_ID == input$explore_prot_id) %>%
-        dplyr::distinct(protocolVersion) %>%
-        dplyr::pull(protocolVersion) %>%
-        na.omit()
-
-      if (length(versions) > 0) {
-
-        # Force numeric sort (safe given your guarantee)
-        versions <- sort(as.numeric(versions))
-
-        # Convert back to character for selectInput
-        versions <- as.character(versions)
-
-      } else {
-        versions <- character(0)
-      }
-
-      updateSelectInput(
-        session,
-        "explore_prot_version",
-        choices = versions,
-        selected = if (length(versions) > 0) versions[1] else NULL
-      )
-
-    })
 
 
     selected_protocol_rows <- reactive({
@@ -672,7 +635,6 @@ mod_select_figure_server <- function(id, r) {
       r$protocol_info %>%
         dplyr::filter(
           protocol_ID == input$explore_prot_id,
-          protocolVersion == input$explore_prot_version
         )
     })
 
@@ -965,7 +927,7 @@ mod_select_figure_server <- function(id, r) {
 
       dt_data <- authorship_data %>%
         dplyr::ungroup() %>%
-        dplyr::group_by(protocol_ID, protocolVersion, bibliographicCitation) %>%
+        dplyr::group_by(protocol_ID, bibliographicCitation) %>%
         dplyr::summarise(
           `# of Samples` = dplyr::n_distinct(samp_name, na.rm = TRUE),
           `# of Locations` = dplyr::n_distinct(station, na.rm = TRUE),
@@ -1020,13 +982,11 @@ mod_select_figure_server <- function(id, r) {
       dt_data <- dt_data %>%
         dplyr::rename(
           "Protocol ID" = "protocol_ID",
-          "Protocol Version" = "protocolVersion",
           "Publication" = "bibliographicCitation",
           "Data Access" = "DataAccess"
         ) |>
         dplyr::relocate(
           `Protocol ID`,
-          `Protocol Version`,
           `# of Samples`,
           `# of Locations`,
           `Indigenous Contributions`,
