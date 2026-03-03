@@ -284,8 +284,8 @@ mod_select_figure_server <- function(id, r) {
       input$compute_and_visualize,
       ignoreInit = TRUE,
       {
-        r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
-        r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
+        r$taxon_lvl_slc <- isolate(r$taxon_lvl_slc)
+        r$taxon_id_slc <- isolate(r$taxon_id_slc)
 
         r$data_selected <- prepare_data(r)
 
@@ -325,14 +325,14 @@ mod_select_figure_server <- function(id, r) {
           )
 
           # Compute detection probability
-          r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, r$frozen_selected_taxon_id, pool_primers = TRUE)
+          r$newprob <- calc_det_prob(r$data_ready, r$taxon_lvl_slc, r$taxon_id_slc, pool_primers = TRUE)
           # Safely scale probabilities
           r$scaledprobs <- tryCatch({
             if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
               cat("calc_det_prob returned empty")
               NULL
             } else {
-              scale_newprob(r$data_ready, r$newprob, r$frozen_selected_taxon_level)
+              scale_newprob(r$data_ready, r$newprob, r$taxon_lvl_slc)
             }
           }, error = function(e) {
             cat("scale_newprob failed:", conditionMessage(e), "\n")
@@ -341,7 +341,7 @@ mod_select_figure_server <- function(id, r) {
 
 
           # Do the same for scientificName if level == genus
-          if(r$frozen_selected_taxon_level == "genus") {
+          if(r$taxon_lvl_slc == "genus") {
             r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
 
             r$scaledprobs_by_scientificName <- tryCatch({
@@ -667,10 +667,10 @@ mod_select_figure_server <- function(id, r) {
     ## EFFORT NEEDED
     output$fig_effort_plot_output <- plotly::renderPlotly({
       req(r$fig_ready, cancelOutput = TRUE)
-      if (r$frozen_selected_taxon_level == 'genus') {
+      if (r$taxon_lvl_slc == 'genus') {
         effort_needed_fig(r$scaledprobs_by_scientificName, selected_taxon_level = "scientificName")
       } else {
-        effort_needed_fig(r$scaledprobs, selected_taxon_level = r$frozen_selected_taxon_level)
+        effort_needed_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
       }
     })
 
@@ -679,10 +679,10 @@ mod_select_figure_server <- function(id, r) {
     output$fig_heatmap_plot_output <- plotly::renderPlotly({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
         plt_ready <- r$fig_ready && r$fig_slc$fig_heatmap
-        if (r$frozen_selected_taxon_level == 'genus') {
+        if (r$taxon_lvl_slc == 'genus') {
           hm_fig(r$scaledprobs_by_scientificName, selected_taxon_level = "scientificName")
         } else {
-          hm_fig(r$scaledprobs, selected_taxon_level = r$frozen_selected_taxon_level)
+          hm_fig(r$scaledprobs, selected_taxon_level = r$taxon_lvl_slc)
         }
       }
     })
@@ -1013,14 +1013,14 @@ prepare_data <- function(r) {
     out <- out |>
       dplyr::filter(station %in% r$station_slc)
   }
-  if (!is.null(r$frozen_selected_taxon_level)) {
-    if (r$frozen_selected_taxon_level == "scientificName") {
+  if (!is.null(r$taxon_lvl_slc)) {
+    if (r$taxon_lvl_slc == "scientificName") {
       out <- out |>
         dplyr::filter(scientificName == r$scientificName)
     } else {
-      if (r$frozen_selected_taxon_id != "All") {
+      if (r$taxon_id_slc != "All") {
         out <- out[
-          out[[r$frozen_selected_taxon_level]] == r$frozen_selected_taxon_id,
+          out[[r$taxon_lvl_slc]] == r$taxon_id_slc,
         ]
       }
     }
