@@ -68,10 +68,14 @@ When a user clicks “Compute & Visualize” a large observeEvent function for *
   * **calc\_window.R** also includes **drop\_all\_zero\_taxa()** which drops any taxon from a given location if the taxon has never been found at that location with the selected protocol\_ID.  
 * **jaccard\_test()** is defined in **jaccard\_test.R** and calculates how consistent the optimal detection window is among years.
 
-# 4\. Observation Menu
+# 4\. Observation Menu (and Explore Protocols)
+
+![](man/guide_figs/prot_explore.png)
+The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The nmds and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph** live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**. The 
 
 ![](man/guide_figs/observation.png)  
 The observation menus are defined in **mod\_select\_figure.R** with ids “threshold” and “prot\_id”. When these selections change, Compute and Visualize (see section 3 above) is rerun.
+
 
 ## Threshold
 
