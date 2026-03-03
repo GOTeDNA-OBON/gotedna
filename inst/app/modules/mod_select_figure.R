@@ -160,7 +160,7 @@ mod_select_figure_ui <- function(id) {
               id = "recompute_button",
               actionButton(
                 ns("recompute_button"),
-                label = "Recompute",
+                label = "Update Figures",
                 title = "Update Figures after Threshold and Protocols",
                 class = "primary-button"
               )
@@ -184,12 +184,6 @@ mod_select_figure_ui <- function(id) {
                 uiOutput(ns("var_year"), class = "fig_text_output"),
               )
             ),
-            # downloadButton(
-            #   ns("export_pdf"),
-            #   "Export to PDF",
-            #   title = "Export figures to PDF",
-            #    class = "primary-button"
-            # )
           )
         ),
         column(
@@ -217,8 +211,6 @@ mod_select_figure_ui <- function(id) {
       ),
       DT::DTOutput(ns("data_authorship"))
     ),
-    # )
-    # )
   )
 }
 
@@ -289,163 +281,38 @@ mod_select_figure_server <- function(id, r) {
 
     # THIS RUNS WHEN WE CLICK COMPUTE & VISUALIZE
     observeEvent(
+      input$compute_and_visualize,
       ignoreInit = TRUE,
-      list(input$compute_and_visualize),
       {
-        req(input$compute_and_visualize)
         r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
         r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
-        print("getting started in compute and visualize")
-        update_data_active()
-        print("got past update_data_active() in compute and visualize")
-        update_protocol_menu()
-        print("got past update_protocol_menu() in compute and visualize")
-        req(input$prot_id)
-        print("got past req prot_id")
-        validate(
-          need(input$prot_id != "Not available", "Protocol not selected yet")
-        )
 
-        r$data_ready <- prepare_data(r) |>
-          filter(protocol_ID %in% input$prot_id)
-        print("got to if statement in compute and visualize")
-        if (nrow(r$data_ready)) {
-          showNotification(
-            paste0(
-              "Computing detection window with threshold set to ",
-              input$threshold, "%",
-              ifelse(
-                nrow(r$data_ready) > 1e4,
-                paste0(" (", nrow(r$data_ready), " observations, this may take some time)"),
-                ""
-              )
-            ),
-            type = "message",
-            duration = NULL,
-            id = "notif_calc_win"
-          )
+        r$data_selected <- prepare_data(r)
 
-          # Compute detection probability
-          r$newprob <- calc_det_prob(r$data_ready, r$frozen_selected_taxon_level, r$frozen_selected_taxon_id, pool_primers = TRUE)
-          # Safely scale probabilities
-          print("got past calc_det_prob() in compute and visualize")
-          r$scaledprobs <- tryCatch({
-            if (length(r$newprob$newP_agg) == 0 && length(r$newprob$newP_yr) == 0) {
-              cat("calc_det_prob returned empty")
-              NULL
-            } else {
-              scale_newprob(r$data_ready, r$newprob, r$frozen_selected_taxon_level)
-            }
-          }, error = function(e) {
-            cat("scale_newprob failed:", conditionMessage(e), "\n")
-            NULL
-          })
-
-          print("got past scaledprobs in compute and visualize")
-          # Do the same for scientificName if level == genus
-          if(r$frozen_selected_taxon_level == "genus") {
-            r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
-
-            r$scaledprobs_by_scientificName <- tryCatch({
-              if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
-                cat("calc_det_prob returned empty for level: scientificName\n")
-                NULL
-              } else {
-                scale_newprob(r$data_ready, r$newprob_by_scientificName, "scientificName")
-              }
-            }, error = function(e) {
-              cat("scale_newprob failed for scientificName:", conditionMessage(e), "\n")
-              NULL
-            })
-          }
-
-
-          cli::cli_alert_info("Computing optimal detection window")
-
-          thresh_slc <- input$threshold
-          win <- calc_window(
-            threshold = input$threshold,
-            scaledprobs = r$scaledprobs
-          )
-
-          j.sim <- jaccard_test(
-            r$scaledprobs,
-            input$threshold
-          )
-
-          if (is.null(win)) {
-            #  showNotification("No optimal detection window", type = "warning")
-            output$opt_sampl <- renderUI("No single detection window")
-            output$conf <- renderUI("NA")
-            output$var_year <- renderUI(
-              paste(j.sim)
-            )
-          } else {
-            output$opt_sampl <- renderUI(
-              paste(win$opt_sampling$period)
-            )
-            output$conf <- renderUI(paste(win$fshTest$confidence))
-            output$var_year <- renderUI(
-              paste(j.sim)
-            )
-          }
-
-
-          r$fig_ready <- TRUE
-
-          session$onFlushed(function() {
-            removeNotification(id = "notif_calc_win")
-          }, once = TRUE)
-
-          # create protocol vector
-
-          v_prot <- r$scaledprobs$protocol_ID |> unique()
-        } else {
-          # showNotification("Data selection is empty", type = "warning")
-        }
-
-        shinyscreenshot::screenshot(
-          selector = "#data_request_top_fields",
-          filename = "data_top",
-          download = FALSE, server_dir = tempdir()
-        )
-
-        shinyscreenshot::screenshot(
-          selector = "#data_request_bottom_fields",
-          filename = "data_btm",
-          download = FALSE, server_dir = tempdir()
-        )
-
-        shinyscreenshot::screenshot(
-          selector = "#reference_data_authorship",
-          filename = "dat_auth",
-          download = FALSE, server_dir = tempdir()
-        )
       }
     )
 
-    #THIS RUNS WHEN WE CHANGE PROTOCOL ID OR THRESHOLD
+    # THIS RUNS AFTER COMPUTE & VISUALIZE AND UPDATES THE PROTOCOL MENU
     observeEvent(
+      r$data_selected,
       ignoreInit = TRUE,
-      list(input$recompute_button),
       {
-        req(input$compute_and_visualize)
-        r$frozen_selected_taxon_level <- isolate(r$taxon_lvl_slc)
-        r$frozen_selected_taxon_id <- isolate(r$taxon_id_slc)
+        update_protocol_menu()
+      }
+    )
 
-        req(input$prot_id)
-        validate(
-          need(input$prot_id != "Not available", "Protocol not selected yet")
-        )
-
-        r$data_ready <- prepare_data(r) |>
-          filter(protocol_ID %in% input$prot_id)
-
+    # THIS RUNS ONCE THE PROTOCOL MENU UPDATES OR WE CONFIRM A NEW THRESHOLD OR PROTOCOL SELECTION
+    observeEvent(
+      list(r$confirmed_prot, r$confirmed_thresh),
+      ignoreInit = TRUE,
+      {
+        r$data_ready <- r$data_selected |>
+          filter(protocol_ID %in% r$confirmed_prot)
         if (nrow(r$data_ready)) {
           showNotification(
             paste0(
               "Computing detection window with threshold set to ",
-              input$threshold, "%",
+              r$confirmed_thresh, "%",
               ifelse(
                 nrow(r$data_ready) > 1e4,
                 paste0(" (", nrow(r$data_ready), " observations, this may take some time)"),
@@ -490,18 +357,16 @@ mod_select_figure_server <- function(id, r) {
             })
           }
 
-
           cli::cli_alert_info("Computing optimal detection window")
 
-          thresh_slc <- input$threshold
           win <- calc_window(
-            threshold = input$threshold,
+            threshold = r$confirmed_thresh,
             scaledprobs = r$scaledprobs
           )
 
           j.sim <- jaccard_test(
             r$scaledprobs,
-            input$threshold
+            r$confirmed_thresh
           )
 
           if (is.null(win)) {
@@ -528,60 +393,48 @@ mod_select_figure_server <- function(id, r) {
             removeNotification(id = "notif_calc_win")
           }, once = TRUE)
 
-          # create protocol vector
 
-          v_prot <- r$scaledprobs$protocol_ID |> unique()
+
         } else {
-          # showNotification("Data selection is empty", type = "warning")
+          showNotification("Data selection is empty", type = "warning")
         }
 
-        shinyscreenshot::screenshot(
-          selector = "#data_request_top_fields",
-          filename = "data_top",
-          download = FALSE, server_dir = tempdir()
-        )
-
-        shinyscreenshot::screenshot(
-          selector = "#data_request_bottom_fields",
-          filename = "data_btm",
-          download = FALSE, server_dir = tempdir()
-        )
-
-        shinyscreenshot::screenshot(
-          selector = "#reference_data_authorship",
-          filename = "dat_auth",
-          download = FALSE, server_dir = tempdir()
-        )
+        # shinyscreenshot::screenshot(
+        #   selector = "#data_request_top_fields",
+        #   filename = "data_top",
+        #   download = FALSE, server_dir = tempdir()
+        # )
+        #
+        # shinyscreenshot::screenshot(
+        #   selector = "#data_request_bottom_fields",
+        #   filename = "data_btm",
+        #   download = FALSE, server_dir = tempdir()
+        # )
+        #
+        # shinyscreenshot::screenshot(
+        #   selector = "#reference_data_authorship",
+        #   filename = "dat_auth",
+        #   download = FALSE, server_dir = tempdir()
+        # )
       }
     )
 
-    update_data_active <- function() {
-      out <- r$cur_data_sta_slc
-      if (!is.null(r$frozen_selected_taxon_level)) {
-        if (r$frozen_selected_taxon_level == "scientificName") {
-          out <- out |>
-            dplyr::filter(scientificName == r$scientificName)
-        } else {
-          if (r$frozen_selected_taxon_id != "All") {
-            out <- out[
-              out[[r$frozen_selected_taxon_level]] == r$frozen_selected_taxon_id,
-            ]
-          }
-        }
+
+
+    #THIS RUNS WHEN WE HIT UPDATE (AFTER SELECTING NEW PROTOCOL OR THRESHOLD)
+    observeEvent(
+      input$recompute_button,
+      ignoreInit = TRUE,
+      {
+        r$confirmed_thresh <- input$threshold
+        r$confirmed_prot <- input$prot_id
       }
+    )
 
-      # primer-based subset
-      r$data_active <- out |>
-        dplyr::filter(primer %in% r$primer)
-      # prevent computation when new data are selected
-      r$fig_ready <- FALSE
-    }
-
-    #observe({ update_data_active() })
 
     update_protocol_menu <- function() {
-      if (!is.null(r$data_active) && nrow(r$data_active) > 0) {
-        r$protocol_summary <- r$data_active %>%
+      if (!is.null(r$data_selected) && nrow(r$data_selected) > 0) {
+        r$protocol_summary <- r$data_selected %>%
           dplyr::group_by(protocol_ID, samp_name) %>%
           dplyr::summarise(
             detected_sample = any(detected == 1, na.rm = TRUE),
@@ -621,6 +474,8 @@ mod_select_figure_server <- function(id, r) {
           choices = l_prot,
           selected = l_prot
         )
+        r$confirmed_thresh <- input$threshold
+        r$confirmed_prot <- l_prot
 
       } else {
         # No data → empty the menu
@@ -639,10 +494,6 @@ mod_select_figure_server <- function(id, r) {
       }
     }
 
-    observe({ update_protocol_menu() })
-
-
-
     selected_protocol_rows <- reactive({
       req(input$explore_prot_id)
 
@@ -651,8 +502,6 @@ mod_select_figure_server <- function(id, r) {
           protocol_ID == input$explore_prot_id,
         )
     })
-
-
 
     # live details card
     output$protocol_details <- renderUI({
@@ -804,15 +653,14 @@ mod_select_figure_server <- function(id, r) {
     ## DETECTION part 1
     output$fig_smooth_plot_output <- renderPlot({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
-        draw_fig_smooth(isolate(r), r$fig_ready && r$fig_slc$fig_detect,
-          id = input$prot_id # using prot_id as string
+        draw_fig_smooth(r$scaledprobs, r$fig_ready && r$fig_slc$fig_detect
         )
       }
     })
     ## DETECTION part 2
     output$fig_detect_plot_output <- renderPlot({
       if (req(r$fig_ready, cancelOutput = TRUE)) {
-        draw_fig_detect(r, r$fig_ready && r$fig_slc$fig_detect, input$threshold)
+        draw_fig_detect(r$scaledprobs, r$fig_ready && r$fig_slc$fig_detect, r$confirmed_thresh)
       }
     })
 
@@ -1203,11 +1051,11 @@ plotNotAvailableError <- function() {
 }
 
 ## Detection part 1
-draw_fig_smooth <- function(r, ready, id) {
+draw_fig_smooth <- function(scaledprobs, ready) {
   if (ready) {
     plt <- try(
       smooth_fig(
-        r$scaledprobs
+        scaledprobs
       )
     )
     if (inherits(plt, "try-error")) {
@@ -1223,11 +1071,11 @@ draw_fig_smooth <- function(r, ready, id) {
 }
 
 ## Detection part 2
-draw_fig_detect <- function(r, ready, threshold) {
+draw_fig_detect <- function(scaledprobs, ready, threshold) {
   if (ready) {
     plt <- thresh_fig(
       threshold,
-      r$scaledprobs
+      scaledprobs
     )
     plt
   } else {
