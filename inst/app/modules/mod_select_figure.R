@@ -339,9 +339,8 @@ mod_select_figure_server <- function(id, r) {
             NULL
           })
 
-
           # Do the same for scientificName if level == genus
-          if(r$taxon_lvl_slc == "genus") {
+          if(r$taxon_lvl_slc == "genus" || r$taxon_lvl_slc == "scientificName") {
             r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
 
             r$scaledprobs_by_scientificName <- tryCatch({
@@ -688,33 +687,35 @@ mod_select_figure_server <- function(id, r) {
 
     ## DATA VARIATION
     output$fig_samples_plot_output <- plotly::renderPlotly({
-      req(input$year_selected)
+      if (req(r$fig_ready, cancelOutput = TRUE)) {
+        req(input$year_selected)
 
-      # Keep your original logic
-      plt_ready <- r$fig_ready && r$fig_slc$fig_samples
-      num_of_species <- r$data_ready$scientificName |> unique() |> length()
+        # Keep your original logic
+        plt_ready <- r$fig_ready && r$fig_slc$fig_samples
+        num_of_species <- r$data_ready$scientificName |> unique() |> length()
 
-      if (num_of_species > 26) {
-        plotly::plot_ly(
-          type = "scatter",
-          mode = "text",
-          text = "Too many species to plot for this taxon. Please restrict your search to less than 26 species.",
-          x = 0, y = 0,
-          textfont = list(size = 12)
-        ) %>%
-          plotly::layout(
-            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
-          )
-      } else {
-        # Wrap draw_fig_samples in tryCatch to catch runtime errors without breaking the app
-        tryCatch({
-          ggp <- draw_fig_samples(r$newprob_by_scientificName, plt_ready, year = input$year_selected)
-        }, error = function(e) {
-          message("*** ERROR in draw_fig_samples: ", conditionMessage(e))
-          return(plotly::plot_ly(type = "scatter", mode = "text",
-                                 text = "Error rendering figure", x = 0, y = 0))
-        })
+        if (num_of_species > 26) {
+          plotly::plot_ly(
+            type = "scatter",
+            mode = "text",
+            text = "Too many species to plot for this taxon. Please restrict your search to less than 26 species.",
+            x = 0, y = 0,
+            textfont = list(size = 12)
+          ) %>%
+            plotly::layout(
+              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
+            )
+        } else {
+          # Wrap draw_fig_samples in tryCatch to catch runtime errors without breaking the app
+          tryCatch({
+            ggp <- draw_fig_samples(r$newprob_by_scientificName, plt_ready, year = input$year_selected)
+          }, error = function(e) {
+            message("*** ERROR in draw_fig_samples: ", conditionMessage(e))
+            return(plotly::plot_ly(type = "scatter", mode = "text",
+                                   text = "Error rendering figure", x = 0, y = 0))
+          })
+        }
       }
     })
 
