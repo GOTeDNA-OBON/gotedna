@@ -39,7 +39,7 @@ R.version.string
 
 #### R users with access to the GitHub repository
 
-##### Option 1: clone the repository with synced package versions (more robust)
+##### Clone the repository with synced package versions (more robust)
 
 `git clone https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git`
 
@@ -52,20 +52,6 @@ Start R in this folder, then in R, install renv if needed:
 Restore the project environment from the lockfile
 
 `renv::restore()`
-
-Follow terminal instructions for installing/syncing packages.
-
-##### Option 2: install app without syncing R package versions (less robust)
-Install the development version of GOTeDNA from [GitHub](https://github.com/) with:
-
-``` r
-install.packages("remotes")
-remotes::install_git(
-  "https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git",
-  force = TRUE,
-  dependencies = TRUE
-)
-```
 
 Follow terminal instructions for installing/syncing packages.
 
