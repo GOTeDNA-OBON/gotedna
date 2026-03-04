@@ -53,6 +53,7 @@ Restore the project environment from the lockfile
 
 `renv::restore()`
 
+Follow terminal instructions for installing/syncing packages.
 
 ##### Option 2: install app without syncing R package versions (less robust)
 Install the development version of GOTeDNA from [GitHub](https://github.com/) with:
@@ -65,6 +66,9 @@ remotes::install_git(
   dependencies = TRUE
 )
 ```
+
+Follow terminal instructions for installing/syncing packages.
+
 *Download and installation could take 10-20 minutes.
 
 ## Usage
