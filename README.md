@@ -39,7 +39,7 @@ R.version.string
 
 #### R users with access to the GitHub repository
 
-##### Clone the repository with synced package versions (more robust)
+##### Clone the repository with synced package versions (assumes git is already installed on your machine)
 
 `git clone https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git`
 
