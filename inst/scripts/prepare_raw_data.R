@@ -175,7 +175,7 @@ gotedna_data$metabarcoding <- filter_nondetections_all(
 )
 print(paste0("rows in data after nondetection distance filter: ", nrow(gotedna_data$metabarcoding)))
 
-saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
+
 
 ################################################
 #ADD STATION FILE FOR MAPPING
@@ -267,9 +267,12 @@ gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   mutate(primer = coalesce(final_primer, primer)) %>%
   select(-final_primer)
 
+
 #### Need to do for both qPCR and metabarcoding
 # Prepare primer data
 # gotedna_data <- readRDS("inst/app/data/gotedna_data.rds")
+
+saveRDS(gotedna_data, "inst/app/data/gotedna_data.rds")
 
 taxon_levels <- c(
   "kingdom", "phylum", "class",
@@ -282,6 +285,8 @@ gotedna_primer <- setNames(
   }),
   taxon_levels
 )
+
+
 
 saveRDS(gotedna_primer, "inst/app/data/gotedna_primer.rds")
 
