@@ -516,8 +516,7 @@ mod_select_figure_server <- function(id, r) {
         "Field Methods" = c("samp_size_mid","size_frac","filter_material","samp_mat_process",
                             # "minimumDepthInMeters","maximumDepthInMeters"),
                             "min_depth_floor", "max_depth_floor"),
-        "Storage Methods" = c("samp_store_temp","samp_store_sol"),
-        "Lab Methods" = c("target_gene","pcr_primer_forward","pcr_primer_reverse","nucl_acid_ext_kit"),
+        "Storage and Extraction Methods" = c("samp_store_temp","samp_store_sol", "nucl_acid_ext_kit"),
         "Library Preparation" = c("platform","instrument","seq_kit"),
         "Bioinformatic Methods" = c("otu_db","tax_assign_cat","otu_seq_comp_appr")
       )
