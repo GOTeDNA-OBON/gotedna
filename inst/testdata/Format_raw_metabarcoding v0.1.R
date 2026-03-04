@@ -298,7 +298,7 @@ write.csv(multHits_stacked,
 
 # For Erin's datasets ----
 
-library(phyloseq)
+# library(phyloseq)
 
 ASVtable = read.csv(files$filepath)
 
