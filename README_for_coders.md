@@ -29,7 +29,7 @@ This menu is defined in **mod\_select\_data.R**.with the id, “datasource”. T
 ## Download OBIS Data
 
 * A user can download a fresh GOTeDNA data file from OBIS using this option, defined in **mod\_select\_data.R** with id “download\_button”. Once confirmed, the download uses the function **big\_OBIS\_data\_pull()** defined in **global.R** to download and properly format the data for GOTeDNA. **big\_OBIS\_data\_pull()** in turn uses the **read\_data()** function defined in **read\_data.R** to filter and download the correct datasets from OBIS.  
-* Location clusters (called stations in the code) are calculated using the **update\_station\_variable()** function defined in **read\_data.R**.  
+* Location clusters (called stations in the code) are calculated using the **update\_location\_clusters()** function defined in **prepare\_data.R**.  
 * Primer info for the imported data is calculated directly in the “external\_file” observer in **mod\_select\_data.R**.
 
 # 2\. Data Selection
@@ -71,7 +71,7 @@ When a user clicks “Compute & Visualize” a cascade of observeEvents are run,
 # 4\. Observation Menu (and Explore Protocols)
 
 ![](man/guide_figs/prot_explore.png)
-The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The nmds and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph**. The functions for generating the plots live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**.
+The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The NMDS and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph**. The functions for generating the plots live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**.
 
 ![](man/guide_figs/observation.png)  
 The observation menus are defined in **mod\_select\_figure.R** with ids “threshold” and “prot\_id”. When "Update Figures" the calculations for the figures are rerun with the selected protocol Ids and threshold.
