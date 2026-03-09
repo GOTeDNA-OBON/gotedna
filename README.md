@@ -23,11 +23,9 @@ We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
 
 2.  Install R Studio
 
-### Install the GOTeDNA package
+### Install the GOTeDNA Application
 
-#### Install Rtools (For Windows)
-
-Note: macOS and Linux do not need Rtools to be installed to run the GOTeDNA package
+#### Install on Windows
 
 The Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
 
@@ -37,9 +35,7 @@ To see what R Version you currently have:
 R.version.string
 ```
 
-#### R users with access to the GitHub repository
-
-##### Clone the repository with synced package versions (assumes git is already installed on your machine)
+Clone the repository (assumes git is already installed on your machine)
 
 `git clone https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git`
 
@@ -56,6 +52,11 @@ Restore the project environment from the lockfile
 Follow terminal instructions for installing/syncing packages.
 
 *Download and installation could take 10-20 minutes.
+
+#### Install on Mac and Linux
+
+There are not currently instructions for installation on Mac and Linux. GOTeDNA has been developed in RStudio in Windows 11. That said, Mac and Linux users with cross-platform experience may have success referring to the Windows instructions above and adapting as needed.
+
 
 ## Usage
 
