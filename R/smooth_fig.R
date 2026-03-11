@@ -45,11 +45,26 @@ smooth_fig <- function(scaledprobs) {
     ggplot2::coord_polar(clip = "off") +
     ggplot2::labs(col = "Year", x = NULL, y = NULL) +
     ggplot2::theme_minimal() +
-    ggplot2::scale_colour_manual(values = palette("Alphabet")) +
+    ggplot2::scale_colour_manual(
+      values = palette.colors(nlevels(data$year), "Alphabet")
+    ) +
     ggplot2::scale_x_continuous(limits = c(0.5, 12.5), breaks = 1:12, labels = month.abb) +
-    ggplot2::guides(colour = ggplot2::guide_legend(label.position = "left", label.hjust = 1)) +
+    # ggplot2::guides(
+    #   colour = ggplot2::guide_legend(
+    #     label.position = "left",
+    #     label.hjust = 1,
+    #     override.aes = list(size = 2),
+    #     keyheight = grid::unit(0.25, "cm")
+    #   )
+    # ) +
     ggplot2::scale_y_continuous(limits = c(-0.1, 1.01), breaks = c(0, 0.25, 0.50, 0.75, 1)) +
-    theme_circle
+    theme_circle +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16),
+      legend.spacing.y = grid::unit(0.04, "cm"),
+      legend.key.height = grid::unit(0.1, "cm")
+    )
 }
 
 
