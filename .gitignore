@@ -33,3 +33,4 @@ vignettes/*.pdf
 docs/
 # pycharm project settings
 .idea
+big_test.rds
