@@ -1,48 +1,32 @@
+
 read_data_k <- function(
-    dataset_ids       = "634a3b54-9e8e-4b20-80fa-23eaed15284d",
+    dataset_ids       = NULL,
     scientificname    = NULL,
     worms_id          = NULL,
-    areaid            = NULL,
+    areaid            = NULL, #Canada: North Atlantic
+    #geometry          = "POLYGON ((-67.72 40.614, -56.821 40.614, -56.821 47.279, -67.72 47.279, -67.72 40.614))",
     join_by           = c("auto", "occurrenceID", "id"),
-    require_absences  = TRUE,
-    store_datasets    = FALSE
+    require_absences  = TRUE
 ) {
 
   join_by <- match.arg(join_by)
-
-  # required_cols <- c(
-  #   "samp_name",
-  #   "target_gene",
-  #   "pcr_primer_name_forward",
-  #   "pcr_primer_name_reverse",
-  #   "scientificName",
-  #   "kingdom",
-  #   "phylum",
-  #   "class",
-  #   "order",
-  #   "family",
-  #   "genus",
-  #   "eventDate_clean",
-  #   "decimalLatitude",
-  #   "decimalLongitude",
-  #   "organismQuantity"
-  # )
 
   # ---- columns you want back ----
   occurrence_cols <- c(
     "recordedBy","bibliographicCitation","materialSampleID",
     "organismQuantity","organismQuantityType",
-    "sampleSizeValue","sampleSizeUnit","associatedSequences",
+    "samp_size", "samp_size_unit", "decimalLatitude", "decimalLongitude",
     "minimumDepthInMeters","maximumDepthInMeters","month","year",
-    "scientificNameID","kingdom","phylum","class","order","family","genus"
+    "scientificNameID","kingdom","phylum","class","order","family","genus",
+    "dataset_id", "bathymetry", "associatedSequences", "bibliographicCitation"
   )
 
   dna_cols <- c(
-    "id","dna_sequence","target_gene","pcr_primer_forward","samp_name",
-    "env_broad_scale","env_local_scale","env_medium","samp_mat_process",
-    "size_frac","samp_size","samp_size_unit","otu_db","seq_kit",
-    "otu_seq_comp_appr","pcr_primer_name_forward","pcr_primer_name_reverse",
-    "pcr_primer_reference","occurrenceID"
+    "id","dna_sequence","target_gene","pcr_primer_forward", "pcr_primer_reverse",
+    "samp_name", "env_broad_scale","env_local_scale","env_medium","samp_mat_process",
+    "size_frac","samp_size","samp_size_unit","otu_db","seq_kit", "otu_seq_comp_appr",
+    "pcr_primer_name_forward","pcr_primer_name_reverse", "pcr_primer_reference",
+    "occurrenceID"
   )
 
   mof_cols <- c(
@@ -51,6 +35,13 @@ read_data_k <- function(
     "seq_run_id","lib_id","project_id","pcr_0_1","samp_store_sol","samp_store_temp",
     "platform","instrument","tax_assign_cat","LClabel","occurrenceID",
     "nucl_acid_ext","nucl_acid_ext_kit","filter_material"
+  )
+
+  required_ext_cols <- c(
+    "samp_name",
+    "target_gene",
+    "pcr_primer_name_forward",
+    "pcr_primer_name_reverse"
   )
 
   added_cols <- c("category", "flags")
@@ -65,20 +56,15 @@ read_data_k <- function(
   ))
 
   # ---- helper: enforce columns (no external function needed) ----
-  enforce_cols <- function(df, cols) {
-    # missing_required <- setdiff(required_columns, names(df))
-    # if (length(missing_required)) {
-    #   message("Missing required columns: ", paste(missing_required, collapse = ", "))
-    #   return(NULL)
-    # }
+  enforce_cols <- function(occ_all, cols) {
     # add missing columns as NA
-    missing <- setdiff(cols, names(df))
+    missing <- setdiff(cols, names(occ_all))
     if (length(missing) > 0) {
-      for (m in missing) df[[m]] <- NA
+      for (m in missing) occ_all[[m]] <- NA
     }
     # keep only requested columns in a consistent order
-    df <- df[, intersect(cols, names(df)), drop = FALSE]
-    df
+    occ_all <- occ_all[, intersect(cols, names(occ_all)), drop = FALSE]
+    occ_all
   }
 
   # ---- helper: build extension-wide table (MOF wide + DNA) ----
@@ -144,6 +130,7 @@ read_data_k <- function(
     ds_tbl <- robis::dataset(
       scientificname = scientificname,
       areaid         = areaid,
+      #geometry       = geometry,
       taxonid        = worms_id,
       hasextensions  = c("DNADerivedData", "MeasurementOrFact")
     ) %>%
@@ -159,13 +146,6 @@ read_data_k <- function(
     else stop("Could not find dataset id column in dataset() output.")
 
     message("Found ", length(dataset_ids), " dataset(s).")
-
-    if(store_datasets) {
-      existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
-      saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
-      dataset_ids <- setdiff(dataset_ids, saved_ds)
-    }
-
   }
 
   dataset_ids <- as.character(dataset_ids)
@@ -197,6 +177,7 @@ read_data_k <- function(
         scientificname = scientificname,
         taxonid        = worms_id,
         areaid         = areaid,
+        #geometry       = geometry,
         absence        = "include",
         dropped        = "include",
         exclude        = exclude_list
@@ -228,10 +209,6 @@ read_data_k <- function(
     core_all <- dplyr::select(core_all, dplyr::any_of(cols_included_from_OBIS))
     core_all <- enforce_cols(core_all, cols_included_from_OBIS)
 
-    if(is.null(core_all)) {
-      return(NULL)
-    }
-
     # 1b) EXTENSIONS (present-only; do NOT request absence="include")
     rec_ext <- tryCatch(
       robis::occurrence(
@@ -239,6 +216,7 @@ read_data_k <- function(
         scientificname = scientificname,
         taxonid        = worms_id,
         areaid         = areaid,
+        #geometry       = geometry,
         extensions     = c("DNADerivedData", "MeasurementOrFact"),
         hasextensions  = c("DNADerivedData", "MeasurementOrFact"),
         dropped        = "include",
@@ -266,6 +244,17 @@ read_data_k <- function(
       return(core_all)
     }
 
+    missing_required <- setdiff(required_ext_cols, names(ext_joined))
+    if (length(missing_required) > 0) {
+      warning(
+        "Dataset ", ds,
+        " missing required column(s): ",
+        paste(missing_required, collapse = ", "),
+        " ; skipping."
+      )
+      return(NULL)
+    }
+
     # 1c) merge extensions onto full core (absences keep NA extension fields)
     out <- dplyr::left_join(core_all, ext_joined, by = "occurrenceID", suffix = c("", ".ext"))
 
@@ -283,9 +272,6 @@ read_data_k <- function(
     out <- dplyr::select(out, dplyr::any_of(cols_included_from_OBIS))
     out <- enforce_cols(out, cols_included_from_OBIS)
     out$samp_name <- as.character(dplyr::coalesce(out$samp_name, out$materialSampleID))
-    if (store_datasets) {
-      saveRDS(out, paste0("inst/app/data/raw_OBIS/dataset-", ds, ".rds"))
-    }
     out
   })
 
@@ -296,7 +282,8 @@ read_data_k <- function(
     return(tibble::tibble())
   }
 
-  GOTeDNA_df <- dplyr::bind_rows(obis_list)
-  rownames(GOTeDNA_df) <- NULL
-  GOTeDNA_df
+  GOTeDNA_occ_all <- dplyr::bind_rows(obis_list)
+  rownames(GOTeDNA_occ_all) <- NULL
+  GOTeDNA_occ_all
 }
+

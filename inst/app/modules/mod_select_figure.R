@@ -341,7 +341,11 @@ mod_select_figure_server <- function(id, r) {
 
           # Do the same for scientificName if level == genus
           if(r$taxon_lvl_slc == "genus" || r$taxon_lvl_slc == "scientificName") {
-            r$newprob_by_scientificName <- calc_det_prob(r$data_ready, "scientificName", "All", pool_primers = TRUE)
+            just_species_df <- r$data_ready %>%
+              filter(
+                str_detect(scientificName, " ")  # only names with a space
+              )
+            r$newprob_by_scientificName <- calc_det_prob(just_species_df, "scientificName", "All", pool_primers = TRUE)
 
             r$scaledprobs_by_scientificName <- tryCatch({
               if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
