@@ -1,5 +1,8 @@
 server <- function(input, output, session) {
-  # INPUTS
+
+  # -----------------------------
+  # Existing reactive values
+  # -----------------------------
   r <- reactiveValues(
     geom = NULL,
     geom_slc = NULL,
@@ -34,32 +37,51 @@ server <- function(input, output, session) {
     reset = 0
   )
 
-#   observeEvent(input$navbar, {
-#    if (input$navbar == "partners") {
-#      browseURL("https://sites.google.com/view/gotedna/partners")
-#    }
+  # -----------------------------
+  # 1️⃣ App choice module
+  # -----------------------------
+  app_choice <- mod_app_choice_server("app_choice")
 
-#    if (input$navbar == "team") {
-#      browseURL("https://sites.google.com/view/gotedna/the-team")
-#    }
-#  })
-
-  mod_select_data_server("slc_data", r)
-
-  mod_dialog_disclaimers_server("show_dialog", r)
-  observeEvent(input$show_dialog, r$show_dialog <- TRUE)
-  observeEvent(input$show_help, r$show_help <- TRUE)
-  mod_dialog_map_info_server("show_map_info", r)
-  mod_glossary_server("glossary")
-
-  mod_primers_server("primer_seq")
-  observeEvent(input$show_source, r$show_source <- TRUE)
-
-  observeEvent(input$reset, {
-    shinyjs::reset("data_authorship")
+  # -----------------------------
+  # 2️⃣ Render choose page
+  # -----------------------------
+  output$choose_ui <- renderUI({
+    choice <- app_choice()
+    if (is.null(choice)) {
+      mod_app_choice_ui("app_choice")
+    } else {
+      NULL
+    }
   })
 
-  mod_select_figure_server("slc_fig", r)
+  # -----------------------------
+  # 3️⃣ Show/hide apps based on choice
+  # -----------------------------
+  observe({
+    choice <- app_choice()
+
+    if (!is.null(choice) && choice == "A") {
+      shinyjs::show("gotedna_app")
+      shinyjs::hide("new_app")
+
+      # -----------------------------
+      # Original GOTeDNA server modules
+      # -----------------------------
+      mod_select_data_server("slc_data", r)
+      mod_dialog_disclaimers_server("show_dialog", r)
+      observeEvent(input$show_dialog, r$show_dialog <- TRUE)
+      observeEvent(input$show_help, r$show_help <- TRUE)
+      mod_dialog_map_info_server("show_map_info", r)
+      mod_glossary_server("glossary")
+      mod_primers_server("primer_seq")
+      observeEvent(input$show_source, r$show_source <- TRUE)
+      observeEvent(input$reset, { shinyjs::reset("data_authorship") })
+      mod_select_figure_server("slc_fig", r)
+
+    } else if (!is.null(choice) && choice == "B") {
+      shinyjs::hide("gotedna_app")
+      shinyjs::show("new_app")
+    }
+  })
 
 }
-
