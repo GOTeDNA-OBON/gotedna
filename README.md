@@ -55,7 +55,7 @@ Follow terminal instructions for installing/syncing packages.
 
 #### Install on Mac and Linux
 
-There are not currently instructions for installation on Mac and Linux. GOTeDNA has been developed in RStudio in Windows 11. That said, Mac and Linux users with cross-platform experience may have success referring to the Windows instructions above and adapting as needed.
+There are not currently instructions for installation on Mac and Linux. GOTeDNA has been developed in RStudio in Windows 11. That said, Mac and Linux users with cross-platform experience may have success referring to the Windows instructions above and adapting as needed. The primary issue is that additional libraries will need to be installed depending on which OS/distribution you are running. Error messages will indicate which libraries need to be installed.
 
 
 ## Usage
