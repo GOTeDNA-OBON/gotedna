@@ -2,12 +2,12 @@ ui <- fluidPage(
   theme = bslib::bs_theme(version = 5),
   shinyjs::useShinyjs(),
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = paste0("extra.css?v=", Sys.time())),
+    tags$link(rel = "stylesheet", type = "text/css", href = paste0("app_a_styles.css?v=", Sys.time())),
     tags$link(rel = "stylesheet", type = "text/css", href = "fonts.css"),
     tags$style(type = "text/css", "body {padding-top: 100px;}"),
     tags$script(type = "text/javascript", src = "js/scrollPage.js"),
     tags$script(type = "text/javascript", src = "js/fakeClick.js"),
-    tags$button(id = "scroll-top", "^ Top", onclick = "topFunction()")
+    # tags$button(id = "scroll-top", "^ Top", onclick = "topFunction()")
   ),
 
   # -----------------------------
@@ -20,6 +20,7 @@ ui <- fluidPage(
   # -----------------------------
   div(
     id = "gotedna_app",
+    class = "app_A",
     style = "display:none;",
     navbarPage(id = "navbar",
                position = "fixed-top",
@@ -113,10 +114,7 @@ ui <- fluidPage(
   div(
     id = "new_app",
     style = "display:none;",
-    fluidPage(
-      h1("New app placeholder"),
-      p("This will become the new app with its own navbar.")
-    )
+    mod_new_app_ui("new_app_id")
   ),
 
   # -----------------------------

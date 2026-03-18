@@ -81,6 +81,7 @@ server <- function(input, output, session) {
     } else if (!is.null(choice) && choice == "B") {
       shinyjs::hide("gotedna_app")
       shinyjs::show("new_app")
+      mod_new_app_server("new_app_id")
     }
   })
 
