@@ -59,6 +59,11 @@ There are not currently instructions for installation on Mac and Linux. GOTeDNA 
 
 
 ## Usage
+Install the GOTeDNA package:
+
+``` r
+install.packages("GOTeDNA")
+```
 
 To load the package: 
 
