@@ -16,6 +16,7 @@ Imports:
     cli,
     dplyr (>= 1.0.0),
     DT,
+    forcats,
     fs,
     ggh4x,
     ggplot2,
@@ -27,8 +28,6 @@ Imports:
     leafem,
     leaflet,
     leaflet.extras,
-    forcats,
-    vegan,
     magick,
     mapedit (>= 0.6.0),
     magrittr,
@@ -38,9 +37,10 @@ Imports:
     shinyjs,
     shinyWidgets,
     tinytex,
+    vegan,
     writexl
 Remotes:
-    trafficonese/leaflet.extras
+    trafficonese/leaflet.extras,
     AnaisLacoursiereRoussel/GOTeDNA
 RoxygenNote: 7.3.3
 LazyLoad: yes
