@@ -17,6 +17,7 @@ Imports:
     dbscan,
     dplyr (>= 1.0.0),
     DT,
+    forcats,
     fs,
     geosphere,
     ggh4x,
@@ -25,6 +26,8 @@ Imports:
     grDevices,
     grid,
     kableExtra,
+    leaflet,
+    leaflet.extras,
     lubridate,
     magick,
     magrittr,
@@ -42,6 +45,7 @@ Imports:
     stats,
     tidyr,
     tinytex,
+    vegan,
     viridis,
     writexl
 Suggests:
@@ -51,7 +55,6 @@ Suggests:
     htmlwidgets,
     knitr,
     leafem,
-    leaflet,
     lme4,
     methods,
     readr (>= 2.1.0),
