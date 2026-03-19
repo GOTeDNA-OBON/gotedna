@@ -36,16 +36,12 @@ Then follow the instructions from https://cran.r-project.org/bin/windows/Rtools/
 Install required packages by pasting the following code into the R Console:
 
 ``` r
-install.packages(
-  "leaflet.extras",
-  repos = c(
-    "https://trafficonese.r-universe.dev",
-    "https://cloud.r-project.org"
-  )
-)
-
 install.packages("pak")
-pak::pak("AnaisLacoursiereRoussel/GOTeDNA")  
+
+pak::pak(c(
+  "trafficonese/leaflet.extras",
+  "AnaisLacoursiereRoussel/GOTeDNA"
+))
 ```
 
 Load the GOTeDNA library: 
