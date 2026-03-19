@@ -13,73 +13,49 @@ The goal of GOTeDNA is to import and format eDNA metabarcoding metadata/data fro
 
 ## Installation
 
-### For non-R users
+### Install R
 
-#### Install R
+Installation of R and RStudio are currently required to access the app.
 
-We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
-
-1.  Download R for your OS: <https://cran.rstudio.com/>
-
-2.  Install R Studio
+This link will guide installation of both applications based on your operating system (Linux, Mac, Windows): <https://posit.co/download/rstudio-desktop/>
 
 ### Install the GOTeDNA Application
 
-#### Install on Windows
+#### Hint (for Windows)
 
-The Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
+The Rtools version appropriate for your R Version will need to be installed. 
 
-To see what R Version you currently have:
+To see what R version you currently have, paste the following code into the R Console:
 
-  ``` r
+``` r
 R.version.string
 ```
+Then follow the instructions from https://cran.r-project.org/bin/windows/Rtools/ 
 
-Clone the repository (assumes git is already installed on your machine)
-
-`git clone https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git`
-
-`cd GOTeDNA`
-
-Start R in this folder, then in R, install renv if needed:
-
-`install.packages("renv")`
-
-Restore the project environment from the lockfile
-
-`renv::restore()`
-
-Follow terminal instructions for installing/syncing packages.
-
-*Download and installation could take 10-20 minutes.
-
-#### Install on Mac and Linux
-
-There are not currently instructions for installation on Mac and Linux. GOTeDNA has been developed in RStudio in Windows 11. That said, Mac and Linux users with cross-platform experience may have success referring to the Windows instructions above and adapting as needed. The primary issue is that additional libraries will need to be installed depending on which OS/distribution you are running. Error messages will indicate which libraries need to be installed.
-
-
-## Usage
-Install the GOTeDNA package:
+#### For installation
+Install required packages by pasting the following code into the R Console:
 
 ``` r
-install.packages("GOTeDNA")
+install.packages(
+  "leaflet.extras",
+  repos = c(
+    "https://trafficonese.r-universe.dev",
+    "https://cloud.r-project.org"
+  )
+)
+
+install.packages("pak")
+pak::pak("AnaisLacoursiereRoussel/GOTeDNA")  
 ```
 
-To load the package: 
+To load the GOTeDNA library and launch the Shiny application in a browser window: 
 
 ``` r
-library("GOTeDNA")
-```
-
-### Shiny
-
-The Shiny application can be launched with:
-
-``` r
+library(GOTeDNA)
 run_gotedna_app()
 ```
 
-### Import data
+### Import data (Optional)
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
 
