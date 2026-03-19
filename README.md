@@ -48,10 +48,15 @@ install.packages("pak")
 pak::pak("AnaisLacoursiereRoussel/GOTeDNA")  
 ```
 
-To load the GOTeDNA library and launch the Shiny application in a browser window: 
+Load the GOTeDNA library: 
 
 ``` r
 library(GOTeDNA)
+```
+
+Launch the Shiny application in a new browser: 
+
+``` r
 run_gotedna_app()
 ```
 
