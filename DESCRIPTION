@@ -66,6 +66,8 @@ Suggests:
     testthat (>= 3.0.0),
     tibble,
     tidyselect
+Remotes:
+    trafficonese/leaflet.extras
 RoxygenNote: 7.3.3
 LazyLoad: yes
 VignetteBuilder:
