@@ -134,7 +134,7 @@ width: 100%;
 }
 
       /* Map container MUST be the positioning context + CLIP panel to map */
-[id$="map_wrap"]{
+.app_B .map_wrap {
   position: relative;
   height: calc(100vh - 72px);
   overflow: hidden;
@@ -215,7 +215,7 @@ width: 100%;
   width: 100%;
 }
      /* ---- Floating panel ---- */
-.app_B [id$="floating_panel"]{
+.app_B .floating_panel{
   position: absolute;
   background: rgba(255,255,255,0.92);
   z-index: 9999;
@@ -236,22 +236,22 @@ width: 100%;
 }
 
 /* Put Leaflet controls (esp. draw toolbar) above the floating panel */
-.app_B [id$="map_wrap"] .leaflet-top,
-.app_B [id$="map_wrap"] .leaflet-bottom{
+.app_B .map_wrap .leaflet-top,
+.app_B .map_wrap .leaflet-bottom{
   z-index: 12000 !important;
 }
 
 /* Specifically ensure the draw toolbar is above */
-.app_B [id$="map_wrap"] .leaflet-draw,
-.app_B [id$="map_wrap"] .leaflet-draw-toolbar,
-.app_B [id$="map_wrap"] .leaflet-control-draw{
+.app_B .map_wrap .leaflet-draw,
+.app_B .map_wrap .leaflet-draw-toolbar,
+.app_B .map_wrap .leaflet-control-draw{
   z-index: 13000 !important;
   position: relative; /* makes z-index apply reliably */
 }
 
 /* Let bootstrap control collapse visibility; we only improve layout */
-.app_B [id$="floating_body"].collapse.in,
-.app_B [id$="floating_body"].collapsing{
+.app_B .floating_body.collapse.in,
+.app_B .floating_body.collapsing{
   display: flex !important;
   flex: 1 1 auto;
   flex-direction: column;
@@ -261,7 +261,7 @@ width: 100%;
 }
 
 /* Actual scrolling container */
-.app_B [id$="floating_body"] .panel-body{
+.app_B .floating_body .panel-body{
   flex: 1 1 auto;
 
   /* REQUIRED for nested scrolling in flex layouts */
@@ -275,29 +275,29 @@ width: 100%;
 }
 
 /* Remove collapse animation delay (optional) */
-.app_B [id$="floating_body"].collapse,
-.app_B [id$="floating_body"].collapsing{
+.app_B .floating_body.collapse,
+.app_B .floating_body.collapsing{
   -webkit-transition: none !important;
   transition: none !important;
 }
-.app_B [id$="floating_panel"]{ transition: none !important; }
+.app_B .floating_panel{ transition: none !important; }
 
 
 /* resizable handles */
-.app_B [id$="floating_panel"] .ui-resizable-handle{ z-index: 10000; }
-.app_B [id$="floating_panel"] .ui-resizable-se{
+.app_B .floating_panel .ui-resizable-handle{ z-index: 10000; }
+.app_B .floating_panel .ui-resizable-se{
   width: 14px; height: 14px;
   right: 2px; bottom: 2px;
   cursor: se-resize;
   background: rgba(0,0,0,0.20);
   border-radius: 3px;
 }
-.app_B [id$="floating_panel"] .ui-resizable-e{
+.app_B .floating_panel .ui-resizable-e{
   width: 10px; right: 0px;
   top: 0; bottom: 0;
   cursor: e-resize;
 }
-.app_B [id$="floating_panel"] .ui-resizable-s{
+.app_B .floating_panel .ui-resizable-s{
   height: 10px; bottom: 0px;
   left: 0; right: 0;
   cursor: s-resize;
@@ -420,7 +420,7 @@ width: 100%;
 }
 
 /* Floating toggle header */
-.app_B [id$="floating_toggle"]{
+.app_B .floating_toggle{
   width: 100%;
   text-align: left;
   display: flex;
@@ -430,8 +430,8 @@ width: 100%;
   font-weight: 600;
   padding: 10px 12px;
 }
-.app_B [id$="floating_toggle"] .caret-icon { transition: transform 150ms ease; }
-.app_B [id$="floating_toggle"][aria-expanded='true'] .caret-icon { transform: rotate(180deg); }
+.app_B .floating_toggle .caret-icon { transition: transform 150ms ease; }
+.app_B .floating_toggle[aria-expanded='true'] .caret-icon { transform: rotate(180deg); }
 
 .scroll-section { scroll-margin-top: 80px; }
 
@@ -582,7 +582,7 @@ width: 100%;
   line-height: 1.2;
 }
 
-[id$="monthly_plot_subtitle"]{
+.monthly_plot_subtitle{
   font-size: 12px;
   color: #444;
   margin-bottom: 2px;
@@ -656,7 +656,7 @@ width: 100%;
    ========================= */
 
 /* default = monitor */
-.app_B [id$="map_wrap"]{
+.app_B .map_wrap{
   --ui-scale: 1;
   --floating-w: 360px;
   --floating-left: 70px;
@@ -676,7 +676,7 @@ width: 100%;
 
 /* laptop-sized screens */
 @media (max-width: 1440px), (max-height: 900px){
-  .app_B [id$="map_wrap"]{
+  .app_B .map_wrap{
     --ui-scale: 0.84;
     --floating-w: 305px;
     --floating-left: 52px;
@@ -726,56 +726,56 @@ width: 100%;
 }
 
 /* ---------- top right: floating panel ---------- */
-.app_B [id$="floating_panel"] {
+.app_B .floating_panel {
   width: var(--floating-w) !important;
 }
 
-.app_B [id$="floating_toggle"] {
+.app_B .floating_toggle {
   font-size: var(--floating-title-fs) !important;
   padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_body"] .panel-body{
+.app_B .floating_body .panel-body{
   padding: calc(15px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_panel"] h4{
+.app_B .floating_panel h4{
   font-size: calc(20px * var(--ui-scale)) !important;
   margin-top: 0 !important;
   margin-bottom: calc(10px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_panel"] .shiny-input-container label{
+.app_B .floating_panel .shiny-input-container label{
   font-size: calc(14px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_panel"] .form-control,
-.app_B [id$="floating_panel"] .selectize-input,
-.app_B [id$="floating_panel"] .selectize-dropdown{
+.app_B .floating_panel .form-control,
+.app_B .floating_panel .selectize-input,
+.app_B .floating_panel .selectize-dropdown{
   font-size: calc(13px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_panel"] .filter-btn{
+.app_B .floating_panel .filter-btn{
   height: var(--filter-btn-h) !important;
   font-size: var(--filter-btn-fs) !important;
   padding: calc(6px * var(--ui-scale)) calc(8px * var(--ui-scale)) !important;
 }
 
-.app_B [id$="floating_panel"] .filter-btn-short{
+.app_B .floating_panel .filter-btn-short{
   height: var(--filter-btn-short-h) !important;
   font-size: var(--filter-btn-fs) !important;
 }
 
-.app_B [id$="floating_panel"] .filter-btn-grid-4,
-.app_B [id$="floating_panel"] .filter-btn-grid-2{
+.app_B .floating_panel .filter-btn-grid-4,
+.app_B .floating_panel .filter-btn-grid-2{
   gap: calc(8px * var(--ui-scale)) !important;
 }
 
 /* species list text in floating panel */
-.app_B [id$="floating_panel"],
-.app_B [id$="floating_panel"] li,
-.app_B [id$="floating_panel"] summary,
-.app_B [id$="floating_panel"] details{
+.app_B .floating_panel,
+.app_B .floating_panel li,
+.app_B .floating_panel summary,
+.app_B .floating_panel details{
   font-size: calc(13px * var(--ui-scale)) !important;
 }
 

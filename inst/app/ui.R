@@ -6,8 +6,7 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "fonts.css"),
     tags$style(type = "text/css", "body {padding-top: 100px;}"),
     tags$script(type = "text/javascript", src = "js/scrollPage.js"),
-    tags$script(type = "text/javascript", src = "js/fakeClick.js"),
-    # tags$button(id = "scroll-top", "^ Top", onclick = "topFunction()")
+    tags$script(type = "text/javascript", src = "js/fakeClick.js")
   ),
 
   # -----------------------------
@@ -18,6 +17,14 @@ ui <- fluidPage(
   # -----------------------------
   # 2️⃣ GOTeDNA App (original) – hidden initially
   # -----------------------------
+  tags$button(
+    id = "scroll-top",
+    type = "button",
+    class = "btn btn-default",
+    onclick = "topFunction()",
+    style = "display:none; position:fixed; bottom:40px; right:40px; z-index:1000;",
+    "^ Top"
+  ),
   div(
     id = "gotedna_app",
     class = "app_A",

@@ -30,34 +30,37 @@ mod_new_app_ui <- function(id) {
       tags$script(HTML("
 $(function(){
 
+  var $root = $('.app_B');
+
   // Smooth scroll navbar
-  $(document).on('click', 'a.nav-scroll', function(e){
+  $root.on('click', 'a.nav-scroll', function(e){
     e.preventDefault();
     var target = $(this).data('target');
-    var el = document.getElementById(target);
-    if(el){
-      el.scrollIntoView({behavior:'smooth', block:'start'});
+    var $el = $root.find(`[id$=\"${target}\"]`);
+
+    if($el.length){
+      $el[0].scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
   });
 
-    // Ensure Bootstrap 3 collapse is initialized on our target (prevents silent no-op)
-  function ensureCollapseInit(){
-    var $body = $('#floating_body');
+  function ensureCollapseInit($root){
+    var $body = $root.find('.floating_body');
     if(!$body.length) return;
 
     if (typeof $body.collapse === 'function') {
-      // Initialize plugin without toggling
       $body.collapse({ toggle: false });
     }
   }
 
-  function clampFloatingToMap(){
-    var $p = $('#floating_panel');
-    var $wrap = $('#map_wrap');
+  function clampFloatingToMap($root){
+    var $p    = $root.find('.floating_panel');
+    var $wrap = $root.find('.map_wrap');
     if(!$p.length || !$wrap.length) return;
 
     var PAD = 14;
-
     var wrapW = $wrap.innerWidth();
     var wrapH = $wrap.innerHeight();
 
@@ -70,30 +73,26 @@ $(function(){
     var pW  = $p.outerWidth();
     var pH  = $p.outerHeight();
 
-    var left = pos.left;
-    var top  = pos.top;
+    var minL = PAD, minT = PAD;
+    var maxL = Math.max(wrapW - pW - PAD, minL);
+    var maxT = Math.max(wrapH - pH - PAD, minT);
 
-    var minL = PAD;
-    var minT = PAD;
-    var maxL = wrapW - pW - PAD;
-    var maxT = wrapH - pH - PAD;
-
-    if(maxL < minL) maxL = minL;
-    if(maxT < minT) maxT = minT;
-
-    left = Math.min(Math.max(left, minL), maxL);
-    top  = Math.min(Math.max(top,  minT), maxT);
+    var left = Math.min(Math.max(pos.left, minL), maxL);
+    var top  = Math.min(Math.max(pos.top, minT), maxT);
 
     $p.css({ left: left + 'px', top: top + 'px' });
   }
 
-  function setFloatingCollapsedUI(isCollapsed){
-    var $p = $('#floating_panel');
-    var $toggle = $('#floating_toggle');
+  function setFloatingCollapsedUI($root, isCollapsed){
+    var $p      = $root.find('.floating_panel');
+    var $toggle = $root.find('.floating_toggle');
+    var $body   = $root.find('.floating_body');
+    var $wrap   = $root.find('.map_wrap');
+
     if(!$p.length || !$toggle.length) return;
 
     if(isCollapsed){
-      if($('#floating_body').hasClass('in')){
+      if($body.hasClass('in')){
         $p.data('open_h', $p.outerHeight());
       }
 
@@ -106,37 +105,37 @@ $(function(){
       $p.css({ height: headerH + 'px' });
 
     } else {
-    $p.removeClass('is-collapsed');
+      $p.removeClass('is-collapsed');
 
-    if($p.hasClass('ui-resizable')){
-      $p.resizable('option', 'minHeight', 180);
+      if($p.hasClass('ui-resizable')){
+        $p.resizable('option', 'minHeight', 180);
+      }
+
+      var oh = $p.data('open_h');
+      if(!oh){
+        var wrapH = $wrap.length ? $wrap.innerHeight() : 700;
+        var isLaptop = window.innerWidth <= 1440 || window.innerHeight <= 900;
+        oh = isLaptop ? wrapH * 0.72 : wrapH * 0.99;
+        $p.data('open_h', oh);
+      }
+      $p.css({ height: oh + 'px' });
     }
 
-    // If we've never been opened before, pick a sane default height
-    var oh = $p.data('open_h');
-    if(!oh){
-  var $wrap = $('#map_wrap');
-  var wrapH = $wrap.length ? $wrap.innerHeight() : 700;
-  var isLaptop = window.innerWidth <= 1440 || window.innerHeight <= 900;
-  oh = isLaptop ? wrapH * 0.72 : wrapH * 0.99;
-  $p.data('open_h', oh);
-}
-    $p.css({ height: oh + 'px' });
+    setTimeout(() => clampFloatingToMap($root), 0);
   }
 
-    setTimeout(clampFloatingToMap, 0);
-  }
+  function enableFloatingResize($root){
+    var $p    = $root.find('.floating_panel');
+    var $wrap = $root.find('.map_wrap');
+    var $toggle = $root.find('.floating_toggle');
 
-  function enableFloatingResize(){
-    var $p = $('#floating_panel');
     if(!$p.length) return;
 
-    // IMPORTANT: we control draggable here. So set absolutePanel(draggable=FALSE).
     if($p.hasClass('ui-draggable')){
-      $p.draggable('option', 'containment', '#map_wrap');
-      $p.draggable('option', 'handle', '#floating_toggle');
+      $p.draggable('option', 'containment', $wrap);
+      $p.draggable('option', 'handle', $toggle);
     } else {
-      $p.draggable({ containment: '#map_wrap', handle: '#floating_toggle' });
+      $p.draggable({ containment: $wrap, handle: $toggle });
     }
 
     if(!$p.hasClass('ui-resizable')){
@@ -144,71 +143,73 @@ $(function(){
         handles: 'e,s,se',
         minWidth: 320,
         minHeight: 200,
-        containment: '#map_wrap'
+        containment: $wrap
       });
     } else {
-      $p.resizable('option', 'containment', '#map_wrap');
+      $p.resizable('option', 'containment', $wrap);
     }
 
-    $p.off('dragstop.clamp').on('dragstop.clamp', clampFloatingToMap);
-    $p.off('resizestop.clamp').on('resizestop.clamp', clampFloatingToMap);
+    $p.off('dragstop.clamp').on('dragstop.clamp', () => clampFloatingToMap($root));
+    $p.off('resizestop.clamp').on('resizestop.clamp', () => clampFloatingToMap($root));
 
-    $(window).off('scroll.clampFloating').on('scroll.clampFloating', clampFloatingToMap);
-    $(window).off('resize.clampFloating').on('resize.clampFloating', clampFloatingToMap);
+    $(window).off('scroll.clampFloating').on('scroll.clampFloating', () => clampFloatingToMap($root));
+    $(window).off('resize.clampFloating').on('resize.clampFloating', () => clampFloatingToMap($root));
 
-    setTimeout(clampFloatingToMap, 0);
-    setTimeout(clampFloatingToMap, 250);
+    setTimeout(() => clampFloatingToMap($root), 0);
+    setTimeout(() => clampFloatingToMap($root), 250);
   }
 
-  function initFloatingPanel(){
-    ensureCollapseInit();
-    enableFloatingResize();
-    setFloatingCollapsedUI(true); // start collapsed
+  function initFloatingPanel($root){
+    ensureCollapseInit($root);
+    enableFloatingResize($root);
+    setFloatingCollapsedUI($root, true);
   }
 
-  $(document).on('shiny:connected', initFloatingPanel);
-  initFloatingPanel();
-
-  // Bootstrap 3 collapse events
-  $(document).on('hide.bs.collapse', '#floating_body', function(){
-    setFloatingCollapsedUI(true);
+  // ✅ Now $root is in scope here
+  $(document).on('shiny:connected', function(){
+    initFloatingPanel($root);
   });
 
-  $(document).on('hidden.bs.collapse', '#floating_body', function(){
-    enableFloatingResize();
-    setFloatingCollapsedUI(true);
-    clampFloatingToMap();
+  initFloatingPanel($root);
+
+  $root.on('hide.bs.collapse', '.floating_body', function(){
+    setFloatingCollapsedUI($root, true);
   });
 
-  $(document).on('shown.bs.collapse', '#floating_body', function(){
-    enableFloatingResize();
-    setFloatingCollapsedUI(false);
-    clampFloatingToMap();
+  $root.on('hidden.bs.collapse', '.floating_body', function(){
+    enableFloatingResize($root);
+    setFloatingCollapsedUI($root, true);
+    clampFloatingToMap($root);
   });
 
-  // Custom message to open the panel
+  $root.on('shown.bs.collapse', '.floating_body', function(){
+    enableFloatingResize($root);
+    setFloatingCollapsedUI($root, false);
+    clampFloatingToMap($root);
+  });
+
   Shiny.addCustomMessageHandler('openFloating', function(message){
-    var $p    = $('#floating_panel');
-    var $body = $('#floating_body');
-    var $tog  = $('#floating_toggle');
+    var $p    = $root.find('.floating_panel');
+    var $body = $root.find('.floating_body');
+    var $tog  = $root.find('.floating_toggle');
     if(!$p.length || !$body.length || !$tog.length) return;
 
-     ensureCollapseInit();  // <<< add this too (safe)
+    ensureCollapseInit($root);
 
     if($body.hasClass('in')){
       $tog.attr('aria-expanded','true');
-      setFloatingCollapsedUI(false);
-      enableFloatingResize();
-      clampFloatingToMap();
+      setFloatingCollapsedUI($root, false);
+      enableFloatingResize($root);
+      clampFloatingToMap($root);
       return;
     }
 
     $body.one('shown.bs.collapse.openFloating', function(){
       $tog.attr('aria-expanded','true');
       requestAnimationFrame(function(){
-        enableFloatingResize();
-        setFloatingCollapsedUI(false);
-        clampFloatingToMap();
+        enableFloatingResize($root);
+        setFloatingCollapsedUI($root, false);
+        clampFloatingToMap($root);
       });
     });
 
@@ -219,13 +220,14 @@ $(function(){
       $body.trigger('shown.bs.collapse');
     }
   });
-});
+
+}); // ✅ ONLY ONE closing
 
     "))
     ),
 
     div(
-      id = "app_B",
+      id = ns("app_B"),
       class = "app_B",
     # ---- REAL NAVBAR ----
     tags$nav(
@@ -255,10 +257,11 @@ $(function(){
       id = "sec_map", class = "scroll-section",
       div(
         id = "map_wrap",
+        class = "map_wrap",
         leafletOutput(ns("map")),
 
         div(
-          id = "monthly_plot_control",
+          id = ns("monthly_plot_control"),
           class = "leaflet-control",
           div(id = "monthly_plot_title", class="monthly_plot_title", "Monthly Number of Samples Collected"),
           div(id = "monthly_plot_subtitle", class="monthly_plot_subtitle", textOutput(ns("monthly_plot_subtitle"), inline = TRUE)),
@@ -266,18 +269,19 @@ $(function(){
         ),
 
         absolutePanel(
-          id = "floating_panel",
+          id = ns("floating_panel"),
+          class = "floating_panel",
           fixed = FALSE, draggable = FALSE,
           top = 10, left = 70, width = 360,
 
           tags$button(
-            id = "floating_toggle",
+            id = ns("floating_toggle"),
             type = "button",
-            class = "btn btn-default",
+            class = "btn btn-default floating_toggle",
             `data-toggle` = "collapse",
-            `data-target` = "#floating_body",
+            `data-target` = paste0("#", ns("floating_body")),
+            `aria-controls` = ns("floating_body"),
             `aria-expanded` = "false",
-            `aria-controls` = "floating_body",
             tagList(
               tags$span("Select a Site"),
               tags$span(class = "caret-icon", HTML("&#9662;"))
@@ -285,8 +289,8 @@ $(function(){
           ),
 
           div(
-            id = "floating_body",
-            class = "collapse",
+            id = ns("floating_body"),
+            class = "collapse floating_body",
             div(
               class = "panel-body",
               h4("Filter"),
@@ -803,7 +807,7 @@ mod_new_app_server <- function(id) {
 
     observe({
       click <- input$map_shape_click
-      proxy <- leafletProxy("map")
+      proxy <- leafletProxy("map", session = session)
 
       proxy %>% clearGroup("Selection outline")
 
@@ -1109,7 +1113,7 @@ mod_new_app_server <- function(id) {
     observeEvent(
       list(sel_year_chr(), sampling_points_layer_on()),
       {
-        proxy <- leafletProxy("map")
+        proxy <- leafletProxy("map", session = session)
 
         if (!isTRUE(sampling_points_layer_on())) {
           proxy %>% clearGroup("Sampling Points")
@@ -2373,305 +2377,185 @@ mod_new_app_server <- function(id) {
           #   options = layersControlOptions(collapsed = FALSE)
         ) %>%
         htmlwidgets::onRender("
-                      function(el, x){
+          function(el, x){
 
-                        const richness = new Set([
-                          'All',
-                          '12S',
-                          'COI',
-                          '16S',
-                          '18S'
-                        ]);
+            // ✅ Module root: wrap all custom divs outside the map
+            var $root = $('#new_app_id'); // <-- replace with your module container div id
 
-                        const context = new Set([
-                          'MPA/AOI Zone Boundaries',
-                          'Sampling Points',
-                          'Sampling Depth',
-                          'Monthly Sampling Plot'
-                        ]);
+            const richness = new Set(['All','12S','COI','16S','18S']);
+            const context  = new Set(['MPA/AOI Zone Boundaries','Sampling Points','Sampling Depth','Monthly Sampling Plot']);
+            const depthName = 'Sampling Depth';
+            const monthlyPlotName = 'Monthly Sampling Plot';
 
-                        const depthName = 'Sampling Depth';
+            // ---- HELPER FUNCTIONS ----
+            function getOverlayRows(){
+              const ctrl = el.querySelector('.leaflet-control-layers');
+              if(!ctrl) return [];
+              const rows = ctrl.querySelectorAll('.leaflet-control-layers-overlays label');
+              return Array.from(rows);
+            }
 
-                        const monthlyPlotName = 'Monthly Sampling Plot';
+            function labelText(row){ return row.textContent.replace(/\\s+/g,' ').trim(); }
+            function inputOf(row){ return row.querySelector('input[type=checkbox]'); }
 
-                        function getOverlayRows(){
-                          const ctrl = el.querySelector('.leaflet-control-layers');
-                          if(!ctrl) return [];
-                          const rows = ctrl.querySelectorAll('.leaflet-control-layers-overlays label');
-                          return Array.from(rows);
-                        }
+            function clickOffByName(name){
+              getOverlayRows().forEach(r => {
+                if(labelText(r) === name){
+                  const cb = inputOf(r);
+                  if(cb && cb.checked) cb.click();
+                }
+              });
+            }
 
-                        function labelText(row){
-                          return row.textContent.replace(/\\s+/g,' ').trim();
-                        }
+            function clickOffSet(nameSet){
+              getOverlayRows().forEach(r => {
+                const nm = labelText(r);
+                if(nameSet.has(nm)){
+                  const cb = inputOf(r);
+                  if(cb && cb.checked) cb.click();
+                }
+              });
+            }
 
-                        function inputOf(row){
-                          return row.querySelector('input[type=checkbox]');
-                        }
+            function anyChecked(nameSet){
+              for(const r of getOverlayRows()){
+                const nm = labelText(r);
+                const cb = inputOf(r);
+                if(cb && cb.checked && nameSet.has(nm)) return true;
+              }
+              return false;
+            }
 
-                        function clickOffByName(name){
-                          const rows = getOverlayRows();
-                          rows.forEach(r => {
-                            if(labelText(r) === name){
-                              const cb = inputOf(r);
-                              if(cb && cb.checked) cb.click();
-                            }
-                          });
-                        }
+            function isChecked(name){
+              for(const r of getOverlayRows()){
+                if(labelText(r) === name){
+                  const cb = inputOf(r);
+                  return cb ? cb.checked : false;
+                }
+              }
+              return false;
+            }
 
-                        function clickOffSet(nameSet){
-                          const rows = getOverlayRows();
-                          rows.forEach(r => {
-                            const nm = labelText(r);
-                            if(nameSet.has(nm)){
-                              const cb = inputOf(r);
-                              if(cb && cb.checked) cb.click();
-                            }
-                          });
-                        }
+            // ---- MONTHLY PLOT VISIBILITY ----
+            function updateMonthlyPlotVisibility(){
+              const plotBox = $root.find('#monthly_plot_control')[0]; // ✅ module-safe
+              if(!plotBox) return;
 
-                        function anyChecked(nameSet){
-                          const rows = getOverlayRows();
-                          for(const r of rows){
-                            const nm = labelText(r);
-                            const cb = inputOf(r);
-                            if(cb && cb.checked && nameSet.has(nm)) return true;
-                          }
-                          return false;
-                        }
+              const monthlyOn = isChecked(monthlyPlotName);
+              const richLegend  = el.querySelector('.legend-richness-box');
+              const depthLegend = el.querySelector('.legend-depth-box');
 
-                        function isChecked(name){
-                          const rows = getOverlayRows();
-                          for(const r of rows){
-                            if(labelText(r) === name){
-                              const cb = inputOf(r);
-                              return cb ? cb.checked : false;
-                            }
-                          }
-                          return false;
-                        }
+              let activeLegend = null;
+              if(richLegend && !richLegend.classList.contains('legend-hidden')) activeLegend = richLegend;
+              else if(depthLegend && !depthLegend.classList.contains('legend-hidden')) activeLegend = depthLegend;
 
-                       function updateMonthlyPlotVisibility(){
-  const plotBox = document.getElementById('monthly_plot_control');
-  if(!plotBox) return;
+              const pad = 14, gap = 14, defaultLegendRight = 10, defaultLegendBottom = 10;
 
-  const monthlyOn = isChecked(monthlyPlotName);
+              if(!monthlyOn){
+                plotBox.style.display = 'none';
+                plotBox.style.left = 'auto'; plotBox.style.right = 'auto';
+                plotBox.style.top = 'auto'; plotBox.style.bottom = 'auto';
+                if(richLegend){ richLegend.style.left = 'auto'; richLegend.style.right = defaultLegendRight + 'px';
+                  richLegend.style.top='auto'; richLegend.style.bottom=defaultLegendBottom+'px'; richLegend.style.margin='0px'; }
+                if(depthLegend){ depthLegend.style.left = 'auto'; depthLegend.style.right = defaultLegendRight + 'px';
+                  depthLegend.style.top='auto'; depthLegend.style.bottom=defaultLegendBottom+'px'; depthLegend.style.margin='0px'; }
+                return;
+              }
 
-  const richLegend  = el.querySelector('.legend-richness-box');
-  const depthLegend = el.querySelector('.legend-depth-box');
+              plotBox.style.display = 'block';
+              plotBox.style.left = 'auto'; plotBox.style.right = pad+'px';
+              plotBox.style.top = 'auto'; plotBox.style.bottom = pad+'px';
+              plotBox.style.margin = '0px';
 
-  let activeLegend = null;
-  if(richLegend && !richLegend.classList.contains('legend-hidden')){
-    activeLegend = richLegend;
-  } else if(depthLegend && !depthLegend.classList.contains('legend-hidden')){
-    activeLegend = depthLegend;
-  }
+              if(activeLegend){
+                const plotW = plotBox.offsetWidth || 320;
+                activeLegend.style.left = 'auto';
+                activeLegend.style.right = (plotW + gap + pad)+'px';
+                activeLegend.style.top = 'auto';
+                activeLegend.style.bottom = pad+'px';
+                activeLegend.style.margin = '0px';
+              }
+            }
 
-  const pad = 14;
-  const gap = 14;
-  const defaultLegendRight = 10;
-  const defaultLegendBottom = 10;
+            // ---- INSERT HEADINGS ----
+            function insertHeadings(){
+              const ctrl = el.querySelector('.leaflet-control-layers'); if(!ctrl) return;
+              const overlayBox = ctrl.querySelector('.leaflet-control-layers-overlays'); if(!overlayBox) return;
+              const rows = getOverlayRows(); if(rows.length===0) return;
 
-  // Monthly plot OFF
-  if(!monthlyOn){
-    plotBox.style.display = 'none';
-    plotBox.style.left = 'auto';
-    plotBox.style.right = 'auto';
-    plotBox.style.top = 'auto';
-    plotBox.style.bottom = 'auto';
+              const richnessRows = {}; let firstCtx=null;
+              rows.forEach(r => { const nm = labelText(r); if(richness.has(nm)) richnessRows[nm]=r;
+                if(!firstCtx && context.has(nm)) firstCtx=r; });
 
-    if(richLegend){
-      richLegend.style.left = 'auto';
-      richLegend.style.right = defaultLegendRight + 'px';
-      richLegend.style.top = 'auto';
-      richLegend.style.bottom = defaultLegendBottom + 'px';
-      richLegend.style.margin = '0px';
-    }
+              if(overlayBox.querySelector('.richness-grid')) return; // already inserted
 
-    if(depthLegend){
-      depthLegend.style.left = 'auto';
-      depthLegend.style.right = defaultLegendRight + 'px';
-      depthLegend.style.top = 'auto';
-      depthLegend.style.bottom = defaultLegendBottom + 'px';
-      depthLegend.style.margin = '0px';
-    }
+              const h1 = document.createElement('div'); h1.className='layers-heading';
+              h1.textContent='Species richness by gene region (grid cells)';
 
-    return;
-  }
+              const grid = document.createElement('div'); grid.className='richness-grid';
+              if(richnessRows['All']) grid.appendChild(richnessRows['All']);
+              const spacer = document.createElement('div'); spacer.className='richness-spacer'; grid.appendChild(spacer);
+              ['12S','16S','COI','18S'].forEach(g => { if(richnessRows[g]) grid.appendChild(richnessRows[g]); });
 
-  // Monthly plot ON
-  plotBox.style.display = 'block';
-  plotBox.style.left = 'auto';
-  plotBox.style.right = pad + 'px';
-  plotBox.style.top = 'auto';
-  plotBox.style.bottom = pad + 'px';
-  plotBox.style.margin = '0px';
+              overlayBox.insertBefore(h1, firstCtx||null);
+              overlayBox.insertBefore(grid, firstCtx||null);
 
-  if(activeLegend){
-    const plotW = plotBox.offsetWidth || 320;
+              if(firstCtx && !overlayBox.querySelector('.layers-sep')){
+                const sep = document.createElement('div'); sep.className='layers-sep'; overlayBox.insertBefore(sep, firstCtx);
+                const h2 = document.createElement('div'); h2.className='layers-heading'; h2.textContent='Accessory Layers';
+                overlayBox.insertBefore(h2, firstCtx);
+              }
+            }
 
-    activeLegend.style.left = 'auto';
-    activeLegend.style.right = (plotW + gap + pad) + 'px';
-    activeLegend.style.top = 'auto';
-    activeLegend.style.bottom = pad + 'px';
-    activeLegend.style.margin = '0px';
-  }
-}
+            // ---- LEGENDS ----
+            function updateLegends(){
+              const richLegend  = el.querySelector('.legend-richness-box');
+              const depthLegend = el.querySelector('.legend-depth-box');
+              const depthOn = isChecked(depthName);
+              const anyRichOn = anyChecked(richness);
+              if(depthLegend) richLegend?.classList.toggle('legend-hidden', depthOn || !anyRichOn);
+              if(depthLegend) depthLegend.classList.toggle('legend-hidden', !depthOn);
+              updateMonthlyPlotVisibility();
+            }
 
-                        function insertHeadings(){
-  const ctrl = el.querySelector('.leaflet-control-layers');
-  if(!ctrl) return;
+            // ---- EXCLUSIVITY ----
+            function wireExclusivity(){
+              getOverlayRows().forEach(r => {
+                const nm = labelText(r), cb = inputOf(r); if(!cb) return;
+                if(cb.dataset.wired==='1') return; cb.dataset.wired='1';
+                cb.addEventListener('change', function(){
+                  if(this.checked && richness.has(nm) && isChecked(depthName)) clickOffByName(depthName);
+                  if(this.checked && nm===depthName) clickOffSet(richness);
+                  updateLegends();
+                });
+              });
+            }
 
-  const overlayBox = ctrl.querySelector('.leaflet-control-layers-overlays');
-  if(!overlayBox) return;
+            function forceStartupOverlayState(){
+              clickOffByName(depthName); clickOffByName(monthlyPlotName);
+              updateLegends(); updateMonthlyPlotVisibility();
+            }
 
-  const rows = getOverlayRows();
-  if(rows.length === 0) return;
+            // ---- INITIALIZATION ----
+            insertHeadings(); wireExclusivity(); setTimeout(forceStartupOverlayState,0);
 
-  const richnessOrder = ['All', '12S', '16S', 'COI', '18S'];
-  const richnessRows = {};
-  let firstCtx = null;
+            // ---- OBSERVER ----
+            let observerBusy = false;
+            const obs = new MutationObserver(()=>{ if(observerBusy) return; observerBusy=true;
+              try{ insertHeadings(); wireExclusivity(); updateLegends(); } finally { observerBusy=false; }
+            });
+            const ctrl = el.querySelector('.leaflet-control-layers');
+            if(ctrl){ obs.observe(ctrl,{childList:true,subtree:true}); }
 
-  rows.forEach(r => {
-    const nm = labelText(r);
-    if(richness.has(nm)){
-      richnessRows[nm] = r;
-    }
-    if(!firstCtx && context.has(nm)){
-      firstCtx = r;
-    }
-  });
-
-  // If our custom layout already exists, do nothing
-  if(overlayBox.querySelector('.richness-grid')){
-    return;
-  }
-
-  const h1 = document.createElement('div');
-  h1.className = 'layers-heading';
-  h1.textContent = 'Species richness by gene region (grid cells)';
-
-  const grid = document.createElement('div');
-  grid.className = 'richness-grid';
-
-  if(richnessRows['All']) grid.appendChild(richnessRows['All']);
-
-  const spacer = document.createElement('div');
-  spacer.className = 'richness-spacer';
-  grid.appendChild(spacer);
-
-  if(richnessRows['12S']) grid.appendChild(richnessRows['12S']);
-  if(richnessRows['16S']) grid.appendChild(richnessRows['16S']);
-  if(richnessRows['COI']) grid.appendChild(richnessRows['COI']);
-  if(richnessRows['18S']) grid.appendChild(richnessRows['18S']);
-
-  overlayBox.insertBefore(h1, firstCtx || null);
-  overlayBox.insertBefore(grid, firstCtx || null);
-
-  if(firstCtx && !overlayBox.querySelector('.layers-sep')){
-    const sep = document.createElement('div');
-    sep.className = 'layers-sep';
-    overlayBox.insertBefore(sep, firstCtx);
-
-    const h2 = document.createElement('div');
-    h2.className = 'layers-heading';
-    h2.textContent = 'Accessory Layers';
-    overlayBox.insertBefore(h2, firstCtx);
-  }
-}
-
-                        // ---- LEGEND SWAP ---- //
-
-                        function updateLegends(){
-                        const richLegend  = el.querySelector('.legend-richness-box');
-                        const depthLegend = el.querySelector('.legend-depth-box');
-
-                        const depthOn = isChecked(depthName);
-                        const anyRichOn = anyChecked(richness);
-
-                        if(depthLegend){
-                        depthLegend.classList.toggle('legend-hidden', !depthOn);
-                        }
-
-                        if(richLegend){
-                        richLegend.classList.toggle('legend-hidden', depthOn || !anyRichOn);
-                        }
-
-                        updateMonthlyPlotVisibility();
-                        }
-
-                        function wireExclusivity(){
-                          const rows = getOverlayRows();
-                          rows.forEach(r => {
-                            const nm = labelText(r);
-                            const cb = inputOf(r);
-                            if(!cb) return;
-
-                            // prevent duplicate listeners if MutationObserver fires
-                            if(cb.dataset.wired === '1') return;
-                            cb.dataset.wired = '1';
-
-                            cb.addEventListener('change', function(){
-
-                              // Richness ON -> Depth OFF
-                              if(this.checked && richness.has(nm)){
-                                if(isChecked(depthName)) clickOffByName(depthName);
-                              }
-
-                              // Depth ON -> all Richness OFF
-                              if(this.checked && nm === depthName){
-                                clickOffSet(richness);
-                              }
-
-                              updateLegends();
-                            });
-                          });
-                        }
-
-                        // ---- FORCE DEPTH + MONTHLY SAMPLING OFF AT STARTUP ----
-
-                        function forceStartupOverlayState(){
-                          clickOffByName(depthName);
-                          clickOffByName(monthlyPlotName);
-                          updateLegends();
-                          updateMonthlyPlotVisibility();
-                          }
-
-                        insertHeadings();
-                        wireExclusivity();
-
-                        // ensure initial state after the control fully exists
-                        setTimeout(forceStartupOverlayState, 0);
-
-
-                       let observerBusy = false;
-
-const obs = new MutationObserver(() => {
-  if(observerBusy) return;
-
-  observerBusy = true;
-
-  try{
-    insertHeadings();
-    wireExclusivity();
-    updateLegends();
-  } finally {
-    observerBusy = false;
-  }
-});
-                        const ctrl = el.querySelector('.leaflet-control-layers');
-                        if(ctrl){
-                        obs.observe(ctrl, { childList: true, subtree: true });
-                        }
-                      }
-                      ")
+          }
+          ")
 
       m
     })
 
     observe({
       polys <- drawn_polys()
-      proxy <- leafletProxy("map")
+      proxy <- leafletProxy("map", session = session)
 
       proxy %>% clearGroup("Drawn polygons")
       proxy %>% clearGroup("Selected drawn polygon")
@@ -2717,7 +2601,7 @@ const obs = new MutationObserver(() => {
     # ---- 2) When the year changes, swap the richness layers ----
     observeEvent(sel_year_chr(), {
       yr <- sel_year_chr()
-      proxy <- leafletProxy("map")
+      proxy <- leafletProxy("map", session = session)
 
       add_grid_layer <- function(data_sf, group_name, value_col, label_prefix) {
         if (is.null(data_sf) || nrow(data_sf) == 0) {
@@ -2778,7 +2662,7 @@ const obs = new MutationObserver(() => {
 
       occ_all <- depth_layers[[yr_key]]
 
-      leafletProxy("map") %>%
+      leafletProxy("map", session = session) %>%
         clearGroup("Sampling Depth") %>%
         addPolygons(
           data        = occ_all,
@@ -3792,7 +3676,7 @@ const obs = new MutationObserver(() => {
       }
 
       sel_id <- selected_draw_id()
-      click  <- input$map_shape_click
+      click  <- input[[ns("map_shape_click")]]  # <-- namespaced
 
       # drawn polygon branch
       if (!is.null(sel_id)) {
@@ -3830,7 +3714,7 @@ const obs = new MutationObserver(() => {
       }
 
       if (grepl("\\|\\|", click$id)) {
-        groups_on <- input$map_groups %||% character(0)
+        groups_on <- input[[ns("map_groups")]] %||% character(0)  # <-- namespaced
         show_poly_total <- "MPA/AOI total species richness" %in% groups_on
         if (!show_poly_total) {
           return(em("Turn ON “MPA/AOI total species richness” to view polygon species lists."))
