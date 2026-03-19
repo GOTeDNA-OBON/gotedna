@@ -26,6 +26,9 @@ Imports:
     knitr,
     leafem,
     leaflet,
+    leaflet.extras,
+    forcats,
+    vegan,
     magick,
     mapedit (>= 0.6.0),
     magrittr,
@@ -37,6 +40,7 @@ Imports:
     tinytex,
     writexl
 Remotes:
+    trafficonese/leaflet.extras
     AnaisLacoursiereRoussel/GOTeDNA
 RoxygenNote: 7.3.3
 LazyLoad: yes
