@@ -218,7 +218,7 @@ html, body {
   /* keep panel inside map bounds */
   max-width:  calc(100% - 24px);
   max-height: calc(100% - 24px);
-
+  left: calc(var(--floating-left) + 0.5rem); /* adds BS5 container padding */
   /* panel itself should NOT scroll */
   overflow: hidden;
 
@@ -242,7 +242,7 @@ html, body {
 }
 
 /* Let bootstrap control collapse visibility; we only improve layout */
-#floating_body.collapse.in,
+#floating_body.collapse.show,
 #floating_body.collapsing{
   display: flex !important;
   flex: 1 1 auto;
@@ -720,11 +720,14 @@ table.dataTable.nowrap th {
 /* ---------- top right: floating panel ---------- */
 #floating_panel{
   width: var(--floating-w) !important;
+  margin-left: 60px;
 }
 
 #floating_toggle{
   font-size: var(--floating-title-fs) !important;
   padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale)) !important;
+  background-color: rgba(255,255,255,0.92);
+  color: #444;
 }
 
 #floating_body .panel-body{

@@ -170,7 +170,7 @@
   padding: 2rem;
 }
 
-.app_A #disclaimer_footer_right {
+#disclaimer_footer_right {
   background-color: #75f9c6;
 }
 
@@ -211,7 +211,7 @@
   min-width: 148px;
 }
 
-.app_A .section_footer {
+.section_footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -774,7 +774,7 @@
   margin-left: 8%;
 }
 
-.app_A #footer {
+#footer {
   padding: 4rem;
   background-color: #333333;
   text-align: center;
@@ -782,23 +782,23 @@
 }
 
 
-.app_A #logo_dfo {
+#logo_dfo {
   height: 6.5rem;
 }
 
-.app_A #logo_mswc {
+#logo_mswc {
   height: 8rem;
 }
 
-.app_A #logo_obon {
+#logo_obon {
   height: 6rem;
 }
 
-.app_A #logo_undossd {
+#logo_undossd {
   height: 8.5rem;
 }
 
-.app_A #logo_gotedna_contact {
+#logo_gotedna_contact {
   width: 300px;
 }
 
