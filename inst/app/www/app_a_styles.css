@@ -160,12 +160,12 @@
   padding: 0px;
 }
 
-.app_A #disclaimer_left {
+#disclaimer_left {
   text-align: center;
   padding: 2rem;
 }
 
-.app_A #disclaimer_right {
+#disclaimer_right {
   background-color: #75f9c6;
   padding: 2rem;
 }
@@ -174,18 +174,18 @@
   background-color: #75f9c6;
 }
 
-.app_A #logo_disclaimer {
+#logo_disclaimer {
   padding-top: 2rem;
   padding-bottom: 5rem;
 }
 
-.app_A .modal_help {
+.modal_help {
   background-color: #75f9c6;
   color: #2241a7;
   padding: 4rem;
 }
 
-.app_A .modal-help ol {
+.modal-help ol {
   margin: 0rem;
 }
 
