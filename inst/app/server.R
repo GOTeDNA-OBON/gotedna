@@ -53,10 +53,8 @@ server <- function(input, output, session) {
       NULL
     }
   })
+  app_b_server(input, output, session)
 
-  # -----------------------------
-  # 3️⃣ Show/hide apps based on choice
-  # -----------------------------
   observe({
     choice <- app_choice()
 
@@ -64,9 +62,6 @@ server <- function(input, output, session) {
       shinyjs::show("gotedna_app")
       shinyjs::hide("new_app")
 
-      # -----------------------------
-      # Original GOTeDNA server modules
-      # -----------------------------
       mod_select_data_server("slc_data", r)
       mod_dialog_disclaimers_server("show_dialog", r)
       observeEvent(input$show_dialog, r$show_dialog <- TRUE)
@@ -81,8 +76,7 @@ server <- function(input, output, session) {
     } else if (!is.null(choice) && choice == "B") {
       shinyjs::hide("gotedna_app")
       shinyjs::show("new_app")
-      mod_new_app_server("new_app_id")
     }
   })
-
 }
+
