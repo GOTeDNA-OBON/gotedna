@@ -101,7 +101,7 @@ $(function(){
 
       $p.addClass('is-collapsed');
 
-      var headerH = Math.max($toggle.outerHeight(true) || 0, 40) + 1;
+      var headerH = Math.max($toggle.outerHeight(true) || 0, 45) + 1;
       if($p.hasClass('ui-resizable')){
         $p.resizable('option', 'minHeight', headerH);
       }
@@ -2965,7 +2965,7 @@ const obs = new MutationObserver(() => {
   observe({
     rr <- rarefaction_drop_summary()
     req(rr)
-
+    print("running rarefaction_drop_summary")
     message("Rarefaction depth: ", rr$depth)
     message("Total samples in current alpha matrix: ", rr$total_samples)
     message("Kept after rarefaction filter: ", rr$kept_samples)

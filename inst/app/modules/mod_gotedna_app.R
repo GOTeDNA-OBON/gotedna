@@ -98,11 +98,9 @@ mod_gotedna_ui <- function(id) {
 
 mod_gotedna_server <- function(id, r) {
   moduleServer(id, function(input, output, session) {
-
-    # Exact same server modules as current GOTeDNA
     mod_select_data_server("slc_data", r)
 
-    mod_dialog_disclaimers_server("show_dialog", r)
+    # mod_dialog_disclaimers_server("show_dialog", r)
     observeEvent(input$show_dialog, r$show_dialog <- TRUE)
     observeEvent(input$show_help, r$show_help <- TRUE)
     mod_dialog_map_info_server("show_map_info", r)

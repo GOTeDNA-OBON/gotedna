@@ -1,0 +1,55 @@
+/* choice_page_styles.css */
+
+/* Container styling */
+.choice-container {
+  text-align: center;
+  margin-top: 80px;
+  margin-bottom: 80px;
+}
+
+/* Headline */
+.choice-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Description text */
+.choice-container p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+/* Button row */
+.choice-btn-row {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  gap: 20px; /* space between buttons */
+  flex-wrap: wrap; /* wrap on small screens */
+}
+
+/* Buttons */
+.choice-btn {
+  width: 250px;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  background-color: #2241a7; /* DFO blue */
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out; /* smooth hover animation */
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16); /* subtle shadow */
+}
+
+.choice-btn:hover {
+  background-color: #005C91; /* slightly darker on hover */
+  transform: translateY(-2px); /* lift effect */
+  box-shadow: 0 6px 12px rgba(0,0,0,0.24); /* slightly stronger shadow */
+}
+
+/* Only style the disclaimer modal */
+.disclaimer_modal .modal-dialog {
+  margin-top: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+}

@@ -2,15 +2,16 @@ mod_app_choice_ui <- function(id) {
   ns <- NS(id)
 
   div(
-    class = "standalone_container",
+    class = "standalone_container choice-container",
     div(
       class = "standalone_60",
-      h1("Choose Application"),
+      h1("Choose GOTeDNA Application"),
       p("Please select which tool you want to launch."),
 
-      actionButton(ns("app_a"), "Explore eDNA Detection Rates"),
-      br(), br(),
-      actionButton(ns("app_b"), "Explore Marine Protected Areas")
+      div(class = "choice-btn-row",
+          actionButton(ns("app_a"), "Explore eDNA Detection Rates", class = "choice-btn"),
+          actionButton(ns("app_b"), "Explore Marine Protected Areas", class = "choice-btn")
+      )
     )
   )
 }

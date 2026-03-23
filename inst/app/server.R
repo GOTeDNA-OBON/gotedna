@@ -37,6 +37,13 @@ server <- function(input, output, session) {
     reset = 0
   )
 
+  mod_dialog_disclaimers_server("show_dialog", r)
+  observe({
+    if (is.null(app_choice()) && is.null(r$disclaimer_shown)) {
+      r$show_dialog <- TRUE
+      r$disclaimer_shown <- TRUE
+    }
+  })
   # -----------------------------
   # 1️⃣ App choice module
   # -----------------------------
@@ -53,8 +60,9 @@ server <- function(input, output, session) {
       NULL
     }
   })
+  print("before app_b_server")
   app_b_server(input, output, session)
-
+  print("after app_b_server")
   observe({
     choice <- app_choice()
 
@@ -63,7 +71,7 @@ server <- function(input, output, session) {
       shinyjs::hide("new_app")
 
       mod_select_data_server("slc_data", r)
-      mod_dialog_disclaimers_server("show_dialog", r)
+      # mod_dialog_disclaimers_server("show_dialog", r)
       observeEvent(input$show_dialog, r$show_dialog <- TRUE)
       observeEvent(input$show_help, r$show_help <- TRUE)
       mod_dialog_map_info_server("show_map_info", r)
