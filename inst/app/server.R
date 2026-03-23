@@ -86,5 +86,19 @@ server <- function(input, output, session) {
       shinyjs::show("new_app")
     }
   })
+
+
+  # Make sure shinyjs::useShinyjs() is in your UI
+  shinyjs::onclick("logo_gotedna", {
+    app_choice(NULL)            # reset choice to show choice page
+    shinyjs::hide("gotedna_app")
+    shinyjs::hide("new_app")
+  })
+
+  shinyjs::onclick("logo_mpa", {
+    app_choice(NULL)            # reset choice to show selection page
+    shinyjs::hide("gotedna_app")
+    shinyjs::hide("new_app")
+  })
 }
 

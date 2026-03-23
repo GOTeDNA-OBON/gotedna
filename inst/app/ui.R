@@ -32,11 +32,16 @@ ui <- fluidPage(
     style = "display:none;",
     navbarPage(id = "navbar",
                position = "fixed-top",
-               img(
-                 src = "img/logo/GOTeDNA_logo_white_got.svg",
-                 alt = "GOTeDNA logo",
-                 title = "GOTeDNA logo",
-                 id = "logo_gotedna"
+               # Wrap the logo in an <a> for clickable action
+               tags$a(
+                 href = "#",
+                 id = "logo_gotedna",
+                 img(
+                   src = "img/logo/GOTeDNA_logo_white_got.svg",
+                   alt = "GOTeDNA logo",
+                   title = "Back to App Selection",
+                   style = "height:40px;"   # adjust height as needed
+                 )
                ),
                tabPanel(
                  "Home",

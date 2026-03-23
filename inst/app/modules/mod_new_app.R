@@ -234,9 +234,16 @@ $(function(){
         class = "navbar navbar-light fixed-top",
         tags$div(
           class = "container-fluid",
-          tags$div(
-            class = "navbar-header",
-            tags$a(class = "navbar-brand nav-scroll", href = "#", `data-target` = "sec_map", "GOTeDNA-MPA")
+          tags$a(
+            class = "navbar-brand nav-scroll",
+            href = "#",
+            id = "logo_mpa",       # ID for shinyjs click
+            img(
+              src = "img/logo/GOTeDNA_logo_white_got.svg",
+              alt = "GOTeDNA-MPA",
+              title = "Back to App Selection",
+              style = "height:40px;"  # adjust height as needed
+            )
           ),
           tags$ul(
             class = "nav navbar-nav",
