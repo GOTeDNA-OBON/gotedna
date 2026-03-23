@@ -139,7 +139,7 @@ width: 100%;
       /* Map container MUST be the positioning context + CLIP panel to map */
 #map_wrap{
   position: relative;
-  height: calc(100vh - 72px);
+  height: calc(100vh - 120px);
   overflow: hidden;
 }
 #map{ height: 100% !important; }

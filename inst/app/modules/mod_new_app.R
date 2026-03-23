@@ -2258,7 +2258,11 @@ app_b_server <- function(input, output, session) {
       addMapPane("pane_selected_top", zIndex = 950) %>%   #new code
       addProviderTiles(providers$CartoDB.Positron, group = "CartoDB Positron") %>%
       addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean Basemap") %>%
-      addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery")
+      addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery") %>%
+      fitBounds(
+        lng1 = -65, lat1 = 41,
+        lng2 = -59, lat2 = 47
+      )
 
     # ---- add initial richness layers if they exist ----
     if (!is.null(init_12S) && nrow(init_12S) > 0) {
