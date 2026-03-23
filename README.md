@@ -21,6 +21,17 @@ This link will guide installation of both applications based on your operating s
 
 ### Install the GOTeDNA Application
 
+#### Hint (For Linux)
+Missing development libraries may need to be installed. 
+
+To help mitigate potential errors, install the following (example from Debian):
+
+``` r
+sudo apt install libproj-dev proj-bin
+sudo apt install libgdal-dev gdal-bin
+sudo apt install r-base r-base-dev
+```
+
 #### Hint (for Windows)
 
 The Rtools version appropriate for your R Version will need to be installed. 
@@ -32,7 +43,7 @@ R.version.string
 ```
 Then follow the instructions from https://cran.r-project.org/bin/windows/Rtools/ 
 
-#### For installation
+#### Installation
 Install required packages by pasting the following code into the R Console:
 
 ``` r
