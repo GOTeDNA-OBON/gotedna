@@ -51,7 +51,7 @@ brew install pkg-config proj geos gdal
 #### Hint (For Linux)
 Missing development libraries and compilers may need to be installed for R and RStudio. 
 
-To help mitigate potential errors, read the warnings() that occurring during the installation of pak and GOTeDNA to determine which libraries are missing.
+To help mitigate potential errors, read the warnings() that occur during the installation of pak and GOTeDNA to determine which libraries are missing.
 
 #### Example for Debian/Devuan
 
