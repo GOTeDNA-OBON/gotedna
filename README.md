@@ -19,7 +19,13 @@ Installation of R and RStudio are currently required to access the app.
 
 This link will guide installation of both applications based on your operating system (Linux, Mac, Windows): <https://posit.co/download/rstudio-desktop/>
 
-### Install the GOTeDNA Application
+### Requirements for loading the GOTeDNA Application
+The following hints are provided to aid loading of the app. 
+
+New coders will need to follow the hints specific to their device before installation of GOTeDNA. 
+
+Users with previous coding experience may have these packages already loaded and can install the app directly by following instructions in the next section "Installation of the GOTeDNA Application".
+If errors occur, refer to the hints below. 
 
 #### Hint (For Linux)
 Missing development libraries may need to be installed. 
@@ -43,7 +49,17 @@ R.version.string
 ```
 Then follow the instructions from https://cran.r-project.org/bin/windows/Rtools/ 
 
-#### Installation
+#### Hint (for MacOS)
+
+The package manager Homebrew will need to be installed. Instructions for installation can be found here: https://brew.sh/
+
+Once installed, run the following line of code in the terminal:
+
+``` r
+brew install pkg-config proj geos gdal
+```
+
+### Installation of the GOTeDNA Application
 Install required packages by pasting the following code into the R Console:
 
 ``` r
