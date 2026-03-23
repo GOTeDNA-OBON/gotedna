@@ -4,27 +4,26 @@
 
 ## An R package for guidance on optimal eDNA sampling periods to develop, optimize, and interpret monitoring programs
 
-### This README is intended for installation and usage of the app. There is also a starter guide to the codebase provided [here](README_for_coders.md) in README_for_coders.md
+The goal of GOTeDNA is to import and format eDNA metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
+
+#### This README is intended for installation and usage of the app. There is also a starter guide to the codebase provided [here](README_for_coders.md) in README_for_coders.md
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-The goal of GOTeDNA is to import and format eDNA metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
-
-## Installation
-
+## For New-Coders
 ### Install R
 
 Installation of R and RStudio are currently required to access the app.
 
 This link will guide installation of both applications based on your operating system (Linux, Mac, Windows): <https://posit.co/download/rstudio-desktop/>
 
-### Requirements for loading the GOTeDNA Application
-The following hints are provided to aid loading of the app. 
+## Requirements for loading the GOTeDNA Application
+### The following hints are provided to aid loading of the app. 
 
 New coders will need to follow the hints specific to their device before installation of GOTeDNA. 
 
-Users with previous coding experience may have these packages already loaded and can install the app directly by following instructions in the next section "Installation of the GOTeDNA Application".
+Users with previous coding experience may have these packages already loaded and can install the app directly by following instructions in section "Installation of the GOTeDNA Application".
 If errors occur, refer to the hints below. 
 
 #### Hint (For Linux)
@@ -59,7 +58,7 @@ Once installed, run the following line of code in the terminal:
 brew install pkg-config proj geos gdal
 ```
 
-### Installation of the GOTeDNA Application
+## Installation of the GOTeDNA Application
 Install required packages by pasting the following code into the R Console:
 
 ``` r
@@ -82,7 +81,7 @@ Launch the Shiny application in a new browser:
 ``` r
 run_gotedna_app()
 ```
-
+## Functionalities within the App
 ### Import data (Optional)
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
