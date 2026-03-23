@@ -349,57 +349,47 @@ width: 100%;
   box-shadow: none !important;
 }
 
-/* OFF button border */
-.filter-btn{
-  border-color: #d0d0d0 !important;
-}
-
-/* ON button border = darker version of fill */
-.filter-btn.btn-group-on{
-  background-color: #2241a7 !important;
-  border-color: #2241a7 !important;  /* darker than fill */
-  color: #0b2a2a !important;
-}
-
 /* OFF state (default look) */
 .filter-btn{
   background-color: #f7f7f7 !important;
   border-color: #d0d0d0 !important;
-  color: #0b2a2a !important;
+  color: black;
 }
 
 /* ON state (group buttons) */
 .filter-btn.btn-group-on{
-  background-color: #2241a7 !important;
-  border-color: #2241a7 !important;
-  color: #FFFFFF !important;   /* <-- white text */
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
 }
 
 /* OFF hover */
 .filter-btn:hover{
   background-color: #eeeeee !important;
+  color: black;
 }
 
 /* ON hover (different colour) */
 .filter-btn.btn-group-on:hover{
-  background-color: #2241a7 !important;
-  border-color: #2241a7 !important;
-  color: #FFFFFF !important;
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
 }
 
 /* SARA / AIS buttons */
 .filter-btn.btn-sara-on,
 .filter-btn.btn-ais-on{
-  background-color: #2241a7 !important;
-  border-color: #2241a7 !important;
-  color: #FFFFFF !important;   /* white text */
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
 }
 
 /* SARA / AIS hover when ON */
 .filter-btn.btn-sara-on:hover,
 .filter-btn.btn-ais-on:hover{
-  background-color: #2241a7 !important;
-  border-color: #2241a7 !important;
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
 }
 
 /* Download button (grey button inside blue panel) */
@@ -764,7 +754,14 @@ table.dataTable.nowrap th {
 #floating_panel .filter-btn{
   height: var(--filter-btn-h) !important;
   font-size: var(--filter-btn-fs) !important;
-  padding: calc(6px * var(--ui-scale)) calc(8px * var(--ui-scale)) !important;
+  padding: calc(2px * var(--ui-scale)) calc(8px * var(--ui-scale)) !important;
+}
+
+#floating_panel .filter-btn img {
+  width: 100%;       /* fill the button width */
+  height: 100%;      /* fill the button height */
+  object-fit: contain; /* scale proportionally to fit inside */
+  display: block;    /* remove inline spacing */
 }
 
 #floating_panel .filter-btn-short{

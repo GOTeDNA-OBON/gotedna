@@ -315,10 +315,46 @@ $(function(){
                 # --- Row 1: 4 across ---
                 div(
                   class = "filter-btn-grid-4",
-                  actionButton("total_fish",     "Fishes",        class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_sharks",   "Sharks & Rays", class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_mammals",  "Mammals",       class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_reptiles", "Turtles",      class = "btn btn-default btn-secondary filter-btn")
+                  actionButton(
+                    "total_fish",
+                    label = tags$img(
+                      src = "img/species_buttons/fish_centred.png",
+                      alt = "Fish",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Fish",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_sharks",
+                    label = tags$img(
+                      src = "img/species_buttons/shark.png",
+                      alt = "Sharks & Rays",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Sharks & Rays",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_mammals",
+                    label = tags$img(
+                      src = "img/species_buttons/whale2.png",
+                      alt = "Mammals",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Mammals",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_reptiles",
+                    label = tags$img(
+                      src = "img/species_buttons/turtle.png",
+                      alt = "Turtles",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Turtles",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  )
                 ),
 
                 tags$div(style="height:8px;"),  # optional spacing between rows
@@ -326,10 +362,46 @@ $(function(){
                 # --- Row 2: 4 across ---
                 div(
                   class = "filter-btn-grid-4",
-                  actionButton("total_birds",      "Birds",       class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_molluscs",   "Molluscs",    class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_arthropods", "Arthropods",  class = "btn btn-default btn-secondary filter-btn"),
-                  actionButton("total_plants",     "Plants",      class = "btn btn-default btn-secondary filter-btn")
+                  actionButton(
+                    "total_birds",
+                    label = tags$img(
+                      src = "img/species_buttons/bird.png",
+                      alt = "Birds",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Birds",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_molluscs",
+                    label = tags$img(
+                      src = "img/species_buttons/mollusc.png",
+                      alt = "Molluscs",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Molluscs",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_arthropods",
+                    label = tags$img(
+                      src = "img/species_buttons/lobster.png",
+                      alt = "Arthropods",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Arthropods",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
+                  actionButton(
+                    "total_plants",
+                    label = tags$img(
+                      src = "img/species_buttons/plant.png",
+                      alt = "Plants",
+                      style = "height:40px;"  # adjust as needed
+                    ),
+                    title = "Plants",
+                    class = "btn btn-default btn-secondary filter-btn"
+                  ),
                 ),
 
                 tags$div(style="height:8px;"),
@@ -337,8 +409,8 @@ $(function(){
                 # --- Row 3: 2 across ---
                 div(
                   class = "filter-btn-grid-2",
-                  actionButton("SARA", "SARA", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
-                  actionButton("AIS",  "AIS",  class = "btn btn-default btn-secondary filter-btn filter-btn-short")
+                  actionButton("SARA", "SARA", title="Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
+                  actionButton("AIS",  "AIS",  title="Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
                 ),
 
                 hr(),
