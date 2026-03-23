@@ -26,17 +26,6 @@ New coders will need to follow the hints specific to their device before install
 Users with previous coding experience may have these packages already loaded and can install the app directly by following instructions in section "Installation of the GOTeDNA Application".
 If errors occur, refer to the hints below. 
 
-#### Hint (For Linux)
-Missing development libraries may need to be installed. 
-
-To help mitigate potential errors, install the following (example from Debian):
-
-``` r
-sudo apt install libproj-dev proj-bin
-sudo apt install libgdal-dev gdal-bin
-sudo apt install r-base r-base-dev
-```
-
 #### Hint (for Windows)
 
 The Rtools version appropriate for your R Version will need to be installed. 
@@ -57,6 +46,33 @@ Once installed, run the following line of code in the terminal:
 ``` r
 brew install pkg-config proj geos gdal
 ```
+
+
+#### Hint (For Linux)
+Missing development libraries and compilers may need to be installed for R and RStudio. 
+
+To help mitigate potential errors, read the warnings() that occurring during the installation of pak and GOTeDNA to determine which libraries are missing.
+
+#### Example for Debian/Devuan
+
+#### Installing R
+``` r
+sudo apt install r-base r-base-dev
+```
+
+#### Installing RStudio
+``` r
+wget https://download1.rstudio.org/electron/jammy/amd64/rstudio-2026.01.1-403-amd64.deb
+sudo apt install gdebi ## gdebi will fetch dependencies for rstudio if they are missing
+sudo gdebi rstudio-2026.01.1-403-amd64.deb
+```
+ 
+#### Example of missing libraries (partial list)
+``` r
+sudo apt install libproj-dev proj-bin
+sudo apt install libgdal-dev gdal-bin
+```
+Note: The specific command and package names differ among Linux Distributions
 
 ## Installation of the GOTeDNA Application
 Install required packages by pasting the following code into the R Console:
