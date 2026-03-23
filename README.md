@@ -55,19 +55,19 @@ To help mitigate potential errors, read the warnings() that occur during the ins
 
 #### Example for Debian/Devuan
 
-#### Installing R
+Installing R
 ``` r
 sudo apt install r-base r-base-dev
 ```
 
-#### Installing RStudio
+Installing RStudio
 ``` r
 wget https://download1.rstudio.org/electron/jammy/amd64/rstudio-2026.01.1-403-amd64.deb
 sudo apt install gdebi ## gdebi will fetch dependencies for rstudio if they are missing
 sudo gdebi rstudio-2026.01.1-403-amd64.deb
 ```
  
-#### Example of missing libraries (partial list)
+Example of missing libraries (partial list)
 ``` r
 sudo apt install libproj-dev proj-bin
 sudo apt install libgdal-dev gdal-bin
