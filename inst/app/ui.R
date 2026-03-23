@@ -4,7 +4,7 @@ ui <- fluidPage(
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = paste0("app_a_styles.css?v=", Sys.time())),
     tags$link(rel = "stylesheet", type = "text/css", href = "fonts.css"),
-    tags$style(type = "text/css", "body {padding-top: 100px;}"),
+    tags$style(type = "text/css", "body {padding-top: 60px;}"),
     tags$script(type = "text/javascript", src = "js/scrollPage.js"),
     tags$script(type = "text/javascript", src = "js/fakeClick.js")
   ),

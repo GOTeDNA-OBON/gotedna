@@ -101,7 +101,7 @@ $(function(){
 
       $p.addClass('is-collapsed');
 
-      var headerH = $toggle.outerHeight(true) + 2;
+      var headerH = Math.max($toggle.outerHeight(true) || 0, 40) + 1;
       if($p.hasClass('ui-resizable')){
         $p.resizable('option', 'minHeight', headerH);
       }
@@ -270,7 +270,7 @@ $(function(){
           absolutePanel(
             id = "floating_panel",
             fixed = FALSE, draggable = FALSE,
-            top = 10, left = 70, width = 360,
+            top = 10, left = 65, width = 360,
 
             tags$button(
               id = "floating_toggle",
