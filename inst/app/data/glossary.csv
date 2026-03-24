@@ -25,7 +25,7 @@ Cq (quantification cycle), The qPCR cycle number at which the fluorescence gener
 Decontamination," The process of removing any potential external DNA / contaminant from any eDNA equipment, typically involves bleaching materials."
 Detection," An eDNA result that meets the detection criteria parameters, indicating the presence of target eDNA."
 Detection probability, A statistical method that utilizes repeated sampling of the same site to estimate the true occupancy of a particular species / target in a given site. Detection probabilities can only be determined after a study.
-Detection threshold,
+Detection threshold,The detection rate (positive detections / total samples * 100%) for the selected taxon; used to calculate whether a month is inside or outside a potential optimal monthly detection window
 DNA extraction,A process of isolating and purifying DNA from any given sample using a combination of physical and chemical methods.
 DNA metabarcoding,A molecular method allowing for mass DNA sequencing and simultaneous molecular identification of multiple taxa from a complex sample. Typically involves one or more sets of universal PCR primers to amplify DNA barcodes from mass collections of organisms or from eDNA.
 eDNA end user,"A manager, client, or requestor of eDNA services who ultimately uses or is intended to ultimately use eDNA results in various contexts, such as conservation and management."
@@ -61,10 +61,9 @@ Multiplex / multiplexing,"Combining multiple assays using multiple genetic marke
 Next-generation sequencing (NGS),"Also known as high-throughput sequencing, is the catch-all term used to describe a number of different modern (non-Sanger-based) sequencing technologies (e.g., Illumina [Solexa] sequencing)."
 Normalized detection probability,"Detection probabilities were rescaled into normalized detection probabilities for each species where each monthly probability was calculated as a proportion of the maximum, and the maximum monthly probability being reassigned to 1."
 Not detected,A test result indicating eDNA of a targeted species was determined to not be present in an eDNA sample.
-Optimal detection window,
+Optimal detection window,A single continuous set of months where the selected taxon's detection rate was above the selected detection threshold.
 Polymerase Chain Reaction (PCR),"A molecular technique that replicates and amplifies target DNA sequences to produce sufficient copies suitable for genetic analyses. It involves a process of heating and cooling (i.e., cycling), where primers bind to a matching DNA sequence during each cycle and a polymerase replicates the DNA sequence in between these primers. At the end of the PCR reaction, the target sequence is present in the reaction in millions of copies (amplicons). In order to visualize these short fragments of DNA, the PCR product must be run on gel electrophoresis. PCR is often referred to as conventional PCR (cPCR)."
 "Positive detection in a qPCR replicate, sample, station, or site",Level of detection that meets or exceeds the limit of detection parameters.
-Predicted sample size,
 Primer(s),"Short single strand DNA sequences manufactured to a match specified sequence of an organism or a taxonomic group, which are used to initiate the PCR process."
 Probe,"A fluorescent-labeled oligonucleotide (short sequence of DNA or RNA) that is added to the qPCR reaction which recognizes a specific sequence on the desired PCR product. qPCR probes offer an alternative to DNA-binding dyes (intercalating agents), as they typically increase specificity and sensitivity since only target specific DNA molecules will be labelled. In a probe-based qPCR, the probe releases a fluorescent signal during each reaction cycle, proportional to the concentration of the target DNA sequence. The strength of this fluorescent signal is compared to a standard curve to estimate the target DNA concentration."
 qPCR blank,A type of negative control used in qPCR that includes all PCR reaction components but no DNA. Also referred to as a no template control (NTC). Amplification in a qPCR blank indicates contamination occurred at the qPCR step.
