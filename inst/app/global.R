@@ -159,7 +159,7 @@ primer_seqs <- read.csv("data/primers.csv") |>
   )
 
 
-big_OBIS_data_pull <- function(dataset_ids = c("74b70871-91bd-4b74-91ce-34e9611ce27d", "858f3eb9-7fee-4764-bf7f-04098922f162")) {
+big_OBIS_data_pull <- function(dataset_ids = NULL) {
   D_mb <- read_data(
     dataset_ids    = dataset_ids,
     scientificname = NULL,
