@@ -75,7 +75,13 @@ effort_needed_fig <- function(scaledprobs, height_per_species = 400, dot_size = 
       color = ~Month,
       colors = cyclic_palette,
       marker = list(size = dot_size),
-      showlegend = FALSE
+      showlegend = FALSE,
+      text = ~paste(
+        "Month:", Month,
+        "<br>Samples needed:", `Samples needed`,
+        "<br>Detection rate:", round(`Detection rate`, 2)
+      ),
+      hoverinfo = "text"   # ensures only your custom text appears
     ) %>%
       plotly::layout(
         yaxis = list(range = c(0, 1), title = "Detection probability"),
