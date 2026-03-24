@@ -36,13 +36,13 @@ ui <- fluidPage(
     )
     ),
     tabPanel(
-      "Dataflow",
+      "Data Workflow",
       value = "interp-guide",
       div(
         class = "standalone_container",
         div(
           class = "standalone_60",
-          h1("Dataflow"),
+          h1("Data Workflow"),
           includeHTML(file.path("www", "doc", "interp_guide.html"))
         )
       )
