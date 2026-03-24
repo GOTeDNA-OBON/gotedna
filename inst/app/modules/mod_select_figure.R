@@ -76,7 +76,7 @@ mod_select_figure_ui <- function(id) {
       div(
         id = "protocol_panel",
         class = "title-container",
-        h1("Explore Protocols"),
+        h1("Explore protocols"),
         div(
           class = "buttons-container",
           actionButton(ns("hide_prots"), "Hide/Show Protocol Info",
