@@ -110,17 +110,23 @@ mod_select_figure_ui <- function(id) {
           h5(
             "Similarity Between Top 10 Protocols for this Selection",
             icon("info-circle", class = "definition",
-            title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
+                 title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
           ),
-          plotlyOutput(ns("protocol_nmds_plot"), height = "400px"),
+          div(
+            style = "border-radius: 17px; overflow: hidden;",
+            plotlyOutput(ns("protocol_nmds_plot"), height = "400px")
+          ),
 
           tags$div(style = "margin-top: 20px;"),
 
           h5(
             "Detection Rates for Top 10 Protocols for this Selection"
           ),
-          plotlyOutput(ns("protocol_bargraph"), height = "300px"),
-          # uiOutput(ns("protocol_bargraph_message"))
+          div(
+            style = "border-radius: 17px; overflow: hidden;",
+            plotlyOutput(ns("protocol_bargraph"), height = "300px")
+            # uiOutput(ns("protocol_bargraph_message"))
+          )
         )
       )
     ),
