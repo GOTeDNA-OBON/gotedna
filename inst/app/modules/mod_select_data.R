@@ -369,14 +369,53 @@ mod_select_data_server <- function(id, r) {
     # File upload handling (existing logic)
     observeEvent(input$external_file, {
       req(input$external_file)
+      file_name <- input$external_file$name
+      file_ext  <- tolower(tools::file_ext(file_name))
+
+      # ---- FILE TYPE VALIDATION ----
+      if (!file_ext %in% c("csv", "xlsx", "xls")) {
+        showModal(modalDialog(
+          title = "Invalid file type",
+          div(
+            style = "color: #a94442;",
+            p("Unsupported file format."),
+            p("Please upload a CSV or Excel (.xlsx) file.")
+          ),
+          easyClose = FALSE,
+          footer = modalButton("Close")
+        ))
+        return(NULL)
+      }
       df <- read_uploaded_file(input$external_file[1, ])
+
+      # ---- VALIDATION FIRST ----
+      missing_cols <- setdiff(required_cols, names(df))
+
+      if (length(missing_cols) > 0) {
+        showModal(modalDialog(
+          title = "Invalid file format",
+          div(
+            style = "color: #a94442;",
+            p("The uploaded file is missing required columns:"),
+            tags$ul(
+              lapply(missing_cols, tags$li)
+            )
+          ),
+          easyClose = FALSE,  # force user to click
+          footer = modalButton("Close")
+        ))
+        return(NULL)
+      }
+
+      # ---- ONLY NOW show loading modal ----
       showModal(modalDialog(
         title = "Please wait",
-        "Processing coordinates and detection rates. This may take several minutes for large files (e.g. >20MB).",
+        "Processing coordinates and detection rates...",
         footer = NULL,
         easyClose = FALSE
       ))
       on.exit(removeModal(), add = TRUE)
+
 
       df <- calculate_and_enforce_columns(df, ds = NULL)
 
