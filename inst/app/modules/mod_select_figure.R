@@ -182,7 +182,7 @@ mod_select_figure_ui <- function(id) {
                 h6(
                   "Optimal timing:",
                   icon("info-circle", class = "definition",
-                       title = "A single continuous set of months where the selected taxon's detection rate was above the selected detection threshold.")
+                       title = "A single continuous set of months (or month) where the selected taxon's detection rate was above the selected detection threshold.")
                 ),
                 uiOutput(ns("opt_sampl"), class = "fig_text_output")
               ),
