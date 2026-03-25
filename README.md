@@ -26,7 +26,7 @@ install.packages("pak")
 
 pak::pak(c(
   "trafficonese/leaflet.extras",
-  "AnaisLacoursiereRoussel/GOTeDNA"
+  "GOTeDNA-OBON/gotedna"
 ))
 ```
 
