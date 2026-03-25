@@ -1,5 +1,6 @@
 library(GOTeDNA)
 library(dplyr)
+library(magrittr)
 library(ggplot2)
 library(patchwork)
 library(plotly)
