@@ -42,7 +42,7 @@ Launch the Shiny application in a new browser:
 run_gotedna_app()
 ```
 
-## Troubleshooting Hints
+## Troubleshooting
 ### The following hints are provided to aid loading of the app, if errors occur.
 
 #### Hint (for Windows)
