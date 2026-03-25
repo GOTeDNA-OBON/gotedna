@@ -18,13 +18,32 @@ Installation of R and RStudio are currently required to access the app.
 
 This link will guide installation of both applications based on your operating system (Linux, Mac, Windows): <https://posit.co/download/rstudio-desktop/>
 
-## Requirements for loading the GOTeDNA Application
-### The following hints are provided to aid loading of the app. 
+## Installation of the GOTeDNA Application
+Install required packages by pasting the following code into the R Console:
 
-New coders will need to follow the hints specific to their device before installation of GOTeDNA. 
+``` r
+install.packages("pak")
 
-Users with previous coding experience may have these packages already loaded and can install the app directly by following instructions in section "Installation of the GOTeDNA Application".
-If errors occur, refer to the hints below. 
+pak::pak(c(
+  "trafficonese/leaflet.extras",
+  "AnaisLacoursiereRoussel/GOTeDNA"
+))
+```
+
+Load the GOTeDNA library: 
+
+``` r
+library(GOTeDNA)
+```
+
+Launch the Shiny application in a new browser: 
+
+``` r
+run_gotedna_app()
+```
+
+## Troubleshooting Hints
+### The following hints are provided to aid loading of the app, if errors occur.
 
 #### Hint (for Windows)
 
@@ -74,29 +93,6 @@ sudo apt install libgdal-dev gdal-bin
 ```
 Note: The specific command and package names differ among Linux Distributions
 
-## Installation of the GOTeDNA Application
-Install required packages by pasting the following code into the R Console:
-
-``` r
-install.packages("pak")
-
-pak::pak(c(
-  "trafficonese/leaflet.extras",
-  "AnaisLacoursiereRoussel/GOTeDNA"
-))
-```
-
-Load the GOTeDNA library: 
-
-``` r
-library(GOTeDNA)
-```
-
-Launch the Shiny application in a new browser: 
-
-``` r
-run_gotedna_app()
-```
 ## Functionalities within the App
 ### Import data (Optional)
 
