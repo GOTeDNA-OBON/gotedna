@@ -593,26 +593,26 @@ mod_select_figure_server <- function(id, r) {
                   } else {
                     cur2
                   }
-                  has_url <- grepl("https?://", cur2)
+                  #has_url <- grepl("https?://", cur2)
 
-                  display_value <- if (has_url) {
-                    # Extract URL
-                    url <- sub(".*(https?://[^ )]+).*", "\\1", cur2)
+                  #display_value <- if (has_url) {
+                  #  # Extract URL
+                  #  url <- sub(".*(https?://[^ )]+).*", "\\1", cur2)
 
-                    # Extract label before URL
-                    label <- trimws(gsub("\\(https?://.*\\)", "", cur2))
+                  #  # Extract label before URL
+                  #  label <- trimws(gsub("\\(https?://.*\\)", "", cur2))
 
-                    # Fallback if label is empty
-                    if (!nzchar(label)) label <- "View link"
+                  # # Fallback if label is empty
+                  #  if (!nzchar(label)) label <- "View link"
 
-                    tags$a(
-                      href = url,
-                      target = "_blank",
-                      label
-                    )
-                  } else {
-                    cur2
-                  }
+                  #  tags$a(
+                  #   href = url,
+                  #    target = "_blank",
+                  #    label
+                  #  )
+                  #} else {
+                  #  cur2
+                  #}
 
 
                   tags$div(
