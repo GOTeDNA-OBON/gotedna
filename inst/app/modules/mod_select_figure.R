@@ -212,7 +212,7 @@ mod_select_figure_ui <- function(id) {
             class = "fig_main_container",
             div(
               class = "fig_main_container-fig",
-              ui_fig_smooth("fig_smooth", "Monthly eDNA Detection Probability", "detection.html", ns),
+              ui_fig_smooth("fig_smooth", "Monthly eDNA detection probability", "detection.html", ns),
               ui_fig_detect_bottom("fig_detect", ns),
               ui_fig_effort("fig_effort", "Guidance on sampling effort", "sample_size.html", ns),
               ui_fig_hm("fig_heatmap", "Species detection heatmap", "heatmap.html", ns),
