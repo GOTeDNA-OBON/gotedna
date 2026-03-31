@@ -328,6 +328,7 @@ read_raw_data <- function(
     # }
 
     if (is.null(core_and_extensions)) {
+      message("core_and_extensions is NULL...moving to next")
       next
     }
     all_shared_cols <- intersect(names(core_and_extensions), cols_included_from_OBIS)

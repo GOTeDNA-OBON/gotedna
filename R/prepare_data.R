@@ -46,7 +46,7 @@ calculate_and_enforce_columns <- function(core_and_extensions, ds = NULL) {
     ) %>%
     mutate(
       station               = if ("samplingStation" %in% names(.)) samplingStation else NA_character_,
-      ownerContact          = project_contact,
+      ownerContact          = if ("project_contact" %in% names(.)) project_contact else NA_character_,
       bibliographicCitation = if ("bibliographicCitation" %in% names(.)) bibliographicCitation else NA_character_,
       organismQuantity      = suppressWarnings(as.numeric(organismQuantity))
     ) %>%
@@ -149,14 +149,18 @@ hybrid_cluster_unique <- function(df_unique, threshold_m, max_hc_size, cluster_p
   db <- dbscan(coords, eps = eps, minPts = 1)
   df_unique$coarse_cluster <- db$cluster
 
+  # 🔑 CRITICAL GUARD
+  if (length(unique(df_unique$coarse_cluster)) == 1) {
+    return(run_complete_linkage(df_unique, threshold_m, cluster_prefix))
+  }
   result_clusters <- df_unique %>%
     group_by(coarse_cluster) %>%
     group_modify(~{
       if (nrow(.x) > max_hc_size) {
-        hybrid_cluster_unique(.x %>% select(-coarse_cluster), threshold_m, max_hc_size,
+        hybrid_cluster_unique(.x %>% select(-any_of("coarse_cluster")), threshold_m, max_hc_size,
                               cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
       } else {
-        run_complete_linkage(.x %>% select(-coarse_cluster), threshold_m,
+        run_complete_linkage(.x %>% select(-any_of("coarse_cluster")), threshold_m,
                              cluster_prefix = paste0(cluster_prefix, "_", unique(.x$coarse_cluster)))
       }
     }) %>%
