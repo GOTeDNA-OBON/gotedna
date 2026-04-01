@@ -257,7 +257,7 @@ primer_map <- map_primers(
   max_dist = 10
 )
 
-# View(primer_map)
+View(primer_map)
 
 gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   left_join(

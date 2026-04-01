@@ -87,6 +87,7 @@ read_raw_data <- function(
     "dna_sequence",
     "target_gene",
     "pcr_primer_forward",
+    "pcr_primer_reverse",
     "samp_name",
     "env_broad_scale",
     "env_local_scale",
@@ -180,7 +181,7 @@ read_raw_data <- function(
 
     saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
 
-    dataset_ids <- setdiff(dataset_ids, saved_ds)
+    # dataset_ids <- setdiff(dataset_ids, saved_ds)
   }
   dataset_ids <- as.character(dataset_ids)
   print("About to start pulling these datasets: ")

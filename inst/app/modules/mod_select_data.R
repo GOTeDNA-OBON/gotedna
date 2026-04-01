@@ -676,6 +676,7 @@ mod_select_data_server <- function(id, r) {
         ),
         r$active_primers
       )
+      browser()
       shinyWidgets::updatePickerInput(
         session,
         "primer",
