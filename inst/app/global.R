@@ -19,7 +19,7 @@ list.files("modules", full.names = TRUE) |>
   lapply(source)
 cli::cli_alert_info("Modules loaded")
 
-
+options(shiny.maxRequestSize = 100 * 1024^2)
 # Ensure that the user installs these if not already installed
 # Necessary to generate PDF report
 

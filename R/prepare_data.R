@@ -80,6 +80,7 @@ calculate_and_enforce_columns <- function(core_and_extensions, ds = NULL) {
 
   optional_columns <- c(
     'samp_size',
+    'samp_size_unit',
     'size_frac',
     'filter_material',
     'samp_mat_process',
