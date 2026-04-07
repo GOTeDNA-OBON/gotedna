@@ -11,7 +11,6 @@ library(stringr)
 # library(shiny)
 # library(shinyjs)
 # library(bslib)
-# library(plotly)
 cli::cli_alert_info("Packages loaded")
 
 list.files("modules", full.names = TRUE) |>
