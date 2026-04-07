@@ -4,77 +4,97 @@
 
 ## An R package for guidance on optimal eDNA sampling periods to develop, optimize, and interpret monitoring programs
 
-### This README is intended for installation and usage of the app. There is also a starter guide to the codebase provided [here](README_for_coders.md) in README_for_coders.md
+The goal of GOTeDNA is to import and format eDNA metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
+
+#### This README is intended for installation and usage of the app. There is also a starter guide to the codebase provided [here](README_for_coders.md) in README_for_coders.md
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-The goal of GOTeDNA is to import and format eDNA qPCR and metabarcoding metadata/data from GOTeDNA sample templates, visualize species detection periods, and statistically delineate optimal species detection windows.
+## For New-Coders
+### Install R
 
-## Installation
+Installation of R and RStudio are currently required to access the app.
 
-### For non-R users
+This link will guide installation of both applications based on your operating system (Linux, Mac, Windows): <https://posit.co/download/rstudio-desktop/>
 
-#### Install R
-
-We recommend to use R and RStudio: <https://posit.co/download/rstudio-desktop/>
-
-1.  Download R for your OS: <https://cran.rstudio.com/>
-
-2.  Install R Studio
-
-### Install the GOTeDNA Application
-
-#### Install on Windows
-
-The Rtools version appropriate for your R Version will need to be installed from https://cran.r-project.org/bin/windows/Rtools/ 
-
-To see what R Version you currently have:
-
-  ``` r
-R.version.string
-```
-
-Clone the repository (assumes git is already installed on your machine)
-
-`git clone https://github.com/AnaisLacoursiereRoussel/GOTeDNA.git`
-
-`cd GOTeDNA`
-
-Start R in this folder, then in R, install renv if needed:
-
-`install.packages("renv")`
-
-Restore the project environment from the lockfile
-
-`renv::restore()`
-
-Follow terminal instructions for installing/syncing packages.
-
-*Download and installation could take 10-20 minutes.
-
-#### Install on Mac and Linux
-
-There are not currently instructions for installation on Mac and Linux. GOTeDNA has been developed in RStudio in Windows 11. That said, Mac and Linux users with cross-platform experience may have success referring to the Windows instructions above and adapting as needed. The primary issue is that additional libraries will need to be installed depending on which OS/distribution you are running. Error messages will indicate which libraries need to be installed.
-
-
-## Usage
-
-To load the package: 
+## Installation of the GOTeDNA Application
+Install required packages by pasting the following code into the R Console:
 
 ``` r
-library("GOTeDNA")
+install.packages("pak")
+
+pak::pak(c(
+  "trafficonese/leaflet.extras",
+  "GOTeDNA-OBON/gotedna"
+))
 ```
 
-### Shiny
+Load the GOTeDNA library: 
 
-The Shiny application can be launched with:
+``` r
+library(GOTeDNA)
+```
+
+Launch the Shiny application in a new browser: 
 
 ``` r
 run_gotedna_app()
 ```
 
-### Import data
+## Troubleshooting
+### The following hints are provided to aid loading of the app, if errors occur.
+
+#### Hint (for Windows)
+
+The Rtools version appropriate for your R Version will need to be installed. 
+
+To see what R version you currently have, paste the following code into the R Console:
+
+``` r
+R.version.string
+```
+Then follow the instructions from https://cran.r-project.org/bin/windows/Rtools/ 
+
+#### Hint (for MacOS)
+
+The package manager Homebrew will need to be installed. Instructions for installation can be found here: https://brew.sh/
+
+Once installed, run the following line of code in the terminal:
+
+``` r
+brew install pkg-config proj geos gdal
+```
+
+
+#### Hint (For Linux)
+Missing development libraries and compilers may need to be installed for R and RStudio. 
+
+To help mitigate potential errors, read the warnings() that occur during the installation of pak and GOTeDNA to determine which libraries are missing.
+
+#### Example for Debian/Devuan
+
+Installing R
+``` r
+sudo apt install r-base r-base-dev
+```
+
+Installing RStudio
+``` r
+wget https://download1.rstudio.org/electron/jammy/amd64/rstudio-2026.01.1-403-amd64.deb
+sudo apt install gdebi ## gdebi will fetch dependencies for rstudio if they are missing
+sudo gdebi rstudio-2026.01.1-403-amd64.deb
+```
+ 
+Example of missing libraries (partial list)
+``` r
+sudo apt install libproj-dev proj-bin
+sudo apt install libgdal-dev gdal-bin
+```
+Note: The specific command and package names differ among Linux Distributions
+
+## Functionalities within the App
+### Import data (Optional)
 
 To import your data within GOTeDNA, it must be formatted within the GOTeDNA template Excel sheets.  
 

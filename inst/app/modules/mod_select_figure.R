@@ -76,7 +76,10 @@ mod_select_figure_ui <- function(id) {
       div(
         id = "protocol_panel",
         class = "title-container",
-        h1("Explore Protocols"),
+        h1("Explore protocols",
+           icon("info-circle", class = "definition",
+                title = "A unique protocol ID is assigned to every set of samples that have a unique combination of protocols. Protocol IDs are ordered by number of positive detections of the selected taxon.")
+        ),
         div(
           class = "buttons-container",
           actionButton(ns("hide_prots"), "Hide/Show Protocol Info",
@@ -107,17 +110,23 @@ mod_select_figure_ui <- function(id) {
           h5(
             "Similarity Between Top 10 Protocols for this Selection",
             icon("info-circle", class = "definition",
-            title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
+                 title = "Protocols with more shared methods appear closer together. (Uses non-metric multidimensional scaling with Grower distance)"),
           ),
-          plotlyOutput(ns("protocol_nmds_plot"), height = "400px"),
+          div(
+            style = "border-radius: 17px; overflow: hidden;",
+            plotlyOutput(ns("protocol_nmds_plot"), height = "400px")
+          ),
 
           tags$div(style = "margin-top: 20px;"),
 
           h5(
             "Detection Rates for Top 10 Protocols for this Selection"
           ),
-          plotlyOutput(ns("protocol_bargraph"), height = "300px"),
-          # uiOutput(ns("protocol_bargraph_message"))
+          div(
+            style = "border-radius: 17px; overflow: hidden;",
+            plotlyOutput(ns("protocol_bargraph"), height = "300px")
+            # uiOutput(ns("protocol_bargraph_message"))
+          )
         )
       )
     ),
@@ -170,18 +179,28 @@ mod_select_figure_ui <- function(id) {
               h4("Guidance"),
               div(
                 class = "sampling_info-item",
-                h6("Optimal timing: "),
+                h6(
+                  "Optimal timing:",
+                  icon("info-circle", class = "definition",
+                       title = "A single continuous set of months (or month) where the selected taxon's detection rate was above the selected detection threshold.")
+                ),
                 uiOutput(ns("opt_sampl"), class = "fig_text_output")
               ),
               div(
                 class = "sampling_info-item",
-                h6("Confidence: "),
+                h6("Confidence:",
+                icon("info-circle", class = "definition",
+                     title = "As measured by a Fisher test between detection rates in the optimal window and those outside the window. 'Very high' = p < 0.001; 'High' = p < 0.01; 'Medium' = p < 0.05; 'Low' = p > 0.05.")
+                ),
                 uiOutput(ns("conf"), class = "fig_text_output")
               ),
               div(
                 class = "sampling_info-item",
-                h6("Consistency among years: "),
-                uiOutput(ns("var_year"), class = "fig_text_output"),
+                h6("Consistency among years: ",
+                   icon("info-circle", class = "definition",
+                        title = "Annual variation in the species’ optimal eDNA detection window, summarized using a weighted Jaccard index to show how consistent the months of high detection probability are across years")
+                ),
+                uiOutput(ns("var_year"), class = "fig_text_output")
               )
             ),
           )
@@ -193,7 +212,7 @@ mod_select_figure_ui <- function(id) {
             class = "fig_main_container",
             div(
               class = "fig_main_container-fig",
-              ui_fig_smooth("fig_smooth", "Monthly eDNA Detection Probability", c("sample_size.html", "detection.html"), ns),
+              ui_fig_smooth("fig_smooth", "Monthly eDNA detection probability", "detection.html", ns),
               ui_fig_detect_bottom("fig_detect", ns),
               ui_fig_effort("fig_effort", "Guidance on sampling effort", "sample_size.html", ns),
               ui_fig_hm("fig_heatmap", "Species detection heatmap", "heatmap.html", ns),
@@ -339,14 +358,14 @@ mod_select_figure_server <- function(id, r) {
             NULL
           })
 
-          # Do the same for scientificName if level == genus
-          if(r$taxon_lvl_slc == "genus" || r$taxon_lvl_slc == "scientificName") {
-            just_species_df <- r$data_ready %>%
-              filter(
-                str_detect(scientificName, " ")  # only names with a space
-              )
-            r$newprob_by_scientificName <- calc_det_prob(just_species_df, "scientificName", "All", pool_primers = TRUE)
 
+          just_species_df <- r$data_ready %>%
+            filter(
+              str_detect(scientificName, " ")  # only names with a space
+            )
+          r$newprob_by_scientificName <- calc_det_prob(just_species_df, "scientificName", "All", pool_primers = TRUE)
+          # Calculate scaledprobs specific to scientificName if genus or scientificName is selected, but not if larger selections are made
+          if(r$taxon_lvl_slc == "genus" || r$taxon_lvl_slc == "scientificName") {
             r$scaledprobs_by_scientificName <- tryCatch({
               if (length(r$newprob_by_scientificName$newP_agg) == 0 && length(r$newprob_by_scientificName$newP_yr) == 0) {
                 cat("calc_det_prob returned empty for level: scientificName\n")
@@ -574,26 +593,26 @@ mod_select_figure_server <- function(id, r) {
                   } else {
                     cur2
                   }
-                  has_url <- grepl("https?://", cur2)
+                  #has_url <- grepl("https?://", cur2)
 
-                  display_value <- if (has_url) {
-                    # Extract URL
-                    url <- sub(".*(https?://[^ )]+).*", "\\1", cur2)
+                  #display_value <- if (has_url) {
+                  #  # Extract URL
+                  #  url <- sub(".*(https?://[^ )]+).*", "\\1", cur2)
 
-                    # Extract label before URL
-                    label <- trimws(gsub("\\(https?://.*\\)", "", cur2))
+                  #  # Extract label before URL
+                  #  label <- trimws(gsub("\\(https?://.*\\)", "", cur2))
 
-                    # Fallback if label is empty
-                    if (!nzchar(label)) label <- "View link"
+                  # # Fallback if label is empty
+                  #  if (!nzchar(label)) label <- "View link"
 
-                    tags$a(
-                      href = url,
-                      target = "_blank",
-                      label
-                    )
-                  } else {
-                    cur2
-                  }
+                  #  tags$a(
+                  #   href = url,
+                  #    target = "_blank",
+                  #    label
+                  #  )
+                  #} else {
+                  #  cur2
+                  #}
 
 
                   tags$div(
@@ -1102,7 +1121,7 @@ draw_fig_samples <- function(newprob, ready, year) {
 }
 
 # Top plot: smooth figure
-ui_fig_smooth <- function(fig_id, title, caption_files, ns) {
+ui_fig_smooth <- function(fig_id, title, caption_file, ns) {
   div(
     id = paste0(ns(fig_id), "_fig_container"),
     class = "fig_container",
@@ -1112,11 +1131,7 @@ ui_fig_smooth <- function(fig_id, title, caption_files, ns) {
       class = "fig_caption-container",
       div(
         class = "fig_caption",
-        includeHTML(file.path("www", "doc", "caption", caption_files[[1]]))
-      ),
-      div(
-        class = "fig_caption",
-        includeHTML(file.path("www", "doc", "caption", caption_files[[2]]))
+        includeHTML(file.path("www", "doc", "caption", caption_file))
       )
     ),
     div(
