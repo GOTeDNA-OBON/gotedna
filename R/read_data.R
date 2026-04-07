@@ -53,6 +53,10 @@ read_data <- function(
     require_absences = TRUE
 ) {
 
+  old <- getOption("robis_page_size")
+  options(robis_page_size = 1000)
+  on.exit(options(robis_page_size = old), add = TRUE)
+
   occurrence_cols <- c(
     "recordedBy",
     "bibliographicCitation",
@@ -80,6 +84,7 @@ read_data <- function(
     "dna_sequence",
     "target_gene",
     "pcr_primer_forward",
+    "pcr_primer_reverse",
     "samp_name",
     "env_broad_scale",
     "env_local_scale",
