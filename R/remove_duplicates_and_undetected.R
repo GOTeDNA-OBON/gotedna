@@ -34,7 +34,7 @@
 remove_duplicates_and_undetected <- function(df) {
 
   #remove duplicate rows
-  df <- unique(df)
+  df <- dplyr::distinct(df, samp_name, primer, protocol_ID, scientificName, detected, .keep_all = TRUE)
 
   #remove nondetections if there is a detection for that species, primer, protocol_ID, and samp_name
   df <- df %>%

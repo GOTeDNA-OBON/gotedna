@@ -171,6 +171,7 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
   )
 
   D_mb_clean <- add_detected_column(D_mb)
+  D_mb_clean <- dplyr::distinct(D_mb_clean)
   D_mb_clean
 }
 
@@ -245,6 +246,7 @@ required_cols <- c(
 
 optional_columns <- c(
   'samp_size',
+  'samp_size_unit',
   'size_frac',
   'filter_material',
   'samp_mat_process',

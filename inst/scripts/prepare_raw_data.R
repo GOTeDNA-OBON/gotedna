@@ -36,6 +36,7 @@ required_cols <- c(
 
 optional_columns <- c(
   'samp_size',
+  'samp_size_unit',
   'size_frac',
   'filter_material',
   'samp_mat_process',
