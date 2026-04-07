@@ -329,6 +329,9 @@ read_data <- function(
         samp_name = as.character(samp_name),
       )
 
+    #this swaps dna columns if name was accidentally entered in the sequence column and vice versa
+    out <- fix_primer_columns(out)
+
     out <- calculate_and_enforce_columns(out, ds)
 
     out

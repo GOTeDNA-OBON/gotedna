@@ -1,4 +1,3 @@
-
 is_dna_seq <- function(x, min_len = 10) {
   grepl(paste0("^[ACGTURYKMSWBDHVNI]{", min_len, ",}$"),
         x,
@@ -45,40 +44,3 @@ fix_primer_columns <- function(df) {
 
   df
 }
-
-
-ids <- c(
-  "5b6b4895-8b97-4fe0-a8f9-e085cb849fba",
-  "5fb6a5e8-a2c4-4a75-aff9-3b4ebb2cdc74",
-  "88f84d06-da70-486c-8944-ac1601977551",
-  "e5337db0-95bd-4b1f-bddd-6202622d5402"
-)
-
-# Full file paths
-existing_files <- list.files(
-  "inst/app/data/raw_OBIS",
-  pattern = "^dataset-.*\\.rds$",
-  full.names = TRUE
-)
-
-pattern_ids <- paste(ids, collapse = "|")
-
-filtered_files <- existing_files[
-  grepl(pattern_ids, basename(existing_files))
-]
-
-lapply(filtered_files, function(f) {
-  df <- readRDS(f)
-
-  before <- sum(is_dna_seq(df$pcr_primer_name_forward), na.rm = TRUE)
-
-  df <- fix_primer_columns(df)
-
-  after <- sum(is_dna_seq(df$pcr_primer_name_forward), na.rm = TRUE)
-
-  message(basename(f), ": swapped rows = ", before - after)
-
-  saveRDS(df, f)
-})
-
-
