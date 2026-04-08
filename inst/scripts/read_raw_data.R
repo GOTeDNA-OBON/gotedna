@@ -87,6 +87,7 @@ read_raw_data <- function(
     "dna_sequence",
     "target_gene",
     "pcr_primer_forward",
+    "pcr_primer_reverse",
     "samp_name",
     "env_broad_scale",
     "env_local_scale",
@@ -328,6 +329,7 @@ read_raw_data <- function(
     # }
 
     if (is.null(core_and_extensions)) {
+      message("core_and_extensions is NULL...moving to next")
       next
     }
     all_shared_cols <- intersect(names(core_and_extensions), cols_included_from_OBIS)
