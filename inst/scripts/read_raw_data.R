@@ -56,7 +56,8 @@ read_raw_data <- function(
     worms_id       = NULL,
     areaid         = NULL,
     join_by        = c("auto", "occurrenceID", "id"),
-    require_absences = TRUE
+    require_absences = TRUE,
+    replace_files = FALSE
 ) {
   library(dplyr)
 
@@ -177,11 +178,11 @@ read_raw_data <- function(
     }
     message("Found ", length(dataset_ids), " dataset(s) with DNADerivedData.")
     dataset_ids <- as.character(dataset_ids)
-    existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
-
-    saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
-
-    dataset_ids <- setdiff(dataset_ids, saved_ds)
+    if (!replace_files) {
+      existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
+      saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
+      dataset_ids <- setdiff(dataset_ids, saved_ds)
+    }
   }
   dataset_ids <- as.character(dataset_ids)
   print("About to start pulling these datasets: ")
