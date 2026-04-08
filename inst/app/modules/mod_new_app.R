@@ -602,7 +602,7 @@ $(function(){
         h3("Taxonomic Pie Chart"),
 
         shinycssloaders::withSpinner(
-          taxplore::KronaChartOutput("tax_krona", height = "700px"),
+          taxplore::KronaChartOutput("tax_krona", height = "900px"),
           type = 4
         )
       )
