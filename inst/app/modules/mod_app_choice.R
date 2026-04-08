@@ -10,7 +10,7 @@ mod_app_choice_ui <- function(id) {
 
       div(class = "choice-btn-row",
           actionButton(ns("app_a"), "Explore eDNA Detection Rates", class = "choice-btn"),
-          actionButton(ns("app_b"), "Explore Marine Protected Areas", class = "choice-btn")
+          actionButton(ns("app_b"), "Explore Biodiversity", class = "choice-btn")
       )
     )
   )
