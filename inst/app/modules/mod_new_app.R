@@ -1155,23 +1155,6 @@ app_b_server <- function(input, output, session) {
   div_gene_initialized <- reactiveVal(FALSE)
   div_primer_initialized <- reactiveVal(FALSE)
 
-  # Detections that fall inside any MPA/AOI polygon (drops outside points)
-  detections_in_mpa <- reactive({
-    yr <- sel_year_chr()
-
-    pts <- species_sf_all_with_poly
-
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
-    }
-
-    pts %>%
-      dplyr::filter(!is.na(site_name), !is.na(site_type)) %>%
-      dplyr::arrange(occurrenceID) %>%
-      dplyr::group_by(occurrenceID, samp_name, scientificName, year, target_gene) %>%
-      dplyr::slice(1) %>%
-      dplyr::ungroup()
-  })
 
   # redraw points when year changes
   observeEvent(
