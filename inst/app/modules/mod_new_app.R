@@ -919,24 +919,6 @@ app_b_server <- function(input, output, session) {
     as.character(yr)
   })
 
-  species_gene_summary <- function(det_sf) {
-    det_sf %>%
-      sf::st_drop_geometry() %>%
-      dplyr::mutate(
-        scientificName = as.character(scientificName),
-        target_gene    = as.character(target_gene),
-        samp_name      = as.character(samp_name)
-      ) %>%
-      dplyr::filter(!is.na(scientificName), scientificName != "") %>%
-      dplyr::group_by(scientificName) %>%
-      dplyr::summarise(
-        genes       = paste(sort(unique(na.omit(target_gene))), collapse = ", "),
-        n_detections = dplyr::n(),
-        n_samples    = dplyr::n_distinct(na.omit(samp_name)),
-        .groups = "drop"
-      ) %>%
-      dplyr::arrange(scientificName)
-  }
 
   # --- Is the Sampling points layer currently visible? ---
   sampling_points_layer_on <- reactive({
@@ -958,43 +940,6 @@ app_b_server <- function(input, output, session) {
     )
   }
 
-  # Return a named list: each name is a layer ("12S", "COI", ... or "All"),
-  # each value is the species vector for that layer
-  species_by_active_layers <- function(det_sf, layers_on, apply_filters_fn) {
-    det_sf <- apply_filters_fn(det_sf)
-
-    out <- list()
-
-    # "All" means no gene filter
-    if ("All" %in% layers_on) {
-      spp_all <- det_sf %>%
-        sf::st_drop_geometry() %>%
-        dplyr::pull(scientificName) %>%
-        as.character() %>%
-        unique() %>%
-        stats::na.omit() %>%
-        sort()
-
-      out[["All"]] <- spp_all
-    }
-
-    # gene-specific lists
-    genes <- setdiff(layers_on, "All")
-    for (g in genes) {
-      spp_g <- det_sf %>%
-        dplyr::filter(as.character(target_gene) == g) %>%
-        sf::st_drop_geometry() %>%
-        dplyr::pull(scientificName) %>%
-        as.character() %>%
-        unique() %>%
-        stats::na.omit() %>%
-        sort()
-
-      out[[g]] <- spp_g
-    }
-
-    out
-  }
 
   #remove cache of deleted polygons
   observeEvent(input$map_draw_deleted_features, {
