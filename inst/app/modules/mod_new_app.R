@@ -1875,23 +1875,7 @@ app_b_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(
-    list(
-      input$tax_rank,
-      input$div_target_gene,
-      input$div_primer,
-      input$sel_year,
-      input$map_shape_click,
-      input$SARA,
-      input$AIS,
-      input$total_fish,
-      input$total_sharks,
-      input$total_mammals,
-      input$total_reptiles,
-      input$total_birds,
-      input$total_molluscs,
-      input$total_arthropods,
-      input$total_plants
-    ),
+    active_groups(),
     {
       download_ready(FALSE)
       shinyjs::disable("downloadData")
