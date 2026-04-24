@@ -352,8 +352,8 @@ read_data <- function(
   GOTeDNA_occ_all
 }
 
-STORED_DATA <- read_data()
-saveRDS(STORED_DATA, "./data/OBIS_data.rds")
+#STORED_DATA <- read_data()
+#saveRDS(STORED_DATA, "./data/test_read_data_file.rds")
 STORED_DATA <- readRDS("./data/OBIS_data.rds")
 
 ################DO NOT CHANGE ABOVE CODE
@@ -424,6 +424,8 @@ SPECIES_SF_BY_KEY <- purrr::imap(DATA_BY_KEY, ~{
 
 species_sf_all <- dplyr::bind_rows(SPECIES_SF_BY_KEY)
 
+
+
 #############################################################
 #Turn species data into sf points  for the spatial join
 
@@ -442,45 +444,16 @@ species_in_polys_all <- sf::st_join(
   ) %>%
   dplyr::filter(!is.na(scientificName), scientificName != "")
 
-# year-aware species list per polygon
-poly_species_year <- species_in_polys_all %>%
-  sf::st_drop_geometry() %>%
-  dplyr::distinct(site_name, site_type, year, scientificName) %>%
-  dplyr::group_by(site_name, site_type, year) %>%
-  dplyr::summarise(species = list(sort(unique(scientificName))), .groups = "drop")
-
-# all-years species list per polygon
-poly_species_all <- species_in_polys_all %>%
-  sf::st_drop_geometry() %>%
-  dplyr::distinct(site_name, site_type, scientificName) %>%
-  dplyr::group_by(site_name, site_type) %>%
-  dplyr::summarise(species = list(sort(unique(scientificName))), .groups = "drop")
-
-total_species_year <- species_in_polys_all %>%
-  sf::st_drop_geometry() %>%
-  dplyr::group_by(site_name, site_type, year) %>%
-  dplyr::summarise(n_species_total = dplyr::n_distinct(scientificName), .groups = "drop")
-
-total_species_all <- species_in_polys_all %>%
-  sf::st_drop_geometry() %>%
-  dplyr::group_by(site_name, site_type) %>%
-  dplyr::summarise(n_species_total = dplyr::n_distinct(scientificName), .groups = "drop")
-
 species_by_class_year <- species_in_polys_all %>%
   sf::st_drop_geometry() %>%
   dplyr::group_by(site_name, site_type, year, class) %>%
   dplyr::summarise(n_species = dplyr::n_distinct(scientificName), .groups = "drop")
-
-species_by_class_wide_year <- species_by_class_year %>%
-  tidyr::pivot_wider(names_from = class, values_from = n_species, values_fill = 0)
 
 species_by_class_all <- species_in_polys_all %>%
   sf::st_drop_geometry() %>%
   dplyr::group_by(site_name, site_type, class) %>%
   dplyr::summarise(n_species = dplyr::n_distinct(scientificName), .groups = "drop")
 
-species_by_class_wide_all <- species_by_class_all %>%
-  tidyr::pivot_wider(names_from = class, values_from = n_species, values_fill = 0)
 
 
 
@@ -492,10 +465,6 @@ species_by_class_wide_all <- species_by_class_all %>%
 species_in_polys_all %>%
   st_drop_geometry() %>%
   count(site_name, site_type, year, target_gene)
-
-poly_species_all_from_year <- poly_species_year %>%
-  group_by(site_name, site_type) %>%
-  summarise(species = list(sort(unique(unlist(species)))), .groups = "drop")
 
 
 #Summary report per polygon
@@ -639,9 +608,6 @@ RICHNESS_GENE_ALL <- list(
   "18S" = build_gene_all_grid("18S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName")
 )
 
-# optional: keep dissolved polygon union for leaflet
-poly_union <- poly_union_ll
-
 
 ## ===== Unified richness palettes + leaflet map (Option A: 4326-only) =====
 
@@ -711,21 +677,7 @@ pal_rich <- leaflet::colorNumeric(
   na.color = "transparent"
 )
 
-# 4) Cell -> species list tables (ALL + by key) using *grid_clip_ll* (not projected!)
-idx_all <- sf::st_intersects(grid_clip_ll, species_sf_all_ll)
 
-CELL_SPECIES_ALL <- tibble::tibble(cell_id = grid_clip_ll$cell_id) %>%
-  dplyr::mutate(
-    spp = purrr::map(idx_all, \(i) sort(unique(species_sf_all_ll$scientificName[i])))
-  )
-
-CELL_SPECIES_BY_KEY <- purrr::imap(SPECIES_SF_BY_KEY_ll, ~{
-  idx <- sf::st_intersects(grid_clip_ll, .x)
-  tibble::tibble(cell_id = grid_clip_ll$cell_id) %>%
-    dplyr::mutate(
-      spp = purrr::map(idx, \(i) sort(unique(.x$scientificName[i])))
-    )
-})
 
 # Long table: one row per (cell_id, scientificName, target_gene, year)
 cell_species_all <- purrr::imap_dfr(SPECIES_SF_BY_KEY_ll, ~{
@@ -743,70 +695,26 @@ cell_species_all <- purrr::imap_dfr(SPECIES_SF_BY_KEY_ll, ~{
     dplyr::filter(!is.na(scientificName), scientificName != "")
 })
 
-cell_species_total <- cell_species_all %>%
-  dplyr::group_by(cell_id) %>%
-  dplyr::summarise(n_species_total = dplyr::n_distinct(scientificName), .groups = "drop")
 
 # 5) Convenience: split RICHNESS_BY_KEY into gene buckets
 grid_12S_by_year <- RICHNESS_BY_KEY[grep("^12S_", names(RICHNESS_BY_KEY))]
-grid_COI_by_year <- RICHNESS_BY_KEY[grep("^COI_", names(RICHNESS_BY_KEY))]
+
 grid_16S_by_year <- RICHNESS_BY_KEY[grep("^16S_", names(RICHNESS_BY_KEY))]
-grid_18s_by_year <- RICHNESS_BY_KEY[grep("^18S_", names(RICHNESS_BY_KEY))]
 
-# 6) Helper: pick which richness layer to display
-# gene: "All" / "12S" / "COI" / "16S" / "18S"
-# year: "All" or specific year string
-get_richness_layer <- function(gene = "All", year = "All") {
-  gene <- as.character(gene)
-  year <- as.character(year)
-
-  if (gene == "All") {
-    if (year == "All") return(RICHNESS_ALL)
-    if (year %in% names(RICHNESS_ALL_BY_YEAR)) return(RICHNESS_ALL_BY_YEAR[[year]])
-    return(RICHNESS_ALL)
-  }
-
-  # gene-specific layers are only defined for specific years (no "All-years" gene grid)
-  if (year == "All") return(NULL)
-
-  key <- paste(gene, year, sep = "_")
-  if (key %in% names(RICHNESS_BY_KEY)) return(RICHNESS_BY_KEY[[key]])
-
-  NULL
-}
 
 # 7) Defaults
 default_gene <- "All"   # or "12S", "COI"
 default_year <- "All"   # or "2024", etc.
 
-init_layer <- get_richness_layer(default_gene, default_year)
-
-# Optionally: a safe init if gene-specific All-years returns NULL
-if (is.null(init_layer)) init_layer <- RICHNESS_ALL
-
-
-
 #Define polygon layers
-
-# Richness layers keyed by gene+year
-selected_rich_key <- function(gene, year) {
-  gene <- as.character(gene); year <- as.character(year)
-
-  if (gene == "All") return("All")        # handle via RICHNESS_ALL / RICHNESS_ALL_BY_YEAR
-  if (year == "All") return(NULL)         # no gene-specific layer for All-years
-  paste(gene, year, sep = "_")            # e.g., "12S_2024"
-}
 
 
 #Organize per year layers into names lists
 
 # --- Richness grids by year ---
 grid_12S_by_year <- RICHNESS_BY_KEY[grep("^12S_", names(RICHNESS_BY_KEY))]
-grid_COI_by_year <- RICHNESS_BY_KEY[grep("^COI_", names(RICHNESS_BY_KEY))]
 grid_16S_by_year <- RICHNESS_BY_KEY[grep("^16S_", names(RICHNESS_BY_KEY))]
 grid_18S_by_year <- RICHNESS_BY_KEY[grep("^18S_", names(RICHNESS_BY_KEY))]
-
-grid_ALL_static <- RICHNESS_ALL
 
 
 ## ===== Shared richness colour scale across ALL layers =====
@@ -830,8 +738,7 @@ max_gene_layers <- max_from_key_layers(RICHNESS_BY_KEY, "n_species")
 
 max_rich <- max(max_all_markers, max_gene_layers, na.rm = TRUE)
 
-# 2) Build ONE palette with ONE domain
-rich_domain <- c(0, max_rich)
+
 
 
 ##NOTE: Right now the SARA Schedule 1 filter is matching based on the data inputted into the app. Once linking the code to OBIS data, edit so that it matches based on WoRMS AphiaID
@@ -878,30 +785,10 @@ AIS <- AIS %>%
     worms_match = !is.na(AphiaID)
   )
 
-sample_tag <- function(occ_all) {  #NEW
-  occ_all %>%
-    dplyr::mutate(
-      yr = dplyr::if_else(is.na(year), "", as.character(year)),
-      mk = dplyr::if_else(is.na(target_gene), "", as.character(target_gene)),
-      tag = paste0(
-        samp_name,
-        dplyr::if_else(
-          yr != "" | mk != "",
-          paste0(" (", paste(c(yr, mk)[c(yr, mk) != ""], collapse = ", "), ")"),
-          ""
-        )
-      )
-    ) %>%
-    dplyr::pull(tag) %>%
-    unique() %>%
-    sort()
-}
-
 
 ##Fix grid heatmap by year for all target_genes
 
-grid_ALL_by_year <- RICHNESS_ALL_BY_YEAR   # already in 4326
-grid_ALL_static  <- RICHNESS_ALL           # all years combined, already in 4326
+
 
 
 # ----------------------------
@@ -1068,6 +955,8 @@ depth_legend_labs <- depth_labels
 #choices_key  <- KEY_TBL$key
 
 #layer_sf <- RICHNESS_BY_KEY[[input$key]]
+
+
 #-------------------------------------------------------------------NEW
 standardize_month_col <- function(df) {
   df %>%
@@ -1177,34 +1066,48 @@ species_sf_all_with_cell <- species_sf_all %>%
 
 #-------------------------------------------------------------
 
+
+
+
 #Bundle the outputs in one list:
 APP_DATA <- list(
-  occ_all = occ_all,
-  KEY_TBL = KEY_TBL,
-  sampling_pts = sampling_pts,
-  species_sf_all = species_sf_all,
-  species_sf_min = species_sf_min,
-  species_sf_by_year = species_sf_by_year,
-  point_cell_lookup = point_cell_lookup,
-  species_sf_all_with_cell = species_sf_all_with_cell,
-  point_poly_lookup = point_poly_lookup,
-  species_sf_all_with_poly = species_sf_all_with_poly,
-  grid_clip = grid_clip,
-  RICHNESS_BY_KEY = RICHNESS_BY_KEY,
-  RICHNESS_ALL = RICHNESS_ALL,
-  RICHNESS_ALL_BY_YEAR = RICHNESS_ALL_BY_YEAR,
-  depth_layers = depth_layers,
+  # DATA
+  AIS = AIS,
   all_polys_click = all_polys_click,
   all_polys_zones = all_polys_zones,
-  pal_rich = pal_rich
+  depth_layers = depth_layers,
+  grid_clip = grid_clip,
+  KEY_TBL = KEY_TBL,
+  point_cell_lookup = point_cell_lookup,
+  point_poly_lookup = point_poly_lookup,
+  RICHNESS_ALL = RICHNESS_ALL,
+  RICHNESS_ALL_BY_YEAR = RICHNESS_ALL_BY_YEAR,
+  RICHNESS_BY_KEY = RICHNESS_BY_KEY,
+  RICHNESS_GENE_ALL = RICHNESS_GENE_ALL,
+  sampling_pts = sampling_pts,
+  SARA = SARA,
+  species_sf_all = species_sf_all,
+  species_sf_all_with_cell = species_sf_all_with_cell,
+  species_sf_all_with_poly = species_sf_all_with_poly,
+  species_sf_by_year = species_sf_by_year,
+  species_sf_min = species_sf_min,
+
+  # FUNCTIONS
+  pal_rich = pal_rich,
+
+  # VALUES
+  cool = cool,
+  default_year = default_year,
+  depth_legend_cols = depth_legend_cols,
+  depth_legend_labs = depth_legend_labs
 )
 
 #Undo hashtags when ready to load and save data
 
-APP_DATA <- mget(ls()) #stores all variables from the environment into APP_DATA
-saveRDS(APP_DATA, "./inst/app/data/v2_essential_app_data_20260424.rds") #saves that as a file
-#APP_DATA <- readRDS("./inst/app/data/v2_essential_app_data_20260424.rds") #loads that file
-#list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
+# APP_DATA <- mget(ls()) #stores all variables from the environment into APP_DATA
+saveRDS(APP_DATA, "./inst/app/data/v2_essential_app_data_20260424-3.rds") #saves that as a file
+# APP_DATA <- readRDS("./inst/app/data/v2_essential_app_data_20260424.rds") #loads that file
+# list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
 
 ggplot2::theme_set(
   ggplot2::theme_minimal(base_family = "sans")

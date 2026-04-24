@@ -36,4 +36,4 @@ docs/
 big_test.rds
 
 /data
-/inst/app/data/v2_essential_app_data_20260424.rds
+/inst/app/data/v2_essential_app_data_2026*.rds
