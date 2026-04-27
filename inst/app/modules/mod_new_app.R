@@ -1958,13 +1958,16 @@ app_b_server <- function(input, output, session){
   }
 
   diversity_dropdown_data <- reactive({
-    pts <- selection_panel_df()
+    df <- dplyr::bind_rows(
+      mpa_membership_panel_df(),
+      polygon_membership_panel_df()
+    )
 
-    if (is.null(pts) || nrow(pts) == 0) {
-      return(pts)
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
     }
 
-    pts %>%
+    df %>%
       add_primer_combo() %>%
       dplyr::mutate(
         target_gene  = as.character(target_gene),
