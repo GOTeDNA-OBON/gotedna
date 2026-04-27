@@ -717,6 +717,352 @@ $(function(){
 
 app_b_server <- function(input, output, session){
 
+
+  dedupe_by_occurrenceID <- function(df) {
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    if (!"occurrenceID" %in% names(df)) {
+      warning("No occurrenceID column, skipping dedupe")
+      return(df)
+    }
+
+    df %>%
+      dplyr::mutate(
+        occurrenceID = as.character(occurrenceID),
+        id = if ("id" %in% names(.)) as.character(id) else NA_character_
+      ) %>%
+      dplyr::arrange(occurrenceID, id) %>%
+      dplyr::group_by(occurrenceID) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
+  }
+
+  species_sf_all <- dedupe_by_occurrenceID(species_sf_all)
+  species_sf_all_with_poly <- dedupe_by_occurrenceID(species_sf_all_with_poly)
+  species_sf_all_with_cell <- dedupe_by_occurrenceID(species_sf_all_with_cell)
+
+
+  cat("rows all:", nrow(species_sf_all), "\n")
+  cat("rows poly:", nrow(species_sf_all_with_poly), "\n")
+  cat("rows cell:", nrow(species_sf_all_with_cell), "\n")
+
+  cat("unique occ all:", dplyr::n_distinct(species_sf_all$occurrenceID), "\n")
+  cat("unique occ poly:", dplyr::n_distinct(species_sf_all_with_poly$occurrenceID), "\n")
+  cat("unique occ cell:", dplyr::n_distinct(species_sf_all_with_cell$occurrenceID), "\n")
+
+
+
+
+  add_primer_combo_vec <- function(fwd, rev) {
+    fwd <- trimws(fwd)
+    rev <- trimws(rev)
+
+    fwd[fwd == ""] <- NA_character_
+    rev[rev == ""] <- NA_character_
+
+    dplyr::case_when(
+      !is.na(fwd) & !is.na(rev) ~ paste(fwd, rev, sep = " | "),
+      !is.na(fwd) &  is.na(rev) ~ fwd,
+      is.na(fwd) & !is.na(rev) ~ rev,
+      TRUE ~ NA_character_
+    )
+  }
+
+  selection_map_df <- reactive({
+    det <- selected_detections()
+
+    if (is.null(det) || nrow(det) == 0) return(det)
+
+    det %>%
+      sf::st_drop_geometry() %>%
+      dplyr::transmute(
+        id = as.character(id),
+        occurrenceID = as.character(occurrenceID),
+        samp_name = as.character(samp_name),
+        scientificName = as.character(scientificName),
+        year = as.character(year),
+        month = as.character(month),
+        target_gene = as.character(target_gene),
+        kingdom = as.character(kingdom),
+        phylum = as.character(phylum),
+        class = as.character(class),
+        order = as.character(order),
+        family = as.character(family),
+        genus = as.character(genus),
+        pcr_primer_name_forward = as.character(pcr_primer_name_forward),
+        pcr_primer_name_reverse = as.character(pcr_primer_name_reverse)
+      )
+  })
+
+  selection_panel_df <- reactive({
+    df <- selection_map_df()
+    if (is.null(df) || nrow(df) == 0) return(df)
+
+    apply_species_filters(df)
+  })
+
+  selection_selection_df <- reactive({
+    df <- selection_panel_df()
+    if (is.null(df) || nrow(df) == 0) return(df)
+
+    apply_diversity_dropdown_filters(df, div_filters())
+  })
+
+  panel_ids <- reactive({
+    df <- selection_panel_df()
+    if (is.null(df) || nrow(df) == 0) return(character(0))
+    unique(df$id)
+  })
+
+  selection_ids <- reactive({
+    df <- selection_selection_df()
+    if (is.null(df) || nrow(df) == 0) return(character(0))
+    unique(df$id)
+  })
+
+
+  diversity_mpa_df <- species_sf_all_with_poly %>%
+    sf::st_drop_geometry() %>%
+    dplyr::transmute(
+      id = as.character(id),
+      occurrenceID = as.character(occurrenceID),
+      point_key = as.character(point_key),
+      samp_name = as.character(samp_name),
+      scientificName = as.character(scientificName),
+      year = as.character(year),
+      target_gene = as.character(target_gene),
+      site_name = as.character(site_name),
+      site_type = as.character(site_type),
+      organismQuantity = as.numeric(organismQuantity),
+      kingdom = as.character(kingdom),
+      phylum = as.character(phylum),
+      class = as.character(class),
+      order = as.character(order),
+      family = as.character(family),
+      genus = as.character(genus),
+      pcr_primer_name_forward = as.character(pcr_primer_name_forward),
+      pcr_primer_name_reverse = as.character(pcr_primer_name_reverse)
+    )
+
+
+  mpa_membership_base_df <- reactive({
+
+    if (is.null(diversity_mpa_df)) {
+      stop("mpa_membership_base_df: diversity_mpa_df is NULL")
+    }
+    diversity_mpa_df %>%
+      dplyr::filter(
+        !is.na(site_name), trimws(site_name) != "",
+        !is.na(site_type), trimws(site_type) != ""
+      )
+  })
+
+  mpa_membership_panel_df <- reactive({
+    df <- mpa_membership_base_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    yr <- sel_year_chr()
+    if (yr != "All") {
+      df <- df %>%
+        dplyr::filter(as.character(year) == yr)
+    }
+
+    df <- apply_species_filters(df)
+
+    df
+  })
+
+  mpa_membership_selection_df <- reactive({
+    df <- mpa_membership_panel_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    apply_diversity_dropdown_filters(df, div_filters())
+  })
+
+
+  diversity_beta_df <- species_sf_all_with_poly %>%
+    dplyr::transmute(
+      id = as.character(id),
+      occurrenceID = as.character(occurrenceID),
+      samp_name = as.character(samp_name),
+      point_key = as.character(point_key),
+      scientificName = as.character(scientificName),
+      year = as.character(year),
+      eventDate = as.character(eventDate),
+      target_gene = as.character(target_gene),
+
+      pcr_primer_name_forward = as.character(pcr_primer_name_forward),
+      pcr_primer_name_reverse = as.character(pcr_primer_name_reverse),
+
+      organismQuantity = as.numeric(organismQuantity),
+
+      site_name = as.character(site_name),
+      site_type = as.character(site_type),
+
+      kingdom = as.character(kingdom),
+      phylum = as.character(phylum),
+      class = as.character(class),
+      order = as.character(order),
+      family = as.character(family),
+      genus = as.character(genus),
+
+      geometry = geometry
+    )
+
+
+  polygon_membership_base_df <- reactive({
+    pts <- diversity_beta_df
+    polys <- drawn_polys()
+
+    if (is.null(pts) || nrow(pts) == 0) {
+      return(pts)
+    }
+
+    if (is.null(polys) || nrow(polys) == 0) {
+      return(sf::st_drop_geometry(pts[0, , drop = FALSE]))
+    }
+
+    drawn_list <- lapply(seq_len(nrow(polys)), function(i) {
+      g_i <- sf::st_geometry(polys[i, , drop = FALSE])
+      lab <- polys$draw_label[i]
+
+      inside_i <- pts[within_any(pts, g_i), , drop = FALSE]
+      if (nrow(inside_i) == 0) return(NULL)
+
+      inside_i %>%
+        dplyr::mutate(
+          site_name = lab,
+          site_type = "User"
+        )
+    })
+
+    out <- dplyr::bind_rows(drawn_list)
+
+    if (is.null(out) || nrow(out) == 0) {
+      return(pts[0, , drop = FALSE] %>% sf::st_drop_geometry())
+    }
+
+    out <- out %>%
+      sf::st_drop_geometry() %>%
+      dplyr::arrange(occurrenceID) %>%
+      dplyr::group_by(
+        occurrenceID, point_key, samp_name, scientificName, year, target_gene,
+        site_name, site_type
+      ) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
+
+    out
+  })
+
+  polygon_membership_panel_df <- reactive({
+    df <- polygon_membership_base_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    yr <- sel_year_chr()
+    if (yr != "All") {
+      df <- df %>% dplyr::filter(as.character(year) == yr)
+    }
+
+    df <- apply_species_filters(df)
+
+    df
+  })
+
+  polygon_membership_selection_df <- reactive({
+    df <- polygon_membership_panel_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    df <- apply_diversity_dropdown_filters(df, div_filters())
+
+    if (nrow(df) == 0) {
+      return(df)
+    }
+
+    df %>%
+      dplyr::arrange(occurrenceID) %>%
+      dplyr::group_by(
+        occurrenceID, point_key, samp_name, scientificName, year, target_gene,
+        site_name, site_type
+      ) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
+  })
+
+
+  ############################################################
+
+
+  #NEW CODE ABOVE HERE
+
+
+
+  ############################################################
+
+
+
+
+
+
+
+  ############################################################
+
+
+
+  #OLD CODE STARTS HERE
+
+
+  ############################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   prune_cache <- function(cache_list, max_n = 100) {
     nms <- names(cache_list)
     if (length(nms) <= max_n) return(cache_list)
@@ -922,13 +1268,6 @@ app_b_server <- function(input, output, session){
   drawn_polys <- reactiveVal(empty_drawn_sf)
   selected_draw_id <- reactiveVal(NULL)
 
-  detections_filtered <- reactive({
-    det <- selected_detections()
-    if (is.null(det) || nrow(det) == 0) return(NULL)
-
-    det %>%
-      apply_species_filters()
-  })
 
   # ---- helper: convert leaflet.draw feature -> sf polygon (EPSG:4326) ----
   feature_to_sf <- function(feature) {
@@ -1041,24 +1380,6 @@ app_b_server <- function(input, output, session){
     as.character(yr)
   })
 
-  species_gene_summary <- function(det_sf) {
-    det_sf %>%
-      sf::st_drop_geometry() %>%
-      dplyr::mutate(
-        scientificName = as.character(scientificName),
-        target_gene    = as.character(target_gene),
-        samp_name      = as.character(samp_name)
-      ) %>%
-      dplyr::filter(!is.na(scientificName), scientificName != "") %>%
-      dplyr::group_by(scientificName) %>%
-      dplyr::summarise(
-        genes       = paste(sort(unique(na.omit(target_gene))), collapse = ", "),
-        n_detections = dplyr::n(),
-        n_samples    = dplyr::n_distinct(na.omit(samp_name)),
-        .groups = "drop"
-      ) %>%
-      dplyr::arrange(scientificName)
-  }
 
   # --- Is the Sampling points layer currently visible? ---
   sampling_points_layer_on <- reactive({
@@ -1087,44 +1408,6 @@ app_b_server <- function(input, output, session){
       style = paste0("max-height:", max_h, "px; overflow-y:auto; padding-left: 10px;"),
       tags$ul(lapply(vec, tags$li))
     )
-  }
-
-  # Return a named list: each name is a layer ("12S", "COI", ... or "All"),
-  # each value is the species vector for that layer
-  species_by_active_layers <- function(det_sf, layers_on, apply_filters_fn) {
-    det_sf <- apply_filters_fn(det_sf)
-
-    out <- list()
-
-    # "All" means no gene filter
-    if ("All" %in% layers_on) {
-      spp_all <- det_sf %>%
-        sf::st_drop_geometry() %>%
-        dplyr::pull(scientificName) %>%
-        as.character() %>%
-        unique() %>%
-        stats::na.omit() %>%
-        sort()
-
-      out[["All"]] <- spp_all
-    }
-
-    # gene-specific lists
-    genes <- setdiff(layers_on, "All")
-    for (g in genes) {
-      spp_g <- det_sf %>%
-        dplyr::filter(as.character(target_gene) == g) %>%
-        sf::st_drop_geometry() %>%
-        dplyr::pull(scientificName) %>%
-        as.character() %>%
-        unique() %>%
-        stats::na.omit() %>%
-        sort()
-
-      out[[g]] <- spp_g
-    }
-
-    out
   }
 
   #remove cache of deleted polygons
@@ -1283,9 +1566,6 @@ app_b_server <- function(input, output, session){
     }
   })
 
-  div_gene_initialized <- reactiveVal(FALSE)
-  div_primer_initialized <- reactiveVal(FALSE)
-
   compare_polygon_choices <- reactive({
     yr <- sel_year_chr()
 
@@ -1335,24 +1615,6 @@ app_b_server <- function(input, output, session){
     sort(unique(c(base_groups, drawn_groups)))
   })
 
-  # Detections that fall inside any MPA/AOI polygon (drops outside points)
-  detections_in_mpa <- reactive({
-    yr <- sel_year_chr()
-
-    pts <- species_sf_all_with_poly
-
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
-    }
-
-    pts %>%
-      dplyr::filter(!is.na(site_name), !is.na(site_type)) %>%
-      dplyr::arrange(occurrenceID) %>%
-      dplyr::group_by(occurrenceID, samp_name, scientificName, year, target_gene) %>%
-      dplyr::slice(1) %>%
-      dplyr::ungroup()
-  })
-
   # redraw points when year changes
   observeEvent(
     list(sel_year_chr(), sampling_points_layer_on()),
@@ -1395,7 +1657,7 @@ app_b_server <- function(input, output, session){
 
   #Monthly sampling
   monthly_sample_counts <- reactive({
-    det <- selected_detections()
+    det <- selection_map_df()
     req(det)
 
     det0 <- det %>%
@@ -1462,7 +1724,7 @@ app_b_server <- function(input, output, session){
     # Only render once the monthly plot layer is actually turned on
     req(monthly_on)
 
-    det <- selected_detections()
+    det <- selection_map_df()
 
     # ---- default placeholder before any cell/polygon is selected ----
     if (is.null(det) || nrow(det) == 0) {
@@ -1662,66 +1924,6 @@ app_b_server <- function(input, output, session){
     NULL
   })
 
-  selected_detections_min <- reactive({      #NEW
-    yr <- sel_year_chr()
-    click <- input$map_shape_click
-    sel_id <- selected_draw_id()
-
-    if (!is.null(sel_id)) {
-      pts <- species_sf_by_year[[yr]]
-      if (is.null(pts)) pts <- species_sf_min[0, ]
-
-      g <- selection_geom()
-      if (is.null(g) || nrow(pts) == 0) {
-        return(NULL)
-      }
-
-      keep <- tryCatch(
-        within_any(pts, g),
-        error = function(e) {
-          showNotification(
-            paste("Polygon selection failed:", e$message),
-            type = "error"
-          )
-          return(rep(FALSE, nrow(pts)))
-        }
-      )
-
-      return(pts[keep, , drop = FALSE])
-    }
-
-    if (is.null(click) || is.null(click$id)) return(NULL)
-
-    id <- as.character(click$id)
-
-    pts <- species_sf_min
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
-    }
-
-    if (grepl("\\|\\|", id)) {
-      parts <- strsplit(id, "\\|\\|")[[1]]
-      p_type <- parts[1]
-      p_name <- parts[2]
-
-      return(
-        pts %>%
-          dplyr::left_join(point_poly_lookup, by = "point_key") %>%
-          dplyr::filter(site_type == p_type, site_name == p_name)
-      )
-    }
-
-    cid <- suppressWarnings(as.integer(id))
-    if (!is.na(cid)) {
-      return(
-        pts %>%
-          dplyr::left_join(point_cell_lookup, by = "point_key") %>%
-          dplyr::filter(cell_id == cid)
-      )
-    }
-
-    NULL
-  })
 
   # ---- group filter helper (multi-select; union across selected groups) ----
   apply_group_filter <- function(occ_all, groups) {
@@ -1837,17 +2039,13 @@ app_b_server <- function(input, output, session){
   }
 
   diversity_dropdown_data <- reactive({
-    pts <- species_sf_all
+    pts <- selection_panel_df()
 
-    yr <- sel_year_chr()
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
+    if (is.null(pts) || nrow(pts) == 0) {
+      return(pts)
     }
 
-    pts <- apply_species_filters(pts)
-
     pts %>%
-      sf::st_drop_geometry() %>%
       add_primer_combo() %>%
       dplyr::mutate(
         target_gene  = as.character(target_gene),
@@ -1858,42 +2056,42 @@ app_b_server <- function(input, output, session){
   # ---- source data for diversity dropdowns ----
   observeEvent(diversity_dropdown_data(), {
     dd <- diversity_dropdown_data()
-
+    if (is.null(dd) || nrow(dd) == 0) {
+      updateSelectizeInput(
+        session,
+        "div_target_gene",
+        choices = character(0),
+        selected = character(0),
+        server = TRUE
+      )
+      return()
+    }
     gene_choices <- dd %>%
       dplyr::filter(!is.na(target_gene), target_gene != "") %>%
       dplyr::pull(target_gene) %>%
       unique() %>%
       sort()
 
-    cur_gene <- input$div_target_gene %||% character(0)
-    sel_gene <- intersect(cur_gene, gene_choices)
-
-    # first load = select all genes
-    if (!div_gene_initialized()) {
-      sel_gene <- gene_choices
-      div_gene_initialized(TRUE)
-    }
 
     freezeReactiveValue(input, "div_target_gene")
     updateSelectizeInput(
       session  = session,
       inputId  = "div_target_gene",
       choices  = gene_choices,
-      selected = sel_gene,
+      selected = gene_choices,
       server   = TRUE
     )
   }, ignoreInit = FALSE)
 
   primer_choices_reactive <- reactive({
     dd <- diversity_dropdown_data()
-
+    if (is.null(dd) || nrow(dd) == 0) return(character(0))
     genes_selected <- input$div_target_gene %||% character(0)
 
     if (length(genes_selected) > 0) {
-      dd <- dd %>%
-        dplyr::filter(target_gene %in% genes_selected)
+      dd <- dd %>% dplyr::filter(target_gene %in% genes_selected)
     } else {
-      dd <- dd[0, , drop = FALSE]
+      return(character(0))
     }
 
     dd %>%
@@ -1909,21 +2107,14 @@ app_b_server <- function(input, output, session){
     {
       primer_choices <- primer_choices_reactive()
 
-      cur_primer <- input$div_primer %||% character(0)
-      sel_primer <- intersect(cur_primer, primer_choices)
 
-      # first load = select all available primers
-      if (!div_primer_initialized()) {
-        sel_primer <- primer_choices
-        div_primer_initialized(TRUE)
-      }
 
       freezeReactiveValue(input, "div_primer")
       updateSelectizeInput(
         session  = session,
         inputId  = "div_primer",
         choices  = primer_choices,
-        selected = sel_primer,
+        selected = primer_choices,
         server   = TRUE
       )
     },
@@ -2044,12 +2235,12 @@ app_b_server <- function(input, output, session){
   }
 
   species_list_occ_all <- reactive({
-    occ_all <- selected_detections()   # or occ_all_filtered(), etc.
+    occ_all <- selection_panel_df()
     req(occ_all)
 
-    occ_all <- apply_species_filters(occ_all)
-
-    occ_all %>% dplyr::distinct(scientificName, .keep_all = TRUE) %>% dplyr::arrange(dplyr::coalesce(worms_valid_name, scientificName))
+    occ_all %>%
+      dplyr::distinct(scientificName, .keep_all = TRUE) %>%
+      dplyr::arrange(dplyr::coalesce(worms_valid_name, scientificName))
   })
 
   observeEvent(input$SARA, {
@@ -2072,23 +2263,7 @@ app_b_server <- function(input, output, session){
   }, ignoreInit = TRUE)
 
   observeEvent(
-    list(
-      input$div_target_gene,
-      input$div_primer,
-      input$div_compare_polygons,
-      input$sel_year,
-      input$map_shape_click,
-      input$SARA,
-      input$AIS,
-      input$total_fish,
-      input$total_sharks,
-      input$total_mammals,
-      input$total_reptiles,
-      input$total_birds,
-      input$total_molluscs,
-      input$total_arthropods,
-      input$total_plants
-    ),
+    active_groups(),
     {
       download_ready(FALSE)
       shinyjs::disable("downloadData")
@@ -2127,7 +2302,7 @@ app_b_server <- function(input, output, session){
       ))
     }
 
-    det <- selected_detections()
+    det <- selection_panel_df()
     if (is.null(det) || nrow(det) == 0) {
       return(DT::datatable(
         data.frame(Message = "No detections in the current selection."),
@@ -2137,7 +2312,6 @@ app_b_server <- function(input, output, session){
     }
 
     det <- det %>%
-      sf::st_drop_geometry() %>%
       dplyr::mutate(scientificName = as.character(scientificName)) %>%
       dplyr::filter(scientificName %in% sara_set())
 
@@ -2229,7 +2403,7 @@ app_b_server <- function(input, output, session){
       ))
     }
 
-    det <- selected_detections()
+    det <- selection_panel_df()
     if (is.null(det) || nrow(det) == 0) {
       return(DT::datatable(
         data.frame(Message = "No detections in the current selection."),
@@ -2239,7 +2413,6 @@ app_b_server <- function(input, output, session){
     }
 
     det <- det %>%
-      sf::st_drop_geometry() %>%
       dplyr::mutate(scientificName = as.character(scientificName)) %>%
       dplyr::filter(scientificName %in% ais_set())
 
@@ -3083,59 +3256,9 @@ const obs = new MutationObserver(() => {
     suppressWarnings(as.integer(click$id))
   })
 
-  # ---- detections used by Diversity section only ----
-  # Floating panel filters still apply first.
-  # tax_rank and div_target_gene only affect diversity calculations.
-  # diversity_detections <- reactive({
-  #   det <- selected_detections()
-  #   req(det)
-  #
-  #   det <- apply_species_filters(det)
-  #
-  #   gene_sel <- input$div_target_gene %||% character(0)
-  #
-  #   # If user deselects everything, keep all genes
-  #   if (length(gene_sel) > 0) {
-  #     det <- det %>%
-  #       dplyr::filter(as.character(target_gene) %in% gene_sel)
-  #   }
-  #
-  #   det
-  # })
-
-
   # ---- diversity detections for all MPA/AOI polygons ----
   diversity_detections_mpa <- reactive({
-    yr <- sel_year_chr()
-    filters <- div_filters()
-
-    pts <- species_sf_all_with_poly
-
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
-    }
-
-    if (is.null(pts) || nrow(pts) == 0) {
-      return(pts)
-    }
-
-    pts <- apply_species_filters(pts)
-    pts <- apply_diversity_dropdown_filters(pts, filters)
-    pts <- apply_compare_polygon_filter(pts, filters$polygons)
-
-    if (nrow(pts) == 0) {
-      return(pts)
-    }
-
-    pts %>%
-      dplyr::filter(!is.na(site_name), !is.na(site_type)) %>%
-      dplyr::arrange(occurrenceID) %>%
-      dplyr::group_by(
-        occurrenceID, samp_name, scientificName, year, target_gene,
-        site_name, site_type
-      ) %>%
-      dplyr::slice(1) %>%
-      dplyr::ungroup()
+    mpa_membership_selection_df()
   })
 
   #Diversity plots
@@ -3322,90 +3445,39 @@ const obs = new MutationObserver(() => {
     meta
   })
 
+  observe({
+    df <- diversity_detections_beta()
+
+    if (is.null(df) || nrow(df) == 0) return()
+
+    cat("\nSelected polygons:\n")
+    print(div_filters()$polygons)
+
+    cat("\nSites reaching beta PCoA:\n")
+    print(
+      df %>%
+        dplyr::distinct(site_type, site_name) %>%
+        dplyr::arrange(site_type, site_name),
+      n = Inf
+    )
+  })
+
   # ---- base detections used for beta ordination ----
   # Includes:
   #   - all detections inside MPA/AOI polygons
   #   - plus detections inside any drawn polygons
   # Floating-panel filters and diversity target_gene filter still apply.
   diversity_detections_beta <- reactive({
-    yr <- sel_year_chr()
-    filters <- div_filters()
+    df <- dplyr::bind_rows(
+      mpa_membership_selection_df(),
+      polygon_membership_selection_df()
+    )
 
-    pts <- species_sf_all_with_poly
-
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
     }
 
-    if (is.null(pts) || nrow(pts) == 0) {
-      return(pts)
-    }
-
-    pts <- apply_species_filters(pts)
-    pts <- apply_diversity_dropdown_filters(pts, filters)
-
-    if (nrow(pts) == 0) {
-      return(pts)
-    }
-
-    # ensure columns exist
-    if (!"site_name" %in% names(pts)) pts$site_name <- NA_character_
-    if (!"site_type" %in% names(pts)) pts$site_type <- NA_character_
-
-    pts <- pts %>%
-      dplyr::mutate(
-        site_name = as.character(site_name),
-        site_type = as.character(site_type)
-      )
-
-    in_mpa <- pts %>%
-      dplyr::filter(!is.na(site_name), site_name != "",
-                    !is.na(site_type), site_type != "")
-
-    if (length(filters$polygons) > 0) {
-      in_mpa <- in_mpa %>%
-        dplyr::filter(as.character(site_name) %in% filters$polygons)
-    }
-
-    if (nrow(in_mpa) > 0) {
-      in_mpa <- in_mpa %>%
-        dplyr::arrange(occurrenceID) %>%
-        dplyr::group_by(
-          occurrenceID, samp_name, scientificName, year, target_gene,
-          site_name, site_type
-        ) %>%
-        dplyr::slice(1) %>%
-        dplyr::ungroup()
-    }
-
-    polys <- drawn_polys()
-
-    if (is.null(polys) || nrow(polys) == 0) {
-      return(in_mpa)
-    }
-
-    drawn_list <- lapply(seq_len(nrow(polys)), function(i) {
-      g_i <- sf::st_geometry(polys[i, , drop = FALSE])
-      lab <- polys$draw_label[i]
-
-      inside_i <- pts[within_any(pts, g_i), , drop = FALSE]
-      if (nrow(inside_i) == 0) return(NULL)
-
-      inside_i %>%
-        dplyr::mutate(
-          site_name = lab,
-          site_type = "User"
-        )
-    })
-
-    in_drawn <- dplyr::bind_rows(drawn_list)
-
-    if (nrow(in_drawn) > 0 && length(filters$polygons) > 0) {
-      in_drawn <- in_drawn %>%
-        dplyr::filter(as.character(site_name) %in% filters$polygons)
-    }
-
-    dplyr::bind_rows(in_mpa, in_drawn)
+    apply_compare_polygon_filter(df, div_filters()$polygons)
   })
 
   # ---- CLR helper for beta diversity ----
@@ -3816,24 +3888,6 @@ const obs = new MutationObserver(() => {
     beta_overlap_warning() %||% ""
   })
 
-  # --- sample metadata for grouping/hover (Location etc.) ---
-  sample_meta <- reactive({
-    det <- selected_detections()
-    req(det)
-
-    occ_all <- det %>% sf::st_drop_geometry()
-
-    out <- occ_all %>%
-      dplyr::mutate(
-        samp_name = as.character(samp_name),
-        site_name  = if ("site_name" %in% names(.)) as.character(site_name) else NA_character_,
-        year      = if ("year" %in% names(.)) as.character(year) else NA_character_
-      ) %>%
-      dplyr::distinct(samp_name, site_name, year)
-
-    out
-  })
-
   #Alpha diversity
   alpha_metric_vec <- reactive({
     req(comm_mat_mpa_rarefied())
@@ -3894,12 +3948,12 @@ const obs = new MutationObserver(() => {
 
   # --- Alpha boxplot data: selected area + optional drawn polygons ---
   alpha_boxplot_occ_all <- reactive({
-    yr <- sel_year_chr()
     selected_polygons <- div_filters()$polygons %||% character(0)
 
     alpha <- alpha_metric_vec()
     meta  <- sample_meta_mpa()
 
+    # ---- Built-in MPA/AOI alpha values ----
     alpha_mpa <- alpha %>%
       dplyr::left_join(
         meta %>% dplyr::distinct(sample_id, .keep_all = TRUE),
@@ -3913,117 +3967,118 @@ const obs = new MutationObserver(() => {
         dplyr::filter(as.character(group_label) %in% selected_polygons)
     }
 
-    polys <- drawn_polys()
+    # ---- Drawn polygon alpha values, using the new filtered polygon pipeline ----
+    poly_df <- polygon_membership_selection_df()
 
-    if (!is.null(polys) && nrow(polys) > 0) {
-
-      pts_analysis <- species_sf_all
-      if (yr != "All") {
-        pts_analysis <- pts_analysis %>%
-          dplyr::filter(as.character(year) == yr)
-      }
-
-      pts_analysis <- pts_analysis %>%
-        apply_species_filters() %>%
-        apply_diversity_dropdown_filters(div_filters())
+    if (!is.null(poly_df) && nrow(poly_df) > 0) {
 
       rank_col <- active_tax_rank()
       metric   <- input$alpha_metric %||% "observed"
+      depth_poly <- rarefaction_depth()
 
-      alpha_poly_list <- lapply(seq_len(nrow(polys)), function(i) {
-        g_i <- sf::st_geometry(polys[i, , drop = FALSE])
+      if (is.finite(depth_poly) && depth_poly > 0 && rank_col %in% names(poly_df)) {
 
-        depth_poly <- rarefaction_depth()
-
-        if (!is.finite(depth_poly) || depth_poly <= 0) return(NULL)
-
-        inside <- pts_analysis[within_any(pts_analysis, g_i), , drop = FALSE] %>%
-          sf::st_drop_geometry() %>%
+        poly_long <- poly_df %>%
           make_sample_id() %>%
           dplyr::mutate(
-            samp_name = as.character(samp_name),
-            taxon     = as.character(.data[[rank_col]]),
-            value     = as.numeric(organismQuantity)
+            site_name   = as.character(site_name),
+            site_type   = as.character(site_type),
+            group_label = as.character(site_name),
+            samp_name   = as.character(samp_name),
+            taxon       = as.character(.data[[rank_col]]),
+            value       = as.numeric(organismQuantity)
           ) %>%
           dplyr::filter(
+            site_type == "User",
+            !is.na(site_name), site_name != "",
             !is.na(sample_id), sample_id != "",
             !is.na(taxon), taxon != "",
             !is.na(value)
           ) %>%
-          dplyr::group_by(sample_id, samp_name, taxon) %>%
+          dplyr::group_by(site_name, site_type, group_label, sample_id, samp_name, taxon) %>%
           dplyr::summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
 
-        if (nrow(inside) == 0) return(NULL)
+        if (length(selected_polygons) > 0) {
+          poly_long <- poly_long %>%
+            dplyr::filter(group_label %in% selected_polygons)
+        }
 
-        mat_poly <- inside %>%
-          tidyr::pivot_wider(
-            id_cols     = c(sample_id, samp_name),
-            names_from  = taxon,
-            values_from = value,
-            values_fill = 0
-          ) %>%
-          as.data.frame()
+        alpha_poly <- poly_long %>%
+          dplyr::group_split(site_name, site_type, group_label) %>%
+          purrr::map_dfr(function(dat) {
 
-        rownames(mat_poly) <- mat_poly$sample_id
+            if (nrow(dat) == 0) return(NULL)
 
-        sample_ids_poly <- data.frame(
-          sample_id = mat_poly$sample_id,
-          samp_name = mat_poly$samp_name,
-          stringsAsFactors = FALSE
-        )
+            site_name_i   <- dat$site_name[1]
+            site_type_i   <- dat$site_type[1]
+            group_label_i <- dat$group_label[1]
 
-        mat_poly$sample_id <- NULL
-        mat_poly$samp_name <- NULL
+            mat_poly <- dat %>%
+              tidyr::pivot_wider(
+                id_cols     = c(sample_id, samp_name),
+                names_from  = taxon,
+                values_from = value,
+                values_fill = 0
+              ) %>%
+              as.data.frame()
 
-        lib_sizes_poly <- rowSums(mat_poly, na.rm = TRUE)
-        keep_poly <- lib_sizes_poly >= depth_poly
+            rownames(mat_poly) <- mat_poly$sample_id
 
-        mat_poly <- mat_poly[keep_poly, , drop = FALSE]
-        sample_ids_poly <- sample_ids_poly[keep_poly, , drop = FALSE]
+            sample_ids_poly <- data.frame(
+              sample_id = mat_poly$sample_id,
+              samp_name = mat_poly$samp_name,
+              stringsAsFactors = FALSE
+            )
 
-        if (nrow(mat_poly) == 0) return(NULL)
+            mat_poly$sample_id <- NULL
+            mat_poly$samp_name <- NULL
 
-        mat_poly <- round(as.matrix(mat_poly))
-        storage.mode(mat_poly) <- "integer"
+            lib_sizes_poly <- rowSums(mat_poly, na.rm = TRUE)
+            keep_poly <- lib_sizes_poly >= depth_poly
 
-        set.seed(123)
-        mat_poly_rarefied <- vegan::rrarefy(mat_poly, sample = depth_poly)
+            mat_poly <- mat_poly[keep_poly, , drop = FALSE]
+            sample_ids_poly <- sample_ids_poly[keep_poly, , drop = FALSE]
 
-        vals_poly <- switch(
-          metric,
-          observed   = vegan::specnumber(mat_poly_rarefied),
-          shannon    = vegan::diversity(mat_poly_rarefied, index = "shannon"),
-          simpson    = vegan::diversity(mat_poly_rarefied, index = "simpson"),
-          invsimpson = vegan::diversity(mat_poly_rarefied, index = "invsimpson"),
-          ace        = vegan::estimateR(mat_poly_rarefied)["S.ACE", ],
-          vegan::specnumber(mat_poly_rarefied)
-        )
+            if (nrow(mat_poly) == 0 || ncol(mat_poly) == 0) return(NULL)
 
-        poly_label <- polys$draw_label[i]
+            mat_poly <- round(as.matrix(mat_poly))
+            storage.mode(mat_poly) <- "integer"
 
-        data.frame(
-          sample_id   = rownames(mat_poly_rarefied),
-          alpha_val   = as.numeric(vals_poly),
-          samp_name   = sample_ids_poly$samp_name[
-            match(rownames(mat_poly_rarefied), sample_ids_poly$sample_id)
-          ],
-          site_name   = poly_label,
-          site_type   = "User",
-          year        = NA_character_,
-          group_label = poly_label,
-          stringsAsFactors = FALSE
-        )
-      })
+            set.seed(123)
+            mat_poly_rarefied <- vegan::rrarefy(mat_poly, sample = depth_poly)
 
-      alpha_poly <- dplyr::bind_rows(alpha_poly_list)
+            vals_poly <- switch(
+              metric,
+              observed   = vegan::specnumber(mat_poly_rarefied),
+              shannon    = vegan::diversity(mat_poly_rarefied, index = "shannon"),
+              simpson    = vegan::diversity(mat_poly_rarefied, index = "simpson"),
+              invsimpson = vegan::diversity(mat_poly_rarefied, index = "invsimpson"),
+              ace        = vegan::estimateR(mat_poly_rarefied)["S.ACE", ],
+              pielou     = {
+                richness <- vegan::specnumber(mat_poly_rarefied)
+                shannon  <- vegan::diversity(mat_poly_rarefied, index = "shannon")
+                dplyr::if_else(richness > 1, shannon / log(richness), NA_real_)
+              },
+              vegan::specnumber(mat_poly_rarefied)
+            )
 
-      if (nrow(alpha_poly) > 0 && length(selected_polygons) > 0) {
-        alpha_poly <- alpha_poly %>%
-          dplyr::filter(as.character(group_label) %in% selected_polygons)
-      }
+            data.frame(
+              sample_id   = rownames(mat_poly_rarefied),
+              alpha_val   = as.numeric(vals_poly),
+              samp_name   = sample_ids_poly$samp_name[
+                match(rownames(mat_poly_rarefied), sample_ids_poly$sample_id)
+              ],
+              site_name   = site_name_i,
+              site_type   = site_type_i,
+              year        = NA_character_,
+              group_label = group_label_i,
+              stringsAsFactors = FALSE
+            )
+          })
 
-      if (nrow(alpha_poly) > 0) {
-        alpha_mpa <- dplyr::bind_rows(alpha_mpa, alpha_poly)
+        if (!is.null(alpha_poly) && nrow(alpha_poly) > 0) {
+          alpha_mpa <- dplyr::bind_rows(alpha_mpa, alpha_poly)
+        }
       }
     }
 
@@ -4031,7 +4086,9 @@ const obs = new MutationObserver(() => {
     draw_lvls <- unique(alpha_mpa$group_label[alpha_mpa$site_type == "User"])
 
     alpha_mpa %>%
-      dplyr::mutate(group_label = factor(group_label, levels = c(base_lvls, draw_lvls)))
+      dplyr::mutate(
+        group_label = factor(group_label, levels = c(base_lvls, draw_lvls))
+      )
   })
 
   #-----------------------------------------------------------------------------
@@ -4745,32 +4802,39 @@ const obs = new MutationObserver(() => {
       )
   })
 
+
+
   #Krona plot
+
+  krona_df <- species_sf_all %>%
+    sf::st_drop_geometry() %>%
+    dplyr::transmute(
+      id = as.character(id),
+      kingdom = as.character(kingdom),
+      phylum = as.character(phylum),
+      class = as.character(class),
+      order = as.character(order),
+      family = as.character(family),
+      genus = as.character(genus),
+      scientificName = as.character(scientificName),
+      organismQuantity = organismQuantity
+    )
+
   output$tax_krona <- taxplore::renderKronaChart({
-    det <- selected_detections()
-    req(det)
 
-    # floating-panel filters
-    det <- apply_species_filters(det)
+    ids <- selection_ids()
 
-    # data-selection filters: target gene + primer only
-    det <- apply_diversity_dropdown_filters(
-      det,
-      list(
-        target_gene = div_filters()$target_gene,
-        primers     = div_filters()$primers
+    shiny::validate(
+      shiny::need(
+        !is.null(ids) && length(ids) > 0,
+        "Select a cell/polygon (or draw a polygon) to display a Krona chart."
       )
     )
 
-    shiny::validate(
-      shiny::need(!is.null(det) && nrow(det) > 0,
-                  "Select a cell/polygon (or draw a polygon) to display a Krona chart.")
-    )
-
-    det0 <- det %>%
-      sf::st_drop_geometry()
+    det0 <- krona_df[krona_df$id %in% ids, , drop = FALSE]
 
     shiny::validate(
+      shiny::need(nrow(det0) > 0, "No data available for this selection."),
       shiny::need("organismQuantity" %in% names(det0),
                   "organismQuantity column is missing.")
     )
@@ -4989,10 +5053,37 @@ const obs = new MutationObserver(() => {
     render_by_layer_ui(by_layer, strong(paste0("Grid cell: ", cid)), 220)
   })
 
-  output$detections_tbl <- DT::renderDT({
+  selection_details_df <- reactive({
     det <- selected_detections()
 
     if (is.null(det) || nrow(det) == 0) {
+      return(det)
+    }
+
+    coords <- sf::st_coordinates(det)
+
+    det %>%
+      sf::st_drop_geometry() %>%
+      dplyr::mutate(
+        decimalLongitude = coords[, 1],
+        decimalLatitude  = coords[, 2]
+      )
+  })
+
+  selection_details_panel_df <- reactive({
+    df <- selection_details_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    apply_species_filters(df)
+  })
+
+  output$detections_tbl <- DT::renderDT({
+    det_raw <- selection_details_df()
+
+    if (is.null(det_raw) || nrow(det_raw) == 0) {
       return(DT::datatable(
         data.frame(Message = "Click an MPA/AOI polygon/grid cell, or draw a polygon, to view detection details"),
         rownames = FALSE,
@@ -5000,9 +5091,9 @@ const obs = new MutationObserver(() => {
       ))
     }
 
-    det_f <- apply_species_filters(det)
+    det_show <- selection_details_panel_df()
 
-    if (nrow(det_f) == 0) {
+    if (is.null(det_show) || nrow(det_show) == 0) {
       return(DT::datatable(
         data.frame(Message = "No detections match the current Year and/or Group filters."),
         rownames = FALSE,
@@ -5010,12 +5101,6 @@ const obs = new MutationObserver(() => {
       ))
     }
 
-    det_show <- det_f %>%
-      dplyr::mutate(
-        decimalLongitude = sf::st_coordinates(.)[, 1],
-        decimalLatitude  = sf::st_coordinates(.)[, 2]
-      ) %>%
-      sf::st_drop_geometry()
 
     needed_cols <- c(
       "kingdom", "phylum", "class", "order", "family", "genus",
@@ -5058,7 +5143,7 @@ const obs = new MutationObserver(() => {
         across(c(
           scientificName, samp_name, target_gene,
           bathymetry, flags, dataset_id, eventDate
-        ), ~as.character(.)),
+        ), ~ as.character(.)),
         Volume = dplyr::case_when(
           !is.na(samp_size) & !is.na(samp_size_unit) ~ paste(samp_size, samp_size_unit),
           !is.na(samp_size) ~ as.character(samp_size),
