@@ -1064,6 +1064,26 @@ app_b_server <- function(input, output, session){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   prune_cache <- function(cache_list, max_n = 100) {
     nms <- names(cache_list)
     if (length(nms) <= max_n) return(cache_list)
@@ -1568,50 +1588,40 @@ app_b_server <- function(input, output, session){
   })
 
   compare_polygon_choices <- reactive({
-    yr <- sel_year_chr()
 
-    pts <- species_sf_all_with_poly
-
-    # 1) year
-    if (yr != "All") {
-      pts <- pts %>% dplyr::filter(as.character(year) == yr)
-    }
-
-    # 2) floating panel filters (groups, SARA, AIS)
-    pts <- apply_species_filters(pts)
-
-    # 3) data-selection filters (target gene + primer)
-    pts <- apply_diversity_dropdown_filters(
-      pts,
-      list(
-        target_gene = input$div_target_gene %||% character(0),
-        primers     = input$div_primer %||% character(0)
-      )
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0)
     )
 
-    # built-in polygons that still have detections after current filters
-    base_groups <- pts %>%
-      sf::st_drop_geometry() %>%
-      dplyr::filter(!is.na(site_name), site_name != "") %>%
-      dplyr::pull(site_name) %>%
-      as.character() %>%
-      unique()
+    base_df <- mpa_membership_panel_df()
 
-    # drawn polygons that still have detections after current filters
-    polys <- drawn_polys()
-
-    drawn_groups <- character(0)
-
-    if (!is.null(polys) && nrow(polys) > 0 && !is.null(pts) && nrow(pts) > 0) {
-      drawn_groups <- vapply(seq_len(nrow(polys)), function(i) {
-        g_i <- sf::st_geometry(polys[i, , drop = FALSE])
-        inside_i <- pts[within_any(pts, g_i), , drop = FALSE]
-
-        if (nrow(inside_i) > 0) polys$draw_label[i] else NA_character_
-      }, character(1))
-
-      drawn_groups <- drawn_groups[!is.na(drawn_groups)]
+    if (!is.null(base_df) && nrow(base_df) > 0) {
+      base_df <- apply_diversity_dropdown_filters(base_df, live_filters)
     }
+
+    draw_df <- polygon_membership_panel_df()
+
+    if (!is.null(draw_df) && nrow(draw_df) > 0) {
+      draw_df <- apply_diversity_dropdown_filters(draw_df, live_filters)
+    }
+
+    get_site_choices <- function(df, user_only = FALSE) {
+      if (is.null(df) || nrow(df) == 0) return(character(0))
+
+      if (isTRUE(user_only) && "site_type" %in% names(df)) {
+        df <- df %>% dplyr::filter(site_type == "User")
+      }
+
+      df %>%
+        dplyr::filter(!is.na(site_name), site_name != "") %>%
+        dplyr::pull(site_name) %>%
+        as.character() %>%
+        unique()
+    }
+
+    base_groups  <- get_site_choices(base_df)
+    drawn_groups <- get_site_choices(draw_df, user_only = TRUE)
 
     sort(unique(c(base_groups, drawn_groups)))
   })
@@ -3318,11 +3328,10 @@ const obs = new MutationObserver(() => {
 
   # ---- library size diagnostics from all data ----
   library_sizes <- reactive({
-    pts <- species_sf_all
+    pts <- diversity_detections_beta()
     req(pts)
 
     occ_all <- pts %>%
-      sf::st_drop_geometry() %>%
       make_sample_id()
 
     shiny::validate(
@@ -3444,23 +3453,6 @@ const obs = new MutationObserver(() => {
       dplyr::distinct(sample_id, group_label, .keep_all = TRUE)
 
     meta
-  })
-
-  observe({
-    df <- diversity_detections_beta()
-
-    if (is.null(df) || nrow(df) == 0) return()
-
-    cat("\nSelected polygons:\n")
-    print(div_filters()$polygons)
-
-    cat("\nSites reaching beta PCoA:\n")
-    print(
-      df %>%
-        dplyr::distinct(site_type, site_name) %>%
-        dplyr::arrange(site_type, site_name),
-      n = Inf
-    )
   })
 
   # ---- base detections used for beta ordination ----
