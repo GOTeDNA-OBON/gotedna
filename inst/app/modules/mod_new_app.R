@@ -785,6 +785,7 @@ app_b_server <- function(input, output, session){
         year = as.character(year),
         month = as.character(month),
         target_gene = as.character(target_gene),
+        organismQuantity = organismQuantity,
         kingdom = as.character(kingdom),
         phylum = as.character(phylum),
         class = as.character(class),
@@ -4806,20 +4807,6 @@ const obs = new MutationObserver(() => {
 
   #Krona plot
 
-  krona_df <- species_sf_all %>%
-    sf::st_drop_geometry() %>%
-    dplyr::transmute(
-      id = as.character(id),
-      kingdom = as.character(kingdom),
-      phylum = as.character(phylum),
-      class = as.character(class),
-      order = as.character(order),
-      family = as.character(family),
-      genus = as.character(genus),
-      scientificName = as.character(scientificName),
-      organismQuantity = organismQuantity
-    )
-
   output$tax_krona <- taxplore::renderKronaChart({
 
     ids <- selection_ids()
@@ -4831,7 +4818,7 @@ const obs = new MutationObserver(() => {
       )
     )
 
-    det0 <- krona_df[krona_df$id %in% ids, , drop = FALSE]
+    det0 <- selection_selection_df()
 
     shiny::validate(
       shiny::need(nrow(det0) > 0, "No data available for this selection."),
