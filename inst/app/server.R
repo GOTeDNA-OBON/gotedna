@@ -60,9 +60,39 @@ server <- function(input, output, session) {
       NULL
     }
   })
-  print("before app_b_server")
-  app_b_server(input, output, session)
-  print("after app_b_server")
+
+  app_b_started <- reactiveVal(FALSE)
+
+  output$app_b_ui <- renderUI({
+    req(app_choice() == "B")
+    app_b_ui()
+  })
+
+  observeEvent(app_choice(), {
+    choice <- app_choice()
+
+    if (is.null(choice)) {
+      shinyjs::hide("gotedna_app")
+      shinyjs::hide("new_app")
+      return()
+    }
+
+    if (choice == "A") {
+      shinyjs::show("gotedna_app")
+      shinyjs::hide("new_app")
+    }
+
+    if (choice == "B") {
+      shinyjs::hide("gotedna_app")
+      shinyjs::show("new_app")
+
+      if (!isTRUE(app_b_started())) {
+        app_b_server(input, output, session)
+        app_b_started(TRUE)
+      }
+    }
+  }, ignoreInit = FALSE)
+
   observe({
     choice <- app_choice()
 

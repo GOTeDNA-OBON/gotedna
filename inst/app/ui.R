@@ -127,7 +127,7 @@ ui <- fluidPage(
   div(
     id = "new_app",
     style = "display:none;",
-    app_b_ui()
+    uiOutput("app_b_ui")
   ),
 
   # -----------------------------

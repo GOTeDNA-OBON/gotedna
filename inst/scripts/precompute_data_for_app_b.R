@@ -1066,15 +1066,91 @@ species_sf_all_with_cell <- species_sf_all %>%
 
 #-------------------------------------------------------------
 
+dedupe_by_occurrenceID <- function(df) {
+  if (is.null(df) || nrow(df) == 0) {
+    return(df)
+  }
+
+  if (!"occurrenceID" %in% names(df)) {
+    warning("No occurrenceID column, skipping dedupe")
+    return(df)
+  }
+
+  df %>%
+    dplyr::mutate(
+      occurrenceID = as.character(occurrenceID),
+      id = if ("id" %in% names(.)) as.character(id) else NA_character_
+    ) %>%
+    dplyr::arrange(occurrenceID, id) %>%
+    dplyr::group_by(occurrenceID) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup()
+}
 
 
+species_sf_all <- dedupe_by_occurrenceID(species_sf_all)
+species_sf_all_with_poly <- dedupe_by_occurrenceID(species_sf_all_with_poly)
+species_sf_all_with_cell <- dedupe_by_occurrenceID(species_sf_all_with_cell)
 
+diversity_mpa_df <- species_sf_all_with_poly %>%
+  sf::st_drop_geometry() %>%
+  dplyr::transmute(
+    id = as.character(id),
+    occurrenceID = as.character(occurrenceID),
+    point_key = as.character(point_key),
+    samp_name = as.character(samp_name),
+    scientificName = as.character(scientificName),
+    year = as.character(year),
+    target_gene = as.character(target_gene),
+    site_name = as.character(site_name),
+    site_type = as.character(site_type),
+    organismQuantity = as.numeric(organismQuantity),
+    kingdom = as.character(kingdom),
+    phylum = as.character(phylum),
+    class = as.character(class),
+    order = as.character(order),
+    family = as.character(family),
+    genus = as.character(genus),
+    pcr_primer_name_forward = as.character(pcr_primer_name_forward),
+    pcr_primer_name_reverse = as.character(pcr_primer_name_reverse)
+  )
+
+diversity_beta_df <- species_sf_all_with_poly %>%
+  dplyr::transmute(
+    id = as.character(id),
+    occurrenceID = as.character(occurrenceID),
+    samp_name = as.character(samp_name),
+    point_key = as.character(point_key),
+    scientificName = as.character(scientificName),
+    year = as.character(year),
+    eventDate = as.character(eventDate),
+    target_gene = as.character(target_gene),
+
+    pcr_primer_name_forward = as.character(pcr_primer_name_forward),
+    pcr_primer_name_reverse = as.character(pcr_primer_name_reverse),
+
+    organismQuantity = as.numeric(organismQuantity),
+
+    site_name = as.character(site_name),
+    site_type = as.character(site_type),
+
+    kingdom = as.character(kingdom),
+    phylum = as.character(phylum),
+    class = as.character(class),
+    order = as.character(order),
+    family = as.character(family),
+    genus = as.character(genus),
+
+    geometry = geometry
+  )
 #Bundle the outputs in one list:
 APP_DATA <- list(
   # DATA
   AIS = AIS,
   all_polys_click = all_polys_click,
   all_polys_zones = all_polys_zones,
+  diversity_mpa_df = diversity_mpa_df,
+  diversity_beta_df = diversity_beta_df,
   depth_layers = depth_layers,
   grid_clip = grid_clip,
   KEY_TBL = KEY_TBL,
@@ -1105,7 +1181,7 @@ APP_DATA <- list(
 #Undo hashtags when ready to load and save data
 
 # APP_DATA <- mget(ls()) #stores all variables from the environment into APP_DATA
-saveRDS(APP_DATA, "./inst/app/data/v2_essential_app_data_20260424-3.rds") #saves that as a file
+saveRDS(APP_DATA, "./inst/app/data/v2_essential_app_data_20260424-4.rds") #saves that as a file
 # APP_DATA <- readRDS("./inst/app/data/v2_essential_app_data_20260424.rds") #loads that file
 # list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
 
