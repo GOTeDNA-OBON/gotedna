@@ -263,7 +263,14 @@ $(function(){
         id = "sec_map", class = "scroll-section",
         div(
           id = "map_wrap",
-          leafletOutput("map"),
+          div(
+            class = "map-spinner-wrap",
+            shinycssloaders::withSpinner(
+              leafletOutput("map"),
+              type = 4,
+              proxy.height = "100%"
+            )
+          ),
 
           div(
             id = "monthly_plot_control",

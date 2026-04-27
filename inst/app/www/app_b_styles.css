@@ -667,6 +667,12 @@ table.dataTable.nowrap th {
   --monthly-subtitle-fs: 12px;
 }
 
+#map_wrap .map-spinner-wrap,
+#map_wrap .shiny-spinner-output-container,
+#map_wrap .load-container {
+  height: 100%;
+}
+
 /* laptop-sized screens */
 @media (max-width: 1440px), (max-height: 900px){
   #map_wrap{
