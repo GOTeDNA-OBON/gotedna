@@ -272,41 +272,41 @@ APP_DATA <- readRDS("data/v2_essential_app_data.rds") #loads that file
 list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
 rm(APP_DATA)
 gc()
-#
-# #Load libraries
-# #Load libraries
-# library(sf)
-# library(dplyr)
-# library(leaflet)
-# library(leaflet.extras)
-# library(arcgislayers)
-# library(tidyr)
-# library(ggplot2)
-# library(scico)
-# library(wesanderson)
-# library(htmltools)
-# library(htmlwidgets)
-# library(DT)
-# library(shinyjs)
-# library(stringr)
-# library(openxlsx)
-# library(purrr)
-# library(readr)
-# library(robis)
-# library(bslib)
-# library(shiny)
-#
-# #install.packages("BiocManager") *NEW
-# #BiocManager::install("phyloseq")
-# library(phyloseq)
-#
-# #install.packages("remotes")
-# #remotes::install_github("markschl/taxplore")
-# library(taxplore)  #Here is the link for taxplore tutorial in Shiny: https://markschl.github.io/taxplore/articles/tutorial.html#shiny-apps
-#
-# library(plotly)
-# library(worrms)
-# library(vegan)
-# library(forcats)
-# library(shinycssloaders)
-# library(multcompView)
+
+#Load libraries
+#Load libraries
+library(sf)
+library(dplyr)
+library(leaflet)
+library(leaflet.extras)
+library(arcgislayers)
+library(tidyr)
+library(ggplot2)
+library(scico)
+library(wesanderson)
+library(htmltools)
+library(htmlwidgets)
+library(DT)
+library(shinyjs)
+library(stringr)
+library(openxlsx)
+library(purrr)
+library(readr)
+library(robis)
+library(bslib)
+library(shiny)
+
+#install.packages("BiocManager") *NEW
+#BiocManager::install("phyloseq")
+library(phyloseq)
+
+#install.packages("remotes")
+#remotes::install_github("markschl/taxplore")
+library(taxplore)  #Here is the link for taxplore tutorial in Shiny: https://markschl.github.io/taxplore/articles/tutorial.html#shiny-apps
+
+library(plotly)
+library(worrms)
+library(vegan)
+library(forcats)
+library(shinycssloaders)
+library(multcompView)
