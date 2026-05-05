@@ -274,7 +274,6 @@ rm(APP_DATA)
 gc()
 
 #Load libraries
-#Load libraries
 library(sf)
 library(dplyr)
 library(leaflet)
@@ -310,3 +309,4 @@ library(vegan)
 library(forcats)
 library(shinycssloaders)
 library(multcompView)
+#may need to add devtools to the DESCRIPTION folder

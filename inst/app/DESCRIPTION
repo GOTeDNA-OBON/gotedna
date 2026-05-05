@@ -12,6 +12,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1)
 Imports:
+    arcgislayers,
     bslib,
     cli,
     dplyr (>= 1.0.0),
@@ -23,6 +24,7 @@ Imports:
     ggpattern,
     GOTeDNA,
     grid,
+    htmltools,
     htmlwidgets,
     knitr,
     leafem,
@@ -31,17 +33,32 @@ Imports:
     magick,
     mapedit (>= 0.6.0),
     magrittr,
+    multcompView,
+    openxlsx,
     patchwork (>= 1.2),
+    phyloseq,
     plotly (>= 4.10.4),
+    purrr,
+    readr,
+    robis,
+    scico,
+    sf,
     shiny,
+    shinycssloaders,
     shinyjs,
     shinyWidgets,
+    stringr,
+    taxplore,
+    tidyr,
     tinytex,
     vegan,
+    wesanderson,
+    worrms,
     writexl
 Remotes:
     trafficonese/leaflet.extras,
-    AnaisLacoursiereRoussel/GOTeDNA
+    AnaisLacoursiereRoussel/GOTeDNA,
+    markschl/taxplore
 RoxygenNote: 7.3.3
 LazyLoad: yes
 VignetteBuilder:
