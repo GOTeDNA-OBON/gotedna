@@ -385,7 +385,7 @@ width: 100%;
 
 /* IUCN hover when ON */
 .filter-btn.btn-iucn-on:hover{
-  background-color: darkred!important;
+  background-color: #D10000 !important;
   border-color: black !important;
   color: white;
 }
