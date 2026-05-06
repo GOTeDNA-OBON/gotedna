@@ -415,7 +415,7 @@ $(function(){
                 # --- Row 3: 2 across ---
                 div(
                   class = "filter-btn-grid-3",
-                  actionButton("IUCN", "IUCN", title="IUCN Redlist", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
+                  actionButton("IUCN", "IUCN", title="IUCN Red List", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                   actionButton("SARA", "SARA", title="Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                   actionButton("AIS",  "AIS",  title="Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
                 ),
@@ -434,7 +434,7 @@ $(function(){
         id = "sec_sara", class = "scroll-section",
         tabsetPanel(
           tabPanel("Detection Details",                                DT::DTOutput("detections_tbl")),
-          tabPanel("IUCN Redlist Details",                             DT::DTOutput("iucn_details")),
+          tabPanel("IUCN Red List Details",                             DT::DTOutput("iucn_details")),
           tabPanel("Species at Risk Act (SARA): Schedule 1-3 Details", DT::DTOutput("sara_details")),
           tabPanel("Aquatic Invasive Species (AIS) Details",           DT::DTOutput("ais_details"))
         )
@@ -2325,7 +2325,7 @@ app_b_server <- function(input, output, session){
       colnames = c(
         "Species",
         # "Common Name",
-        "IUCN Redlist Category",
+        "IUCN Red List Category",
         "Number of Detections",
         "Number of Samples",
         "Samples",
