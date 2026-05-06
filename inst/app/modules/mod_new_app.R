@@ -414,7 +414,8 @@ $(function(){
 
                 # --- Row 3: 2 across ---
                 div(
-                  class = "filter-btn-grid-2",
+                  class = "filter-btn-grid-3",
+                  actionButton("IUCN", "IUCN", title="IUCN Redlist", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                   actionButton("SARA", "SARA", title="Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                   actionButton("AIS",  "AIS",  title="Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
                 ),
@@ -432,9 +433,10 @@ $(function(){
       div(
         id = "sec_sara", class = "scroll-section",
         tabsetPanel(
-          tabPanel("Detection Details",              DT::DTOutput("detections_tbl")),
-          tabPanel("Species at Risk Act (SARA): Schedule 1 Details", DT::DTOutput("sara_details")),
-          tabPanel("Aquatic Invasive Species (AIS) Details",             DT::DTOutput("ais_details"))
+          tabPanel("Detection Details",                                DT::DTOutput("detections_tbl")),
+          tabPanel("IUCN Redlist Details",                             DT::DTOutput("iucn_details")),
+          tabPanel("Species at Risk Act (SARA): Schedule 1-3 Details", DT::DTOutput("sara_details")),
+          tabPanel("Aquatic Invasive Species (AIS) Details",           DT::DTOutput("ais_details"))
         )
       ),
 
@@ -752,6 +754,7 @@ app_b_server <- function(input, output, session){
         occurrenceID = as.character(occurrenceID),
         samp_name = as.character(samp_name),
         scientificName = as.character(scientificName),
+        category = if ("category" %in% names(.)) as.character(category) else NA_character_,
         year = as.character(year),
         month = as.character(month),
         target_gene = as.character(target_gene),
@@ -1031,23 +1034,25 @@ app_b_server <- function(input, output, session){
 
   species_cache <- reactiveValues(data = list())
 
-  make_species_cache_key <- function(selected_key, year, groups, sara_on, ais_on) {
+  make_species_cache_key <- function(selected_key, year, groups, iucn_on, sara_on, ais_on) {
     paste(
       selected_key,
       year,
       paste(sort(groups), collapse = "|"),
+      paste0("iucn=", iucn_on),
       paste0("sara=", sara_on),
       paste0("ais=", ais_on),
       sep = "~~"
     )
   }
 
-  get_species_by_layer_cached <- function(selected_key, det_sf, year, groups, sara_on, ais_on) {
+  get_species_by_layer_cached <- function(selected_key, det_sf, year, groups, iucn_on, sara_on, ais_on) {
 
     cache_key <- make_species_cache_key(
       selected_key = selected_key,
       year         = year,
       groups       = groups,
+      iucn_on      = iucn_on,
       sara_on      = sara_on,
       ais_on       = ais_on
     )
@@ -1937,10 +1942,26 @@ app_b_server <- function(input, output, session){
     if (length(cur) == 0) "All" else paste(cur, collapse = " + ")
   })
 
-  # ---- SARA/AIS sets + toggles (assumes SARA & AIS exist globally) ----
+  # ---- IUCN/SARA/AIS sets + toggles (assumes IUCN, SARA & AIS exist globally) ----
+  iucn_set <- reactive({
+    df <- selection_map_df()
+
+    if (is.null(df) || nrow(df) == 0 || !"category" %in% names(df)) {
+      return(character(0))
+    }
+
+    df %>%
+      dplyr::filter(!is.na(category), trimws(as.character(category)) != "") %>%
+      dplyr::pull(scientificName) %>%
+      unique() %>%
+      na.omit() %>%
+      as.character()
+  })
+
   sara_set <- reactive(unique(na.omit(SARA$Scientific.Name)))
   ais_set  <- reactive(unique(na.omit(AIS$Scientific.Name)))  # adjust column if needed
 
+  filter_iucn_on <- reactiveVal(FALSE)
   filter_sara_on <- reactiveVal(FALSE)
   filter_ais_on  <- reactiveVal(FALSE)
 
@@ -1953,6 +1974,7 @@ app_b_server <- function(input, output, session){
     if ("scientificName" %in% names(occ_all)) {
       spp_keep <- character(0)
 
+      if (isTRUE(filter_iucn_on())) spp_keep <- union(spp_keep, iucn_set())
       if (isTRUE(filter_sara_on())) spp_keep <- union(spp_keep, sara_set())
       if (isTRUE(filter_ais_on()))  spp_keep <- union(spp_keep, ais_set())
 
@@ -2172,6 +2194,13 @@ app_b_server <- function(input, output, session){
       dplyr::arrange(dplyr::coalesce(worms_valid_name, scientificName))
   })
 
+
+  observeEvent(input$IUCN, {
+    new_state <- !isTRUE(filter_iucn_on())
+    filter_iucn_on(new_state)
+    if (new_state) shinyjs::addClass("IUCN", "btn-iucn-on") else shinyjs::removeClass("IUCN", "btn-iucn-on")
+  })
+
   observeEvent(input$SARA, {
     new_state <- !isTRUE(filter_sara_on())
     filter_sara_on(new_state)
@@ -2203,12 +2232,13 @@ app_b_server <- function(input, output, session){
   # UI
 
   apply_interest_filter <- function(spp_vec) {
-    if (!isTRUE(filter_sara_on()) && !isTRUE(filter_ais_on())) {
+    if (!isTRUE(filter_iucn_on()) && !isTRUE(filter_sara_on()) && !isTRUE(filter_ais_on())) {
       return(spp_vec)
     }
 
     keep <- character(0)
 
+    if (isTRUE(filter_iucn_on())) keep <- union(keep, iucn_set())
     if (isTRUE(filter_sara_on())) keep <- union(keep, sara_set())
     if (isTRUE(filter_ais_on()))  keep <- union(keep, ais_set())
 
@@ -2217,9 +2247,101 @@ app_b_server <- function(input, output, session){
 
   active_filters_label <- reactive({
     labs <- c()
+    if (isTRUE(filter_iucn_on())) labs <- c(labs, "IUCN")
     if (isTRUE(filter_sara_on())) labs <- c(labs, "SARA")
     if (isTRUE(filter_ais_on()))  labs <- c(labs, "AIS")
     if (length(labs) == 0) "None" else paste(labs, collapse = " + ")
+  })
+
+  output$iucn_details <- DT::renderDT({
+    if (!isTRUE(filter_iucn_on())) {
+      return(DT::datatable(
+        data.frame(Message = "Select the “IUCN” button to view species at risk details."),
+        rownames = FALSE,
+        options = list(dom = "t")
+      ))
+    }
+
+    det <- selection_panel_df()
+    if (is.null(det) || nrow(det) == 0) {
+      return(DT::datatable(
+        data.frame(Message = "No detections in the current selection."),
+        rownames = FALSE,
+        options = list(dom = "t")
+      ))
+    }
+
+    det <- det %>%
+      dplyr::mutate(scientificName = as.character(scientificName)) %>%
+      dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+
+    if (nrow(det) == 0) {
+      return(DT::datatable(
+        data.frame(Message = "No IUCN detections for this selection."),
+        rownames = FALSE,
+        options = list(dom = "t")
+      ))
+    }
+
+    out <- det %>%
+      dplyr::group_by(scientificName, category) %>%
+      dplyr::summarise(
+        # Common.Name  = paste(sort(unique(na.omit(Common.Name))), collapse = " |OR| "),
+        n_detections = dplyr::n(),
+        n_samples    = dplyr::n_distinct(samp_name),
+        samples      = paste(sort(unique(samp_name)), collapse = ", "),
+        years        = paste(sort(unique(na.omit(year))), collapse = ", "),
+        months       = paste(sort(unique(na.omit(month))), collapse = ", "),
+        markers      = paste(sort(unique(na.omit(target_gene))), collapse = ", "),
+        primers      = paste(
+          sort(unique(na.omit(
+            paste(
+              trimws(pcr_primer_name_forward),
+              trimws(pcr_primer_name_reverse),
+              sep = " | "
+            )
+          ))),
+          collapse = ", "
+        ),
+        .groups = "drop"
+      ) %>%
+      dplyr::select(
+        scientificName,
+        # Common.Name,
+        category,
+        n_detections,
+        n_samples,
+        samples,
+        years,
+        months,
+        markers,
+        primers
+      ) %>%
+      dplyr::arrange(category, scientificName)
+
+    DT::datatable(
+      out,
+      rownames = FALSE,
+      colnames = c(
+        "Species",
+        # "Common Name",
+        "IUCN Redlist Category",
+        "Number of Detections",
+        "Number of Samples",
+        "Samples",
+        "Years",
+        "Months",
+        "Target Genes",
+        "Primers"
+      ),
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        autoWidth = FALSE,
+        scrollCollapse = TRUE
+      ),
+      class = "nowrap"
+    )
   })
 
   output$sara_details <- DT::renderDT({
@@ -2246,7 +2368,7 @@ app_b_server <- function(input, output, session){
 
     if (nrow(det) == 0) {
       return(DT::datatable(
-        data.frame(Message = "No SARA Schedule 1 detections for this selection."),
+        data.frame(Message = "No SARA detections for this selection."),
         rownames = FALSE,
         options = list(dom = "t")
       ))
@@ -4863,6 +4985,7 @@ const obs = new MutationObserver(() => {
         det_sf       = inside,
         year         = yr,
         groups       = active_groups(),
+        iucn_on      = isTRUE(filter_iucn_on()),
         sara_on      = isTRUE(filter_sara_on()),
         ais_on       = isTRUE(filter_ais_on())
       )
@@ -4908,6 +5031,7 @@ const obs = new MutationObserver(() => {
         det_sf       = inside,
         year         = yr,
         groups       = active_groups(),
+        iucn_on      = isTRUE(filter_iucn_on()),
         sara_on      = isTRUE(filter_sara_on()),
         ais_on       = isTRUE(filter_ais_on())
       )
@@ -4942,6 +5066,7 @@ const obs = new MutationObserver(() => {
       det_sf       = det,
       year         = yr,
       groups       = active_groups(),
+      iucn_on      = isTRUE(filter_iucn_on()),
       sara_on      = isTRUE(filter_sara_on()),
       ais_on       = isTRUE(filter_ais_on())
     )

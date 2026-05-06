@@ -312,14 +312,14 @@ width: 100%;
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
       }
-      .filter-btn-grid-2{
+      .filter-btn-grid-3{
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
       @media (max-width: 500px){
         .filter-btn-grid-4{ grid-template-columns: repeat(2, 1fr); }
-        .filter-btn-grid-2{ grid-template-columns: repeat(2, 1fr); }
+        .filter-btn-grid-3{ grid-template-columns: repeat(3, 1fr); }
       }
       .filter-btn{
         width: 100% !important;
@@ -374,6 +374,20 @@ width: 100%;
   background-color: #ABDDDE !important;
   border-color: #046c9a !important;
   color: black;
+}
+
+/* IUCN button */
+.filter-btn.btn-iucn-on{
+  background-color: red !important;
+  border-color: black !important;
+  color: white;
+}
+
+/* IUCN hover when ON */
+.filter-btn.btn-iucn-on:hover{
+  background-color: darkred!important;
+  border-color: black !important;
+  color: white;
 }
 
 /* SARA / AIS buttons */
@@ -776,7 +790,7 @@ table.dataTable.nowrap th {
 }
 
 #floating_panel .filter-btn-grid-4,
-#floating_panel .filter-btn-grid-2{
+#floating_panel .filter-btn-grid-3{
   gap: calc(8px * var(--ui-scale)) !important;
 }
 
