@@ -1546,9 +1546,18 @@ app_b_server <- function(input, output, session){
     sort(unique(c(base_groups, drawn_groups)))
   })
 
+  #AIS icon for marker
+  ais_icon <- leaflet::makeIcon(
+    iconUrl = "img/species_buttons/invasive_symbol.png",
+    iconWidth = 28,
+    iconHeight = 28,
+    iconAnchorX = 14,
+    iconAnchorY = 14
+  )
+
   # redraw points when year changes
   observeEvent(
-    list(sel_year_chr(), sampling_points_layer_on()),
+    list(sel_year_chr(), sampling_points_layer_on(), filter_ais_on()),
     {
       proxy <- leafletProxy("map")
 
@@ -1566,22 +1575,46 @@ app_b_server <- function(input, output, session){
       }
 
       proxy %>%
-        clearGroup("Sampling Points") %>%
-        addCircleMarkers(
-          data        = pts,
-          group       = "Sampling Points",
-          radius      = 2,
-          stroke      = TRUE,
-          weight      = 1,
-          opacity     = 1,
-          fillOpacity = 0.8,
-          options     = pathOptions(pane = "pane_points"),
-          label       = ~paste0(
-            "Marker: ", target_gene,
-            ifelse(is.na(year), "", paste0(" | Year: ", year)),
-            ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+        clearGroup("Sampling Points")
+
+      if (isTRUE(filter_ais_on())) {
+
+        # Only AIS species
+        pts_ais <- pts %>%
+          dplyr::filter(scientificName %in% ais_set())
+
+        proxy %>%
+          addMarkers(
+            data  = pts_ais,
+            icon  = ais_icon,
+            group = "Sampling Points",
+            options = markerOptions(pane = "pane_points"),
+            label = ~paste0(
+              scientificName,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
           )
-        )
+
+      } else {
+
+        proxy %>%
+          addCircleMarkers(
+            data        = pts,
+            group       = "Sampling Points",
+            radius      = 2,
+            stroke      = TRUE,
+            weight      = 1,
+            opacity     = 1,
+            fillOpacity = 0.8,
+            options     = pathOptions(pane = "pane_points"),
+            label       = ~paste0(
+              "Marker: ", target_gene,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
+          )
+      }
     },
     ignoreInit = TRUE
   )
