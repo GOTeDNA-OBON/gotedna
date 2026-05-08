@@ -260,16 +260,20 @@ $(function(){
 
       # ---- MAP SECTION ----
       div(
-        id = "sec_map", class = "scroll-section",
+        id = "sec_map",
+        class = "scroll-section",
+
         div(
           id = "map_wrap",
+
+          leafletOutput(
+            "map",
+            height = "calc(100vh - 120px)"
+          ),
+
           div(
-            class = "map-spinner-wrap",
-            shinycssloaders::withSpinner(
-              leafletOutput("map"),
-              type = 4,
-              proxy.height = "100%"
-            )
+            id = "map_loading_overlay",
+            div(class = "loader")
           ),
 
           div(
@@ -402,10 +406,10 @@ $(function(){
                     "total_plants",
                     label = tags$img(
                       src = "img/species_buttons/plant.png",
-                      alt = "Plants",
+                      alt = "Plants & Algae",
                       style = "height:40px;"  # adjust as needed
                     ),
-                    title = "Plants",
+                    title = "Plants & Algae",
                     class = "btn btn-default btn-secondary filter-btn"
                   ),
                 ),
@@ -443,7 +447,7 @@ $(function(){
       # ---- DATA SELECTION SECTION ----
       div(
         id = "sec_datsel", class = "scroll-section",
-        h3("Data Selection and Download (Optional)"),
+        h3("Data Selection and Download"),
 
         div(
           class = "data-select-grid",
@@ -774,15 +778,40 @@ app_b_server <- function(input, output, session){
     df <- selection_map_df()
     if (is.null(df) || nrow(df) == 0) return(df)
 
-    apply_species_filters(df)
+    live_filters <- list(
+      year = sel_year_chr(),
+      groups = active_groups(),
+      iucn_on = filter_iucn_on(),
+      sara_on = filter_sara_on(),
+      ais_on = filter_ais_on()
+    )
+
+    apply_species_filters(df, live_filters)
   })
 
+  # ---- confirmed diversity controls ----
+  div_filters <- reactiveVal(
+    list(
+      target_gene = character(0),
+      primers     = character(0),
+      polygons      = character(0)
+    )
+  )
+
   selection_selection_df <- reactive({
-    df <- selection_panel_df()
+    req(confirmed_map_filters())
+
+    df <- selection_map_df()
+
+    df <- apply_species_filters(
+      df,
+      confirmed_map_filters()
+    )
     if (is.null(df) || nrow(df) == 0) return(df)
 
     apply_diversity_dropdown_filters(df, div_filters())
-  })
+  }) %>%
+    bindEvent(input$div_apply, ignoreInit = FALSE)
 
   panel_ids <- reactive({
     df <- selection_panel_df()
@@ -835,7 +864,8 @@ app_b_server <- function(input, output, session){
     }
 
     apply_diversity_dropdown_filters(df, div_filters())
-  })
+  }) %>%
+    bindEvent(input$div_apply, ignoreInit = FALSE)
 
   polygon_membership_base_df <- reactive({
     pts <- diversity_beta_df
@@ -920,7 +950,8 @@ app_b_server <- function(input, output, session){
       ) %>%
       dplyr::slice(1) %>%
       dplyr::ungroup()
-  })
+  }) %>%
+    bindEvent(input$div_apply, ignoreInit = FALSE)
 
 
   ############################################################
@@ -1745,17 +1776,12 @@ app_b_server <- function(input, output, session){
   }
 
   selected_detections <- reactive({
-    yr <- sel_year_chr()
     click <- input$map_shape_click
     sel_id <- selected_draw_id()
 
     # ---- drawn polygon: still needs spatial filtering ----
     if (!is.null(sel_id)) {
-      pts <- if (yr == "All") {
-        species_sf_all
-      } else {
-        species_sf_by_year[[yr]] %||% species_sf_all[0, ]
-      }
+      pts <- species_sf_all
 
       g <- selection_geom()
       if (is.null(g) || nrow(pts) == 0) {
@@ -1789,9 +1815,6 @@ app_b_server <- function(input, output, session){
       p_name <- parts[2]
 
       pts <- species_sf_all_with_poly
-      if (yr != "All") {
-        pts <- pts %>% dplyr::filter(as.character(year) == yr)
-      }
 
       return(
         pts %>%
@@ -1803,9 +1826,6 @@ app_b_server <- function(input, output, session){
     cid <- suppressWarnings(as.integer(id))
     if (!is.na(cid)) {
       pts <- species_sf_all_with_cell
-      if (yr != "All") {
-        pts <- pts %>% dplyr::filter(as.character(year) == yr)
-      }
 
       return(
         pts %>%
@@ -1828,7 +1848,10 @@ app_b_server <- function(input, output, session){
       "Birds"         = list(col = "class",   vals = c("Aves")),
       "Molluscs"      = list(col = "phylum",  vals = c("Mollusca")),
       "Arthropods"    = list(col = "phylum",  vals = c("Arthropoda")),
-      "Plants"        = list(col = "kingdom", vals = c("Plantae"))
+      "Plants & Algae"        = list(
+        list(col = "kingdom", vals = c("Plantae")),
+        list(col = "class",   vals = c("Phaeophyceae"))
+      )
     )
 
     groups <- as.character(groups %||% character(0))
@@ -1869,7 +1892,7 @@ app_b_server <- function(input, output, session){
   observeEvent(input$total_birds,      { toggle_group("Birds") }, ignoreInit = TRUE)
   observeEvent(input$total_molluscs,   { toggle_group("Molluscs") }, ignoreInit = TRUE)
   observeEvent(input$total_arthropods, { toggle_group("Arthropods") }, ignoreInit = TRUE)
-  observeEvent(input$total_plants,     { toggle_group("Plants") }, ignoreInit = TRUE)
+  observeEvent(input$total_plants,     { toggle_group("Plants & Algae") }, ignoreInit = TRUE)
 
   sync_group_button_classes <- function() {
     cur <- active_groups()
@@ -1882,7 +1905,7 @@ app_b_server <- function(input, output, session){
       total_birds      = "Birds",
       total_molluscs   = "Molluscs",
       total_arthropods = "Arthropods",
-      total_plants     = "Plants"
+      total_plants     = "Plants & Algae"
     )
 
     for (btn_id in names(btn_map)) {
@@ -1926,21 +1949,52 @@ app_b_server <- function(input, output, session){
   filter_sara_on <- reactiveVal(FALSE)
   filter_ais_on  <- reactiveVal(FALSE)
 
-  apply_species_filters <- function(occ_all) {
+  confirmed_map_filters <- eventReactive(input$div_apply, {
+    list(
+      year = sel_year_chr(),
+      groups = active_groups(),
+      iucn_on = filter_iucn_on(),
+      sara_on = filter_sara_on(),
+      ais_on = filter_ais_on()
+    )
+  }, ignoreNULL = FALSE)
 
-    # 1) group buttons
-    occ_all <- apply_group_filter(occ_all, active_groups())
+  apply_species_filters <- function(occ_all, filters = NULL) {
 
-    # 2) SARA/AIS union logic
+    if (is.null(filters)) {
+      groups   <- active_groups()
+      iucn_on  <- filter_iucn_on()
+      sara_on  <- filter_sara_on()
+      ais_on   <- filter_ais_on()
+    } else {
+      groups   <- filters$groups
+      iucn_on  <- filters$iucn_on
+      sara_on  <- filters$sara_on
+      ais_on   <- filters$ais_on
+    }
+
+    if (!is.null(filters)) {
+      yr <- filters$year
+
+      if (!is.null(yr) && yr != "All" && "year" %in% names(occ_all)) {
+        occ_all <- occ_all %>%
+          dplyr::filter(as.character(year) == yr)
+      }
+    }
+
+    occ_all <- apply_group_filter(occ_all, groups)
+
     if ("scientificName" %in% names(occ_all)) {
+
       spp_keep <- character(0)
 
-      if (isTRUE(filter_iucn_on())) spp_keep <- union(spp_keep, iucn_set())
-      if (isTRUE(filter_sara_on())) spp_keep <- union(spp_keep, sara_set())
-      if (isTRUE(filter_ais_on()))  spp_keep <- union(spp_keep, ais_set())
+      if (isTRUE(iucn_on)) spp_keep <- union(spp_keep, iucn_set())
+      if (isTRUE(sara_on)) spp_keep <- union(spp_keep, sara_set())
+      if (isTRUE(ais_on))  spp_keep <- union(spp_keep, ais_set())
 
       if (length(spp_keep) > 0) {
-        occ_all <- occ_all %>% dplyr::filter(scientificName %in% spp_keep)
+        occ_all <- occ_all %>%
+          dplyr::filter(scientificName %in% spp_keep)
       }
     }
 
@@ -1952,8 +2006,8 @@ app_b_server <- function(input, output, session){
     iconUrl = "img/species_buttons/iucn-red-list-logo-red.png",
     iconWidth = 20,
     iconHeight = 20,
-    iconAnchorX = 16,
-    iconAnchorY = 14
+    iconAnchorX = 14,
+    iconAnchorY = 14,
   )
 
   #SARA icon for marker
@@ -2016,7 +2070,7 @@ app_b_server <- function(input, output, session){
 
       if (isTRUE(filter_sara_on())) {
         pts_sara <- pts %>%
-          dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+          dplyr::filter(scientificName %in% sara_set())
 
         proxy %>%
           addMarkers(
@@ -2198,15 +2252,6 @@ app_b_server <- function(input, output, session){
       server   = TRUE
     )
   }, ignoreInit = FALSE)
-
-  # ---- confirmed diversity controls ----
-  div_filters <- reactiveVal(
-    list(
-      target_gene = character(0),
-      primers     = character(0),
-      polygons      = character(0)
-    )
-  )
 
   #taxonomic selection reactive #NEW
   active_tax_rank <- reactive({
@@ -3256,7 +3301,14 @@ const obs = new MutationObserver(() => {
                       ")
 
     m
-  })
+  }) %>%
+    htmlwidgets::onRender("
+    function(el, x) {
+      setTimeout(function(){
+        $('#map_loading_overlay').fadeOut(250);
+      }, 300);
+    }
+  ")
 
   observe({
     polys <- drawn_polys()
@@ -3885,7 +3937,8 @@ const obs = new MutationObserver(() => {
       dist = d,
       meta = meta2
     )
-  })
+  }) %>%
+    bindEvent(input$div_apply, ignoreInit = FALSE)
 
   beta_stats <- reactive({
     dat <- beta_stats_data()
@@ -4208,7 +4261,8 @@ const obs = new MutationObserver(() => {
       dplyr::mutate(
         group_label = factor(group_label, levels = c(base_lvls, draw_lvls))
       )
-  })
+  }) %>%
+    bindEvent(input$div_apply, ignoreInit = FALSE)
 
   #-----------------------------------------------------------------------------
   alpha_stats <- reactive({
