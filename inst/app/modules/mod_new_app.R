@@ -1546,78 +1546,6 @@ app_b_server <- function(input, output, session){
     sort(unique(c(base_groups, drawn_groups)))
   })
 
-  #AIS icon for marker
-  ais_icon <- leaflet::makeIcon(
-    iconUrl = "img/species_buttons/invasive_symbol.png",
-    iconWidth = 28,
-    iconHeight = 28,
-    iconAnchorX = 14,
-    iconAnchorY = 14
-  )
-
-  # redraw points when year changes
-  observeEvent(
-    list(sel_year_chr(), sampling_points_layer_on(), filter_ais_on()),
-    {
-      proxy <- leafletProxy("map")
-
-      if (!isTRUE(sampling_points_layer_on())) {
-        proxy %>% clearGroup("Sampling Points")
-        return(NULL)
-      }
-
-      yr <- sel_year_chr()
-      pts <- sampling_pts
-
-      # Year filter ONLY
-      if (yr != "All") {
-        pts <- pts %>% dplyr::filter(as.character(year) == yr)
-      }
-
-      proxy %>%
-        clearGroup("Sampling Points")
-
-      if (isTRUE(filter_ais_on())) {
-
-        # Only AIS species
-        pts_ais <- pts %>%
-          dplyr::filter(scientificName %in% ais_set())
-
-        proxy %>%
-          addMarkers(
-            data  = pts_ais,
-            icon  = ais_icon,
-            group = "Sampling Points",
-            options = markerOptions(pane = "pane_points"),
-            label = ~paste0(
-              scientificName,
-              ifelse(is.na(year), "", paste0(" | Year: ", year)),
-              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
-            )
-          )
-
-      } else {
-
-        proxy %>%
-          addCircleMarkers(
-            data        = pts,
-            group       = "Sampling Points",
-            radius      = 2,
-            stroke      = TRUE,
-            weight      = 1,
-            opacity     = 1,
-            fillOpacity = 0.8,
-            options     = pathOptions(pane = "pane_points"),
-            label       = ~paste0(
-              "Marker: ", target_gene,
-              ifelse(is.na(year), "", paste0(" | Year: ", year)),
-              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
-            )
-          )
-      }
-    },
-    ignoreInit = TRUE
-  )
 
   #Monthly sampling
   monthly_sample_counts <- reactive({
@@ -2018,6 +1946,131 @@ app_b_server <- function(input, output, session){
 
     occ_all
   }
+
+  #IUCN icon for marker
+  iucn_icon <- leaflet::makeIcon(
+    iconUrl = "img/species_buttons/iucn-red-list-logo-red.png",
+    iconWidth = 20,
+    iconHeight = 20,
+    iconAnchorX = 16,
+    iconAnchorY = 14
+  )
+
+  #SARA icon for marker
+  sara_icon <- leaflet::makeIcon(
+    iconUrl = "img/species_buttons/SARA_icon.png",
+    iconWidth = 20,
+    iconHeight = 20,
+    iconAnchorX = 14,
+    iconAnchorY = 14
+  )
+
+  #AIS icon for marker
+  ais_icon <- leaflet::makeIcon(
+    iconUrl = "img/species_buttons/invasive_symbol.png",
+    iconWidth = 28,
+    iconHeight = 28,
+    iconAnchorX = 14,
+    iconAnchorY = 14
+  )
+
+  # redraw points when year changes
+  observeEvent(
+    list(sel_year_chr(), sampling_points_layer_on(), filter_iucn_on(), filter_sara_on(), filter_ais_on()),
+    {
+      proxy <- leafletProxy("map")
+
+      if (!isTRUE(sampling_points_layer_on())) {
+        proxy %>% clearGroup("Sampling Points")
+        return(NULL)
+      }
+
+      yr <- sel_year_chr()
+      pts <- sampling_pts
+
+      # Year filter ONLY
+      if (yr != "All") {
+        pts <- pts %>% dplyr::filter(as.character(year) == yr)
+      }
+
+      proxy %>% clearGroup("Sampling Points")
+
+      if (isTRUE(filter_iucn_on())) {
+        pts_iucn <- pts %>%
+          dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+
+        proxy %>%
+          addMarkers(
+            data = pts_iucn,
+            icon = iucn_icon,
+            group = "Sampling Points",
+            options = markerOptions(pane = "pane_points"),
+            label = ~paste0(
+              scientificName,
+              ifelse(is.na(category), "", paste0(" | IUCN: ", category)),
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
+          )
+      }
+
+      if (isTRUE(filter_sara_on())) {
+        pts_sara <- pts %>%
+          dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+
+        proxy %>%
+          addMarkers(
+            data = pts_sara,
+            icon = sara_icon,
+            group = "Sampling Points",
+            options = markerOptions(pane = "pane_points"),
+            label = ~paste0(
+              scientificName,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
+          )
+      }
+
+      if (isTRUE(filter_ais_on())) {
+        pts_ais <- pts %>%
+          dplyr::filter(scientificName %in% ais_set())
+
+        proxy %>%
+          addMarkers(
+            data = pts_ais,
+            icon = ais_icon,
+            group = "Sampling Points",
+            options = markerOptions(pane = "pane_points"),
+            label = ~paste0(
+              scientificName,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
+          )
+      }
+
+      if (!isTRUE(filter_iucn_on()) && !isTRUE(filter_sara_on()) && !isTRUE(filter_ais_on())) {
+        proxy %>%
+          addCircleMarkers(
+            data = pts,
+            group = "Sampling Points",
+            radius = 2,
+            stroke = TRUE,
+            weight = 1,
+            opacity = 1,
+            fillOpacity = 0.8,
+            options = pathOptions(pane = "pane_points"),
+            label = ~paste0(
+              "Marker: ", target_gene,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
+            )
+          )
+      }
+    },
+    ignoreInit = TRUE
+  )
 
   diversity_dropdown_data <- reactive({
     df <- dplyr::bind_rows(

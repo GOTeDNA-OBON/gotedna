@@ -379,14 +379,14 @@ width: 100%;
 /* IUCN button */
 .filter-btn.btn-iucn-on{
   background-color: red !important;
-  border-color: black !important;
+  border-color:  #D10000 !important;
   color: white;
 }
 
 /* IUCN hover when ON */
 .filter-btn.btn-iucn-on:hover{
   background-color: #D10000 !important;
-  border-color: black !important;
+  border-color: #D10000 !important;
   color: white;
 }
 
