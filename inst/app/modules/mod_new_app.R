@@ -459,9 +459,8 @@ $(function(){
               "Target gene",
               choices = NULL,
               selected = NULL,
-              multiple = TRUE,
+              multiple = FALSE,
               options = list(
-                plugins = list("remove_button"),
                 placeholder = "Select target gene(s)"
               )
             )
@@ -584,9 +583,19 @@ $(function(){
           column(
             width = 8,
             offset = 2,
-            shinycssloaders::withSpinner(
+            div(
+              class = "custom-loader-wrap",
+
               plotly::plotlyOutput("alpha_boxplot", height = "700px"),
-              type = 4
+
+              div(
+                id = "alpha_loading_overlay",
+                class = "custom-loading-overlay custom-placeholder-overlay",
+                div(
+                  class = "custom-placeholder-text",
+                  "Select the Confirm button to view alpha diversity"
+                )
+              )
             )
           )
         ),
@@ -679,9 +688,19 @@ $(function(){
           column(
             width = 8,
             offset = 2,
-            shinycssloaders::withSpinner(
+            div(
+              class = "custom-loader-wrap",
+
               plotly::plotlyOutput("beta_pcoa", height = "700px"),
-              type = 4
+
+              div(
+                id = "beta_loading_overlay",
+                class = "custom-loading-overlay custom-placeholder-overlay",
+                div(
+                  class = "custom-placeholder-text",
+                  "Select the Confirm button to view beta diversity"
+                )
+              )
             )
           )
         ),
@@ -719,9 +738,19 @@ $(function(){
         id = "sec_pie", class = "scroll-section",
         h3("Taxonomic Pie Chart"),
 
-        shinycssloaders::withSpinner(
+        div(
+          class = "custom-loader-wrap",
+
           taxplore::KronaChartOutput("tax_krona", height = "800px"),
-          type = 4
+
+          # div(
+          #   id = "tax_loading_overlay",
+          #   class = "custom-loading-overlay custom-placeholder-overlay",
+          #   div(
+          #     class = "custom-placeholder-text",
+          #     "Select the Confirm button to view taxonomy"
+          #   )
+          # )
         )
       )
     )
@@ -953,6 +982,27 @@ app_b_server <- function(input, output, session){
   }) %>%
     bindEvent(input$div_apply, ignoreInit = FALSE)
 
+  observeEvent(input$div_apply, {
+
+    shinyjs::html(
+      "alpha_loading_overlay",
+      '<div class="loader"></div>'
+    )
+    shinyjs::removeClass("alpha_loading_overlay", "hidden")
+
+    shinyjs::html(
+      "beta_loading_overlay",
+      '<div class="loader"></div>'
+    )
+    shinyjs::removeClass("beta_loading_overlay", "hidden")
+#
+#     shinyjs::html(
+#       "tax_loading_overlay",
+#       '<div class="loader"></div>'
+#     )
+#     shinyjs::removeClass("tax_loading_overlay", "hidden")
+
+  }, ignoreInit = TRUE)
 
   ############################################################
 
@@ -2169,7 +2219,7 @@ app_b_server <- function(input, output, session){
       session  = session,
       inputId  = "div_target_gene",
       choices  = gene_choices,
-      selected = gene_choices,
+      selected = gene_choices[1],
       server   = TRUE
     )
   }, ignoreInit = FALSE)
@@ -3297,18 +3347,16 @@ const obs = new MutationObserver(() => {
                         if(ctrl){
                         obs.observe(ctrl, { childList: true, subtree: true });
                         }
+
+                        setTimeout(function(){
+                        $('#map_loading_overlay').fadeOut(250);
+                        }, 300);
                       }
                       ")
 
     m
-  }) %>%
-    htmlwidgets::onRender("
-    function(el, x) {
-      setTimeout(function(){
-        $('#map_loading_overlay').fadeOut(250);
-      }, 300);
-    }
-  ")
+
+  })
 
   observe({
     polys <- drawn_polys()
@@ -4713,7 +4761,14 @@ const obs = new MutationObserver(() => {
         ),
         margin = list(l = 80, r = 30, t = 40, b = 120),
         showlegend = TRUE
-      )
+      ) %>%
+      htmlwidgets::onRender("
+        function(el,x){
+          setTimeout(function(){
+            $('#beta_loading_overlay').addClass('hidden');
+          },300);
+        }
+      ")
   })
 
   make_ellipse <- function(df, conf = 0.95, npoints = 100) {
@@ -4972,7 +5027,14 @@ const obs = new MutationObserver(() => {
         ),
         margin = list(l = 80, r = 30, t = 70, b = 80),
         showlegend = TRUE
-      )
+      ) %>%
+      htmlwidgets::onRender("
+    function(el,x){
+      setTimeout(function(){
+        $('#alpha_loading_overlay').addClass('hidden');
+      },300);
+    }
+  ")
   })
 
 
@@ -5029,7 +5091,14 @@ const obs = new MutationObserver(() => {
       tax_occ_all,
       magnitude   = krona_occ_all$magnitude,
       total_label = "Sum organismQuantity"
-    )
+    ) %>%
+      htmlwidgets::onRender("
+        function(el,x){
+          setTimeout(function(){
+            $('#tax_loading_overlay').addClass('hidden');
+          },300);
+        }
+      ")
   })
 
   #Helper to generate species vectors
