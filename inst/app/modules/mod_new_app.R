@@ -458,7 +458,7 @@ $(function(){
           fluidRow(
             column(
               width = 4,
-              selectInput("req_protocol", "ProtocolID",
+              selectInput("req_protocol", "Protocol ID",
                           choices = character(0), selected = NULL, selectize = FALSE)
             ),
             column(
