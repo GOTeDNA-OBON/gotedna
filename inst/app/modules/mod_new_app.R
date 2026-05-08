@@ -248,7 +248,7 @@ $(function(){
             class = "nav navbar-nav",
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_map",    "Interactive Map")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_sara",   "Detection Details")),
-            #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Method Comparison")),
+            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Method Comparison")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_datsel", "Data Selection and Download")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_div",    "Diversity Metrics")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_pie",    "Taxonomic Pie Chart"))
@@ -441,6 +441,31 @@ $(function(){
           tabPanel("IUCN Red List Details",                             DT::DTOutput("iucn_details")),
           tabPanel("Species at Risk Act (SARA): Schedule 1-3 Details", DT::DTOutput("sara_details")),
           tabPanel("Aquatic Invasive Species (AIS) Details",           DT::DTOutput("ais_details"))
+        )
+      ),
+
+      # ---- METHOD COMPARISON SECTION ----
+      div(
+        id = "sec_method", class = "scroll-section",
+        h3("Method Comparison"),
+
+        div(
+          id = "data_request_wrap",
+          style = "padding: 10px 12px; background: rgba(255,255,255,0.92);
+               border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+               margin-bottom: 10px;",
+          h4("Data Request"),
+          fluidRow(
+            column(
+              width = 4,
+              selectInput("req_protocol", "ProtocolID",
+                          choices = character(0), selected = NULL, selectize = FALSE)
+            ),
+            column(
+              width = 8,
+              uiOutput("protocol_details")
+            )
+          )
         )
       ),
 
