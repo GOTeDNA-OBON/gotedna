@@ -248,7 +248,7 @@ $(function(){
             class = "nav navbar-nav",
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_map",    "Interactive Map")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_sara",   "Detection Details")),
-            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Method Comparison")),
+            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Explore Protocols")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_datsel", "Data Selection and Download")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_div",    "Diversity Metrics")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_pie",    "Taxonomic Pie Chart"))
@@ -444,43 +444,12 @@ $(function(){
         )
       ),
 
-      # ---- METHOD COMPARISON SECTION ----
+      # ---- Explore Protocols SECTION ----
       div(
         id = "sec_method", class = "scroll-section",
-        h3("Method Comparison"),
+        h3("Explore Protocols"),
 
-        div(
-          id = "data_request_wrap",
-          style = "padding: 10px 12px; background: rgba(255,255,255,0.92);
-               border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-               margin-bottom: 10px;",
-          h4("Data Request"),
-          fluidRow(
-            column(
-              width = 4,
-              selectInput(
-                "req_protocol",
-                "Protocol ID",
-                choices = NULL,
-                selected = NULL,
-                selectize = TRUE
-              )
-            ),
-            column(
-              width = 8,
-              uiOutput("protocol_details"),
-              plotly::plotlyOutput("protocol_nmds_plot", height = "400px"),
-              plotly::plotlyOutput("protocol_barplot", height = "350px")
-            )
-          )
-        )
-      ),
-
-      # ---- DATA SELECTION SECTION ----
-      div(
-        id = "sec_datsel", class = "scroll-section",
-        h3("Data Selection and Download"),
-
+        # ---- Row 1: target gene + primer menus ----
         div(
           class = "data-select-grid",
 
@@ -516,6 +485,65 @@ $(function(){
               actionButton("div_primer_all", "Select all", class = "btn btn-default btn-secondary btn-sm"),
               actionButton("div_primer_none", "Deselect all", class = "btn btn-default btn-secondary btn-sm")
             )
+          )
+        ),
+
+        # ---- Row 2: protocol dropdown + cards/plots ----
+        div(
+          id = "data_request_wrap",
+          class = "method-comparison-wrap",
+          h3(" "),
+
+          # h4("Data Request"),
+
+          fluidRow(
+            column(
+              width = 2,
+              selectInput(
+                "req_protocol",
+                "Protocol ID",
+                choices = NULL,
+                selected = NULL,
+                selectize = TRUE
+              )
+            ),
+
+            column(
+              width = 4,
+              uiOutput("protocol_details"),
+            ),
+
+            column(
+              width = 6,
+              plotly::plotlyOutput("protocol_nmds_plot", height = "400px"),
+              plotly::plotlyOutput("protocol_barplot", height = "350px")
+            )
+          )
+        )
+      ),
+
+      # ---- DATA SELECTION SECTION ----
+      div(
+        id = "sec_datsel", class = "scroll-section",
+        h3("Data Selection and Download"),
+
+        div(
+          class = "data-select-grid",
+
+          div(
+            class = "data-select-item",
+            shinyWidgets::pickerInput(
+              inputId = "prot_id",
+              label = "Select Protocol IDs",
+              choices = NULL,
+              selected = NULL,
+              multiple = TRUE,
+              options = shinyWidgets::pickerOptions(
+                actionsBox = TRUE,
+                liveSearch = TRUE,
+                noneSelectedText = "Select protocol ID(s)"
+              )
+            )
           ),
 
           div(
@@ -534,6 +562,18 @@ $(function(){
             div(
               style = "margin-top: 6px; font-size: 13px; color: #666;",
               "Used for diversity plots and statistics after clicking Confirm."
+            )
+          ),
+
+          div(
+            class = "data-select-item rarefaction-selection",
+            numericInput(
+              "rarefaction_depth",
+              "Rarefaction depth",
+              value = 5000,
+              min = 1,
+              max = 1000000000,
+              step = 100
             )
           ),
 
@@ -773,49 +813,96 @@ $(function(){
         div(
           class = "custom-loader-wrap",
 
-          taxplore::KronaChartOutput("tax_krona", height = "800px"),
+          taxplore::KronaChartOutput("tax_krona", height = "750px"),
 
-          # div(
-          #   id = "tax_loading_overlay",
-          #   class = "custom-loading-overlay custom-placeholder-overlay",
-          #   div(
-          #     class = "custom-placeholder-text",
-          #     "Select the Confirm button to view taxonomy"
-          #   )
-          # )
+          div(
+            id = "tax_loading_overlay",
+            class = "custom-loading-overlay custom-placeholder-overlay",
+            div(
+              class = "custom-placeholder-text",
+              "Select the Confirm button to view taxonomy"
+            )
+          )
         )
       )
     )
   )
 }
 
-app_b_server <- function(input, output, session){
+assign_protocol_ID <- function(df,
+                               protocol_columns,
+                               protocol_sheet = NULL) {
 
-  # ---- Data Request: use occ_all directly ----
+  # Remove existing protocol_ID if present
+  df <- df %>%
+    select(-any_of("protocol_ID"))
 
-  meta_all <- reactive({
+  # Get distinct protocol definitions from incoming data
+  new_protocol_combos <- df %>%
+    select(all_of(protocol_columns)) %>%
+    distinct()
 
-    df <- NULL
+  # --------------------------------------------------------------
+  # CASE 1: No existing protocol_sheet → build from scratch
+  # --------------------------------------------------------------
+  if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
 
-    if (exists("occ_all", inherits = TRUE)) {
-      df <- get("occ_all", inherits = TRUE)
-    } else if (exists("species_sf_all", inherits = TRUE)) {
-      df <- get("species_sf_all", inherits = TRUE)
-    } else if (exists("diversity_beta_df", inherits = TRUE)) {
-      df <- get("diversity_beta_df", inherits = TRUE)
+    protocol_sheet <- new_protocol_combos %>%
+      mutate(protocol_ID = row_number())
+
+  } else {
+
+    # Ensure protocol_sheet has required structure
+    required_cols <- c(protocol_columns, "protocol_ID")
+    missing_cols <- setdiff(required_cols, names(protocol_sheet))
+
+    if (length(missing_cols) > 0) {
+      stop("protocol_sheet is missing required columns: ",
+           paste(missing_cols, collapse = ", "))
     }
 
-    shiny::validate(
-      shiny::need(!is.null(df), "No source data found for protocol assignment.")
+    # --------------------------------------------------------------
+    # Add new protocol_IDs for unseen combinations
+    # --------------------------------------------------------------
+
+    unseen_protocols <- anti_join(
+      new_protocol_combos,
+      protocol_sheet %>% select(all_of(protocol_columns)),
+      by = protocol_columns
     )
+
+    if (nrow(unseen_protocols) > 0) {
+
+      max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
+
+      unseen_protocols <- unseen_protocols %>%
+        mutate(protocol_ID = row_number() + max_id)
+
+      protocol_sheet <- bind_rows(protocol_sheet, unseen_protocols)
+    }
+  }
+
+  # --------------------------------------------------------------
+  # Assign protocol_ID back to df
+  # --------------------------------------------------------------
+
+  df_with_ids <- df %>%
+    left_join(protocol_sheet, by = protocol_columns)
+
+  return(list(
+    data = df_with_ids,
+    protocol_sheet = protocol_sheet
+  ))
+}
+
+app_b_server <- function(input, output, session){
+
+  protocol_source <- reactive({
+    df <- gotedna_data$metabarcoding
 
     if (inherits(df, "sf")) {
       df <- sf::st_drop_geometry(df)
     }
-
-    shiny::validate(
-      shiny::need(nrow(df) > 0, "Protocol source data has zero rows.")
-    )
 
     protocol_columns <- c(
       "samp_size",
@@ -850,10 +937,11 @@ app_b_server <- function(input, output, session){
       protocol_sheet = NULL
     )
 
-    out$data %>%
-      dplyr::mutate(
-        ProtocolID = paste0("Protocol ", protocol_ID)
-      )
+    out$data
+  })
+
+  meta_all <- reactive({
+    protocol_source()
   })
 
   protocol_data <- reactive({
@@ -899,6 +987,10 @@ app_b_server <- function(input, output, session){
   observeEvent(protocol_summary(), {
     ps <- protocol_summary()
 
+    shiny::validate(
+      shiny::need(nrow(ps) > 0, "No protocols found.")
+    )
+
     choices <- as.list(ps$protocol_ID)
 
     names(choices) <- paste0(
@@ -907,32 +999,39 @@ app_b_server <- function(input, output, session){
       sprintf("%.1f", ps$detection_rate), "%)"
     )
 
-    updateSelectInput(
+    # ---- Single protocol dropdown ----
+    session$onFlushed(function() {
+
+      current <- suppressWarnings(as.numeric(isolate(input$req_protocol)))
+
+      selected_id <- if (
+        length(current) == 1 &&
+        !is.na(current) &&
+        current %in% ps$protocol_ID
+      ) {
+        current
+      } else {
+        ps$protocol_ID[1]
+      }
+
+      updateSelectInput(
+        session,
+        "req_protocol",
+        choices = choices,
+        selected = selected_id
+      )
+
+    }, once = TRUE)
+
+    # ---- Multi-protocol picker ----
+    shinyWidgets::updatePickerInput(
       session,
-      "req_protocol",
+      inputId = "prot_id",
       choices = choices,
-      selected = ps$protocol_ID[1]
+      selected = NULL
     )
+
   }, ignoreInit = FALSE)
-
-  # Populate ProtocolID dropdown (filtered by selected Location)
-  observe({
-    df <- meta_all()
-
-    prots <- df %>%
-      dplyr::filter(!is.na(ProtocolID), ProtocolID != "") %>%
-      dplyr::distinct(protocol_ID, ProtocolID) %>%
-      dplyr::arrange(protocol_ID)
-
-    choices <- stats::setNames(prots$ProtocolID, prots$ProtocolID)
-
-    updateSelectInput(
-      session,
-      "req_protocol",
-      choices = choices,
-      selected = choices[[1]]
-    )
-  })
 
   # helper: pick a single display value (unique or collapse)
   pick_display <- function(x) {
@@ -943,25 +1042,28 @@ app_b_server <- function(input, output, session){
     if (length(ux) == 1) ux else paste(ux, collapse = " | ")
   }
 
-  # rows matching current Location + ProtocolID
+  # rows matching current ProtocolID
   selected_protocol_rows <- reactive({
-    req(input$req_protocol)
+    ps <- protocol_summary()
+
+    selected_id <- suppressWarnings(as.numeric(input$req_protocol))
+
+    if (is.na(selected_id) && nrow(ps) > 0) {
+      selected_id <- ps$protocol_ID[1]
+    }
 
     protocol_info() %>%
-      dplyr::filter(protocol_ID == as.numeric(input$req_protocol))
+      dplyr::filter(protocol_ID == selected_id)
   })
+
+  div_unlocked <- reactiveVal(FALSE)
 
   # --- base protocol per Location (the "starting choice") ---
   base_protocol <- reactiveVal(NULL)
 
-  observeEvent(meta_all(), {
-    prots <- meta_all() %>%
-      dplyr::filter(!is.na(ProtocolID), ProtocolID != "") %>%
-      dplyr::distinct(ProtocolID) %>%
-      dplyr::arrange(ProtocolID) %>%
-      dplyr::pull(ProtocolID)
-
-    base_protocol(if (length(prots)) prots[[1]] else NULL)
+  observeEvent(protocol_summary(), {
+    ps <- protocol_summary()
+    base_protocol(if (nrow(ps) > 0) ps$protocol_ID[1] else NULL)
   }, ignoreInit = FALSE)
 
   # live details card
@@ -975,8 +1077,7 @@ app_b_server <- function(input, output, session){
     method_groups <- list(
       "Field Methods" = c("samp_size","size_frac","filter_material","samp_mat_process",
                           "minimumDepthInMeters","maximumDepthInMeters"),
-      "Storage Methods" = c("samp_store_temp","samp_store_sol"),
-      "Lab Methods" = c("target_gene", "pcr_primer_name_forward", "pcr_primer_name_reverse", "pcr_primer_forward", "pcr_primer_reverse", "nucl_acid_ext_kit"),
+      "Storage and Extraction Methods" = c("samp_store_temp","samp_store_sol", "nucl_acid_ext_kit"),
       "Library Preparation" = c("platform","instrument","seq_kit"),
       "Bioinformatic Methods" = c("otu_db","tax_assign_cat","otu_seq_comp_appr")
     )
@@ -993,8 +1094,8 @@ app_b_server <- function(input, output, session){
     bp <- base_protocol()
     df_base <- NULL
     if (!is.null(bp) && nzchar(bp)) {
-      df_base <- meta_all() %>%
-        dplyr::filter(ProtocolID == bp)
+      df_base <- protocol_info() %>%
+        dplyr::filter(protocol_ID == as.numeric(bp))
       if (nrow(df_base) == 0) df_base <- NULL
     }
 
@@ -1053,7 +1154,13 @@ app_b_server <- function(input, output, session){
       dplyr::pull(protocol_ID)
 
     filtered_protocol_sheet <- protocol_info() %>%
-      dplyr::filter(protocol_ID %in% top_ids)
+      dplyr::filter(protocol_ID %in% top_ids) %>%
+      dplyr::mutate(
+        dplyr::across(
+          where(~ inherits(.x, c("Date", "POSIXct", "POSIXlt"))),
+          as.character
+        )
+      )
 
     protocol_nmds(filtered_protocol_sheet)
   })
@@ -1148,11 +1255,17 @@ app_b_server <- function(input, output, session){
       df,
       confirmed_map_filters()
     )
+
     if (is.null(df) || nrow(df) == 0) return(df)
 
-    apply_diversity_dropdown_filters(df, div_filters())
-  }) %>%
-    bindEvent(input$div_apply, ignoreInit = FALSE)
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0),
+      polygons    = input$div_compare_polygons %||% character(0)
+    )
+
+    apply_diversity_dropdown_filters(df, live_filters)
+  })
 
   panel_ids <- reactive({
     df <- selection_panel_df()
@@ -1204,9 +1317,15 @@ app_b_server <- function(input, output, session){
       return(df)
     }
 
-    apply_diversity_dropdown_filters(df, div_filters())
-  }) %>%
-    bindEvent(input$div_apply, ignoreInit = FALSE)
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0),
+      polygons    = input$div_compare_polygons %||% character(0)
+    )
+
+    df <- apply_diversity_dropdown_filters(df, live_filters)
+    apply_compare_polygon_filter(df, live_filters$polygons)
+  })
 
   polygon_membership_base_df <- reactive({
     pts <- diversity_beta_df
@@ -1277,7 +1396,15 @@ app_b_server <- function(input, output, session){
       return(df)
     }
 
-    df <- apply_diversity_dropdown_filters(df, div_filters())
+    #df <- apply_diversity_dropdown_filters(df, div_filters())
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0),
+      polygons    = input$div_compare_polygons %||% character(0)
+    )
+
+    df <- apply_diversity_dropdown_filters(df, live_filters)
+    df <- apply_compare_polygon_filter(df, live_filters$polygons)
 
     if (nrow(df) == 0) {
       return(df)
@@ -1291,10 +1418,11 @@ app_b_server <- function(input, output, session){
       ) %>%
       dplyr::slice(1) %>%
       dplyr::ungroup()
-  }) %>%
-    bindEvent(input$div_apply, ignoreInit = FALSE)
+   })
 
   observeEvent(input$div_apply, {
+
+    div_unlocked(TRUE)
 
     shinyjs::html(
       "alpha_loading_overlay",
@@ -1307,12 +1435,12 @@ app_b_server <- function(input, output, session){
       '<div class="loader"></div>'
     )
     shinyjs::removeClass("beta_loading_overlay", "hidden")
-#
-#     shinyjs::html(
-#       "tax_loading_overlay",
-#       '<div class="loader"></div>'
-#     )
-#     shinyjs::removeClass("tax_loading_overlay", "hidden")
+
+    shinyjs::html(
+      "tax_loading_overlay",
+      '<div class="loader"></div>'
+    )
+    shinyjs::removeClass("tax_loading_overlay", "hidden")
 
   }, ignoreInit = TRUE)
 
@@ -1501,130 +1629,6 @@ app_b_server <- function(input, output, session){
     inside_cache$data[[cache_key]] <- inside
     inside_cache$data <- prune_cache(inside_cache$data, max_n = 100)
     inside
-  }
-
-  ################################################
-  #ADD PROTOCOL_ID
-  ################################################
-
-  add_quantitative_bins_for_protocol_cols <- function(df) {
-
-    df <- df %>%
-      mutate(
-        # ---- Coerce samp_size safely ----
-        samp_size_num = suppressWarnings(
-          as.numeric(gsub("[^0-9.]", "", samp_size))
-        ),
-        samp_size_num = dplyr::if_else(
-          samp_size_unit == "mL",
-          samp_size_num / 1000,
-          samp_size_num
-        ),
-        # ---- Depth bins ----
-        min_depth_floor = floor(round(minimumDepthInMeters, 6) / 5) * 5,
-        max_depth_floor = floor(round(maximumDepthInMeters, 6) / 5) * 5,
-
-        min_depth_bin = paste0(min_depth_floor, "-", min_depth_floor + 5, "m"),
-        max_depth_bin = paste0(max_depth_floor, "-", max_depth_floor + 5, "m"),
-
-        # ---- Sample size bins ----
-        samp_size_floor = if_else(
-          is.na(samp_size_num),
-          NA_real_,
-          pmax(
-            0,
-            floor((samp_size_num - 0.125) / 0.25) * 0.25 + 0.125
-          )
-        ),
-
-        samp_size_upper = samp_size_floor + 0.25,
-
-        samp_size_mid = if_else(
-          is.na(samp_size_floor),
-          NA_real_,
-          round(samp_size_floor + 0.125, 3)
-        ),
-
-        samp_size_bin = if_else(
-          is.na(samp_size_floor),
-          NA_character_,
-          sprintf(
-            "%.3f-%.3fL",
-            round(samp_size_floor, 3),
-            round(samp_size_upper, 3)
-          )
-        )
-      ) %>%
-      select(-samp_size_upper)
-
-    df
-  }
-
-
-  assign_protocol_ID <- function(df,
-                                 protocol_columns,
-                                 protocol_sheet = NULL) {
-
-    # Remove existing protocol_ID if present
-    df <- df %>%
-      select(-any_of("protocol_ID"))
-
-    # Get distinct protocol definitions from incoming data
-    new_protocol_combos <- df %>%
-      select(all_of(protocol_columns)) %>%
-      distinct()
-
-    # --------------------------------------------------------------
-    # CASE 1: No existing protocol_sheet → build from scratch
-    # --------------------------------------------------------------
-    if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
-
-      protocol_sheet <- new_protocol_combos %>%
-        mutate(protocol_ID = row_number())
-
-    } else {
-
-      # Ensure protocol_sheet has required structure
-      required_cols <- c(protocol_columns, "protocol_ID")
-      missing_cols <- setdiff(required_cols, names(protocol_sheet))
-
-      if (length(missing_cols) > 0) {
-        stop("protocol_sheet is missing required columns: ",
-             paste(missing_cols, collapse = ", "))
-      }
-
-      # --------------------------------------------------------------
-      # Add new protocol_IDs for unseen combinations
-      # --------------------------------------------------------------
-
-      unseen_protocols <- anti_join(
-        new_protocol_combos,
-        protocol_sheet %>% select(all_of(protocol_columns)),
-        by = protocol_columns
-      )
-
-      if (nrow(unseen_protocols) > 0) {
-
-        max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
-
-        unseen_protocols <- unseen_protocols %>%
-          mutate(protocol_ID = row_number() + max_id)
-
-        protocol_sheet <- bind_rows(protocol_sheet, unseen_protocols)
-      }
-    }
-
-    # --------------------------------------------------------------
-    # Assign protocol_ID back to df
-    # --------------------------------------------------------------
-
-    df_with_ids <- df %>%
-      left_join(protocol_sheet, by = protocol_columns)
-
-    return(list(
-      data = df_with_ids,
-      protocol_sheet = protocol_sheet
-    ))
   }
 
   protocol_bargraph <- function(df) {
@@ -2762,6 +2766,7 @@ app_b_server <- function(input, output, session){
 
   #taxonomic selection reactive #NEW
   active_tax_rank <- reactive({
+    req(div_unlocked())
     input$tax_rank %||% "scientificName"
   })
 
@@ -4038,8 +4043,38 @@ const obs = new MutationObserver(() => {
       dplyr::arrange(library_size)
   })
 
+  confirmed_rarefaction_depth <- reactiveVal(NULL)
+
+  observeEvent(input$div_apply, {
+    depth <- input$rarefaction_depth
+
+    shiny::validate(
+      shiny::need(!is.null(depth), "Enter a rarefaction depth."),
+      shiny::need(!is.na(depth), "Enter a valid rarefaction depth."),
+      shiny::need(depth > 0, "Rarefaction depth must be greater than 0.")
+    )
+
+    confirmed_rarefaction_depth(as.numeric(depth))
+
+    # Force alpha rarefaction summary to calculate/print first
+    rr <- isolate(rarefaction_drop_summary())
+
+    message("Rarefaction depth used for alpha diversity: ", rr$depth)
+    message("Total samples in current alpha matrix: ", rr$total_samples)
+    message("Kept after rarefaction filter: ", rr$kept_samples)
+    message("Dropped before rarefaction: ", rr$dropped_samples)
+
+    if (nrow(rr$dropped_table) > 0) {
+      print(rr$dropped_table)
+    } else {
+      message("No samples dropped at this rarefaction depth.")
+    }
+
+  }, ignoreInit = TRUE, priority = 100)
+
   rarefaction_depth <- reactive({
-    5000
+    req(confirmed_rarefaction_depth())
+    confirmed_rarefaction_depth()
   })
 
   rarefaction_drop_summary <- reactive({
@@ -4069,49 +4104,53 @@ const obs = new MutationObserver(() => {
     )
   })
 
-  observe({
-    rr <- rarefaction_drop_summary()
-    req(rr)
+  # observe({
+  #   rr <- rarefaction_drop_summary()
+  #   req(rr)
+  #
+  #   message("Rarefaction depth: ", rr$depth)
+  #   message("Total samples in current alpha matrix: ", rr$total_samples)
+  #   message("Kept after rarefaction filter: ", rr$kept_samples)
+  #   message("Dropped before rarefaction: ", rr$dropped_samples)
+  # })
 
-    message("Rarefaction depth: ", rr$depth)
-    message("Total samples in current alpha matrix: ", rr$total_samples)
-    message("Kept after rarefaction filter: ", rr$kept_samples)
-    message("Dropped before rarefaction: ", rr$dropped_samples)
-  })
-
-  #Check which samples were dropped
-  observe({
-    rr <- rarefaction_drop_summary()
-    req(rr)
-
-    if (nrow(rr$dropped_table) > 0) {
-      print(rr$dropped_table)
-    } else {
-      message("No samples dropped at this rarefaction depth.")
-    }
-  })
+  # #Check which samples were dropped
+  # observe({
+  #   rr <- rarefaction_drop_summary()
+  #   req(rr)
+  #
+  #   if (nrow(rr$dropped_table) > 0) {
+  #     print(rr$dropped_table)
+  #   } else {
+  #     message("No samples dropped at this rarefaction depth.")
+  #   }
+  # })
 
 
   #Create rarefied matrix for alpha diversity
   comm_mat_mpa_rarefied <- reactive({
-    mat <- comm_mat_mpa()
-    req(mat)
+    req(input$div_apply > 0)
 
+    mat <- comm_mat_mpa()
     depth <- rarefaction_depth()
 
-    shiny::validate(
-      shiny::need(nrow(mat) > 0, "No samples available for rarefaction."),
-      shiny::need(depth > 0, "Rarefaction depth must be greater than 0.")
-    )
-
     lib_sizes <- rowSums(mat, na.rm = TRUE)
-
     keep <- lib_sizes >= depth
-    mat  <- mat[keep, , drop = FALSE]
+
+    n_total   <- length(lib_sizes)
+    n_dropped <- sum(!keep)
+    n_kept    <- sum(keep)
+
+    # message("Rarefaction depth used for alpha diversity: ", depth)
+    # message("Samples before rarefaction filtering: ", n_total)
+    # message("Samples dropped below rarefaction depth: ", n_dropped)
+    # message("Samples retained after rarefaction filtering: ", n_kept)
+
+    mat <- mat[keep, , drop = FALSE]
 
     shiny::validate(
       shiny::need(nrow(mat) > 0,
-                  "No filtered samples have enough reads to be rarefied at the depth.")
+                  "No filtered samples have enough reads to be rarefied at this depth.")
     )
 
     mat <- round(as.matrix(mat))
@@ -4121,6 +4160,7 @@ const obs = new MutationObserver(() => {
     vegan::rrarefy(mat, sample = depth)
   })
 
+  beta_terminal_printed_key <- reactiveVal(NULL)
 
   sample_meta_mpa <- reactive({
     det <- diversity_detections_mpa()
@@ -4279,6 +4319,7 @@ const obs = new MutationObserver(() => {
   })
 
   beta_distance <- reactive({     #NEW
+    req(div_unlocked())
     mat_use <- beta_mat_processed()
     beta_method <- input$beta_metric %||% "bray"
 
@@ -4366,27 +4407,42 @@ const obs = new MutationObserver(() => {
   })
 
   #Beta diagnostics - Checks for ordination (beta)  *NEW
-  observe({
-    mat <- beta_comm_mat()
-    req(mat)
+  observeEvent(input$div_apply, {
+    req(input$div_apply > 0)
 
-    lib_sizes <- rowSums(mat, na.rm = TRUE)
+    mat_raw <- beta_comm_mat()
+    mat_proc <- beta_mat_processed()
 
-    message("BETA raw samples: ", nrow(mat))
-    message("BETA zero-sum samples: ", sum(lib_sizes == 0, na.rm = TRUE))
+    req(mat_raw, mat_proc)
+
+    lib_sizes <- rowSums(mat_raw, na.rm = TRUE)
+    zero_sum <- lib_sizes == 0
+
+    beta_key <- paste(
+      input$div_apply,
+      input$beta_metric,
+      input$tax_rank,
+      paste(input$div_target_gene %||% character(0), collapse = "|"),
+      paste(input$div_primer %||% character(0), collapse = "|"),
+      paste(input$div_compare_polygons %||% character(0), collapse = "|"),
+      sep = "~~"
+    )
+
+    if (identical(beta_terminal_printed_key(), beta_key)) {
+      return(NULL)
+    }
+
+    beta_terminal_printed_key(beta_key)
+
+    message("BETA raw samples: ", nrow(mat_raw))
+    message("BETA zero-sum samples: ", sum(zero_sum, na.rm = TRUE))
     message("BETA min library size: ", min(lib_sizes, na.rm = TRUE))
-    message("BETA median library size: ", median(lib_sizes, na.rm = TRUE))
+    message("BETA median library size: ", stats::median(lib_sizes, na.rm = TRUE))
     message("BETA max library size: ", max(lib_sizes, na.rm = TRUE))
-  })
-
-  observe({
-    mat <- beta_mat_processed()
-    req(mat)
-
-    message("BETA processed samples: ", nrow(mat))
-    message("BETA processed taxa: ", ncol(mat))
+    message("BETA processed samples: ", nrow(mat_proc))
+    message("BETA processed taxa: ", ncol(mat_proc))
     message("BETA metric: ", input$beta_metric %||% "bray")
-  })
+  }, ignoreInit = TRUE, priority = 50)
 
   # ---- metadata for plotting: samples can belong to multiple groups ----
   beta_plot_meta <- reactive({
@@ -4414,6 +4470,7 @@ const obs = new MutationObserver(() => {
   })
 
   beta_stats_data <- reactive({    #NEW
+    req(div_unlocked())
     if (!is.null(beta_overlap_warning())) {
       return(NULL)
     }
@@ -4442,8 +4499,7 @@ const obs = new MutationObserver(() => {
       dist = d,
       meta = meta2
     )
-  }) %>%
-    bindEvent(input$div_apply, ignoreInit = FALSE)
+   })
 
   beta_stats <- reactive({
     dat <- beta_stats_data()
@@ -4567,6 +4623,7 @@ const obs = new MutationObserver(() => {
 
   #Alpha diversity
   alpha_metric_vec <- reactive({
+    req(div_unlocked())
     req(comm_mat_mpa_rarefied())
     mat <- comm_mat_mpa_rarefied()
 
@@ -4607,24 +4664,31 @@ const obs = new MutationObserver(() => {
   })
 
   #Console check to verify depth
-  observe({
+  observeEvent(input$div_apply, {
+
     df <- library_sizes_mpa()
+
     req(nrow(df) > 0)
 
     message("Min library size: ", min(df$library_size, na.rm = TRUE))
     message("Median library size: ", median(df$library_size, na.rm = TRUE))
     message("Max library size: ", max(df$library_size, na.rm = TRUE))
-  })
 
-  observe({
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$div_apply, {
+
     depth <- rarefaction_depth()
+
     req(depth)
 
     message("Rarefaction depth used for alpha diversity: ", depth)
-  })
+
+  }, ignoreInit = TRUE)
 
   # --- Alpha boxplot data: selected area + optional drawn polygons ---
   alpha_boxplot_occ_all <- reactive({
+    req(div_unlocked())
     selected_polygons <- div_filters()$polygons %||% character(0)
 
     alpha <- alpha_metric_vec()
@@ -4766,8 +4830,7 @@ const obs = new MutationObserver(() => {
       dplyr::mutate(
         group_label = factor(group_label, levels = c(base_lvls, draw_lvls))
       )
-  }) %>%
-    bindEvent(input$div_apply, ignoreInit = FALSE)
+  })
 
   #-----------------------------------------------------------------------------
   alpha_stats <- reactive({
@@ -5499,7 +5562,7 @@ const obs = new MutationObserver(() => {
   #Krona plot
 
   output$tax_krona <- taxplore::renderKronaChart({
-
+    req(div_unlocked())
     ids <- selection_ids()
 
     shiny::validate(

@@ -137,12 +137,6 @@ width: 100%;
 }
 
       /* Map container MUST be the positioning context + CLIP panel to map */
-#map_wrap{
-  position: relative;
-  height: calc(100vh - 120px);
-  overflow: hidden;
-}
-#map{ height: 100% !important; }
 
       /* Make the overlays panel wide enough */
       .leaflet-control-layers-overlays{ min-width: 220px; }
@@ -199,11 +193,19 @@ width: 100%;
         transform:translateX(12px);
       }
 
+html,
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
 .app_b {
   height: auto !important;
-  min-height: 100%;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+  min-height: 100vh;
+  max-width: 100vw !important;
+  overflow-y: visible !important;
+  overflow-x: clip !important;
 }
 
 .app_b .scroll-section {
@@ -320,6 +322,18 @@ width: 100%;
   color: #555;
   max-width: 500px;
   line-height: 1.5;
+}
+
+.custom-loader-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+#alpha_boxplot,
+#beta_pcoa,
+#tax_krona {
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Put Leaflet controls (esp. draw toolbar) above the floating panel */
@@ -717,7 +731,6 @@ table.dataTable.nowrap th {
 #sec_sara .datatables {
   width: 100% !important;
   max-width: 100% !important;
-  overflow-x: hidden !important;
   box-sizing: border-box;
 }
 
