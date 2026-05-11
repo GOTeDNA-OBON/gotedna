@@ -458,12 +458,19 @@ $(function(){
           fluidRow(
             column(
               width = 4,
-              selectInput("req_protocol", "Protocol ID",
-                          choices = character(0), selected = NULL, selectize = FALSE)
+              selectInput(
+                "req_protocol",
+                "Protocol ID",
+                choices = NULL,
+                selected = NULL,
+                selectize = TRUE
+              )
             ),
             column(
               width = 8,
-              uiOutput("protocol_details")
+              uiOutput("protocol_details"),
+              plotly::plotlyOutput("protocol_nmds_plot", height = "400px"),
+              plotly::plotlyOutput("protocol_barplot", height = "350px")
             )
           )
         )
@@ -784,6 +791,286 @@ $(function(){
 
 app_b_server <- function(input, output, session){
 
+  # ---- Data Request: use occ_all directly ----
+
+  meta_all <- reactive({
+
+    df <- NULL
+
+    if (exists("occ_all", inherits = TRUE)) {
+      df <- get("occ_all", inherits = TRUE)
+    } else if (exists("species_sf_all", inherits = TRUE)) {
+      df <- get("species_sf_all", inherits = TRUE)
+    } else if (exists("diversity_beta_df", inherits = TRUE)) {
+      df <- get("diversity_beta_df", inherits = TRUE)
+    }
+
+    shiny::validate(
+      shiny::need(!is.null(df), "No source data found for protocol assignment.")
+    )
+
+    if (inherits(df, "sf")) {
+      df <- sf::st_drop_geometry(df)
+    }
+
+    shiny::validate(
+      shiny::need(nrow(df) > 0, "Protocol source data has zero rows.")
+    )
+
+    protocol_columns <- c(
+      "samp_size",
+      "size_frac",
+      "filter_material",
+      "samp_mat_process",
+      "samp_store_temp",
+      "samp_store_sol",
+      "target_gene",
+      "pcr_primer_name_forward",
+      "pcr_primer_name_reverse",
+      "pcr_primer_forward",
+      "pcr_primer_reverse",
+      "nucl_acid_ext_kit",
+      "platform",
+      "instrument",
+      "seq_kit",
+      "otu_db",
+      "tax_assign_cat",
+      "otu_seq_comp_appr"
+    )
+
+    protocol_columns <- protocol_columns[protocol_columns %in% names(df)]
+
+    shiny::validate(
+      shiny::need(length(protocol_columns) > 0, "No protocol columns were found.")
+    )
+
+    out <- assign_protocol_ID(
+      df = df,
+      protocol_columns = protocol_columns,
+      protocol_sheet = NULL
+    )
+
+    out$data %>%
+      dplyr::mutate(
+        ProtocolID = paste0("Protocol ", protocol_ID)
+      )
+  })
+
+  protocol_data <- reactive({
+    df <- meta_all()
+
+    if (!"detected" %in% names(df)) {
+      df <- df %>%
+        dplyr::mutate(
+          detected = dplyr::if_else(
+            !is.na(organismQuantity) & organismQuantity > 0,
+            1L, 0L
+          )
+        )
+    }
+
+    df
+  })
+
+  protocol_info <- reactive({
+    protocol_data() %>%
+      dplyr::group_by(protocol_ID) %>%
+      dplyr::slice_head(n = 1) %>%
+      dplyr::ungroup()
+  })
+
+  protocol_summary <- reactive({
+    protocol_data() %>%
+      dplyr::group_by(protocol_ID, samp_name) %>%
+      dplyr::summarise(
+        detected_sample = any(detected == 1, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      dplyr::group_by(protocol_ID) %>%
+      dplyr::summarise(
+        total_samples = dplyr::n(),
+        total_detections = sum(detected_sample),
+        detection_rate = 100 * total_detections / total_samples,
+        .groups = "drop"
+      ) %>%
+      dplyr::arrange(dplyr::desc(total_detections))
+  })
+
+  observeEvent(protocol_summary(), {
+    ps <- protocol_summary()
+
+    choices <- as.list(ps$protocol_ID)
+
+    names(choices) <- paste0(
+      "Protocol ", ps$protocol_ID,
+      " (", ps$total_detections, " detections | ",
+      sprintf("%.1f", ps$detection_rate), "%)"
+    )
+
+    updateSelectInput(
+      session,
+      "req_protocol",
+      choices = choices,
+      selected = ps$protocol_ID[1]
+    )
+  }, ignoreInit = FALSE)
+
+  # Populate ProtocolID dropdown (filtered by selected Location)
+  observe({
+    df <- meta_all()
+
+    prots <- df %>%
+      dplyr::filter(!is.na(ProtocolID), ProtocolID != "") %>%
+      dplyr::distinct(protocol_ID, ProtocolID) %>%
+      dplyr::arrange(protocol_ID)
+
+    choices <- stats::setNames(prots$ProtocolID, prots$ProtocolID)
+
+    updateSelectInput(
+      session,
+      "req_protocol",
+      choices = choices,
+      selected = choices[[1]]
+    )
+  })
+
+  # helper: pick a single display value (unique or collapse)
+  pick_display <- function(x) {
+    x <- as.character(x)
+    x <- x[!is.na(x) & nzchar(trimws(x))]
+    if (length(x) == 0) return(NA_character_)
+    ux <- unique(x)
+    if (length(ux) == 1) ux else paste(ux, collapse = " | ")
+  }
+
+  # rows matching current Location + ProtocolID
+  selected_protocol_rows <- reactive({
+    req(input$req_protocol)
+
+    protocol_info() %>%
+      dplyr::filter(protocol_ID == as.numeric(input$req_protocol))
+  })
+
+  # --- base protocol per Location (the "starting choice") ---
+  base_protocol <- reactiveVal(NULL)
+
+  observeEvent(meta_all(), {
+    prots <- meta_all() %>%
+      dplyr::filter(!is.na(ProtocolID), ProtocolID != "") %>%
+      dplyr::distinct(ProtocolID) %>%
+      dplyr::arrange(ProtocolID) %>%
+      dplyr::pull(ProtocolID)
+
+    base_protocol(if (length(prots)) prots[[1]] else NULL)
+  }, ignoreInit = FALSE)
+
+  # live details card
+  output$protocol_details <- renderUI({
+    df <- selected_protocol_rows()
+
+    if (nrow(df) == 0) {
+      return(tags$div(style="margin-top:10px;", em("No rows found for this Location + ProtocolID.")))
+    }
+
+    method_groups <- list(
+      "Field Methods" = c("samp_size","size_frac","filter_material","samp_mat_process",
+                          "minimumDepthInMeters","maximumDepthInMeters"),
+      "Storage Methods" = c("samp_store_temp","samp_store_sol"),
+      "Lab Methods" = c("target_gene", "pcr_primer_name_forward", "pcr_primer_name_reverse", "pcr_primer_forward", "pcr_primer_reverse", "nucl_acid_ext_kit"),
+      "Library Preparation" = c("platform","instrument","seq_kit"),
+      "Bioinformatic Methods" = c("otu_db","tax_assign_cat","otu_seq_comp_appr")
+    )
+
+    pick_display <- function(x) {
+      x <- as.character(x)
+      x <- x[!is.na(x) & nzchar(trimws(x))]
+      if (length(x) == 0) return(NA_character_)
+      ux <- unique(x)
+      if (length(ux) == 1) ux else paste(ux, collapse = " | ")
+    }
+
+    # Build base df (for comparison)
+    bp <- base_protocol()
+    df_base <- NULL
+    if (!is.null(bp) && nzchar(bp)) {
+      df_base <- meta_all() %>%
+        dplyr::filter(ProtocolID == bp)
+      if (nrow(df_base) == 0) df_base <- NULL
+    }
+
+    # UI
+
+    tags$div(
+      class = "protocol-details-wrap",
+      tagList(
+        lapply(names(method_groups), function(group_name) {
+          fields <- method_groups[[group_name]]
+
+          # Keep only fields that actually exist in df
+          fields <- fields[fields %in% names(df)]
+          if (length(fields) == 0) return(NULL)  # hide empty groups
+
+          tags$div(
+            tags$h5(class = "protocol-group-title", group_name),
+
+            tags$div(
+              class="protocol-grid",
+
+              lapply(fields, function(f) {
+                cur <- pick_display(df[[f]])
+                bas <- if (!is.null(df_base) && f %in% names(df_base)) pick_display(df_base[[f]]) else NA_character_
+
+                cur2 <- ifelse(is.na(cur), "", trimws(as.character(cur)))
+                bas2 <- ifelse(is.na(bas), "", trimws(as.character(bas)))
+
+                changed <- nzchar(cur2) && nzchar(bas2) && !identical(cur2, bas2)
+                is_na   <- !nzchar(cur2)
+
+                tags$div(
+                  tags$div(class="protocol-field-title", f),
+                  tags$div(
+                    class = paste("protocol-card", if (changed) "changed", if (is_na) "na"),
+                    if (is_na) "—" else cur2
+                  )
+                )
+              })
+            )
+          )
+        })
+      )
+    )
+  })
+
+  output$protocol_nmds_plot <- plotly::renderPlotly({
+    ps <- protocol_summary()
+
+    shiny::validate(
+      shiny::need(nrow(ps) > 2, "NMDS requires more than two protocols.")
+    )
+
+    top_ids <- ps %>%
+      dplyr::slice_head(n = 10) %>%
+      dplyr::pull(protocol_ID)
+
+    filtered_protocol_sheet <- protocol_info() %>%
+      dplyr::filter(protocol_ID %in% top_ids)
+
+    protocol_nmds(filtered_protocol_sheet)
+  })
+
+  output$protocol_barplot <- plotly::renderPlotly({
+    ps <- protocol_summary()
+
+    shiny::validate(
+      shiny::need(nrow(ps) > 0, "No protocol summary available.")
+    )
+
+    top_protocols <- ps %>%
+      dplyr::slice_max(order_by = total_detections, n = 10, with_ties = FALSE) %>%
+      dplyr::arrange(protocol_ID)
+
+    protocol_bargraph(top_protocols)
+  })
 
   add_primer_combo_vec <- function(fwd, rev) {
     fwd <- trimws(fwd)
@@ -1216,6 +1503,160 @@ app_b_server <- function(input, output, session){
     inside
   }
 
+  ################################################
+  #ADD PROTOCOL_ID
+  ################################################
+
+  add_quantitative_bins_for_protocol_cols <- function(df) {
+
+    df <- df %>%
+      mutate(
+        # ---- Coerce samp_size safely ----
+        samp_size_num = suppressWarnings(
+          as.numeric(gsub("[^0-9.]", "", samp_size))
+        ),
+        samp_size_num = dplyr::if_else(
+          samp_size_unit == "mL",
+          samp_size_num / 1000,
+          samp_size_num
+        ),
+        # ---- Depth bins ----
+        min_depth_floor = floor(round(minimumDepthInMeters, 6) / 5) * 5,
+        max_depth_floor = floor(round(maximumDepthInMeters, 6) / 5) * 5,
+
+        min_depth_bin = paste0(min_depth_floor, "-", min_depth_floor + 5, "m"),
+        max_depth_bin = paste0(max_depth_floor, "-", max_depth_floor + 5, "m"),
+
+        # ---- Sample size bins ----
+        samp_size_floor = if_else(
+          is.na(samp_size_num),
+          NA_real_,
+          pmax(
+            0,
+            floor((samp_size_num - 0.125) / 0.25) * 0.25 + 0.125
+          )
+        ),
+
+        samp_size_upper = samp_size_floor + 0.25,
+
+        samp_size_mid = if_else(
+          is.na(samp_size_floor),
+          NA_real_,
+          round(samp_size_floor + 0.125, 3)
+        ),
+
+        samp_size_bin = if_else(
+          is.na(samp_size_floor),
+          NA_character_,
+          sprintf(
+            "%.3f-%.3fL",
+            round(samp_size_floor, 3),
+            round(samp_size_upper, 3)
+          )
+        )
+      ) %>%
+      select(-samp_size_upper)
+
+    df
+  }
+
+
+  assign_protocol_ID <- function(df,
+                                 protocol_columns,
+                                 protocol_sheet = NULL) {
+
+    # Remove existing protocol_ID if present
+    df <- df %>%
+      select(-any_of("protocol_ID"))
+
+    # Get distinct protocol definitions from incoming data
+    new_protocol_combos <- df %>%
+      select(all_of(protocol_columns)) %>%
+      distinct()
+
+    # --------------------------------------------------------------
+    # CASE 1: No existing protocol_sheet → build from scratch
+    # --------------------------------------------------------------
+    if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
+
+      protocol_sheet <- new_protocol_combos %>%
+        mutate(protocol_ID = row_number())
+
+    } else {
+
+      # Ensure protocol_sheet has required structure
+      required_cols <- c(protocol_columns, "protocol_ID")
+      missing_cols <- setdiff(required_cols, names(protocol_sheet))
+
+      if (length(missing_cols) > 0) {
+        stop("protocol_sheet is missing required columns: ",
+             paste(missing_cols, collapse = ", "))
+      }
+
+      # --------------------------------------------------------------
+      # Add new protocol_IDs for unseen combinations
+      # --------------------------------------------------------------
+
+      unseen_protocols <- anti_join(
+        new_protocol_combos,
+        protocol_sheet %>% select(all_of(protocol_columns)),
+        by = protocol_columns
+      )
+
+      if (nrow(unseen_protocols) > 0) {
+
+        max_id <- max(protocol_sheet$protocol_ID, na.rm = TRUE)
+
+        unseen_protocols <- unseen_protocols %>%
+          mutate(protocol_ID = row_number() + max_id)
+
+        protocol_sheet <- bind_rows(protocol_sheet, unseen_protocols)
+      }
+    }
+
+    # --------------------------------------------------------------
+    # Assign protocol_ID back to df
+    # --------------------------------------------------------------
+
+    df_with_ids <- df %>%
+      left_join(protocol_sheet, by = protocol_columns)
+
+    return(list(
+      data = df_with_ids,
+      protocol_sheet = protocol_sheet
+    ))
+  }
+
+  protocol_bargraph <- function(df) {
+    color_vec <- c("#00A08A", "#446455", "#Fdd262", "#5BBCD6", "#046c9a", "#ABDDDE", "#d3dddc")
+
+    df <- df %>%
+      dplyr::mutate(
+        color = color_vec[(seq_len(dplyr::n()) - 1) %% length(color_vec) + 1],
+        protocol_ID = factor(protocol_ID, levels = sort(unique(protocol_ID)))
+      )
+
+    plotly::plot_ly(
+      data = df,
+      x = ~protocol_ID,
+      y = ~detection_rate,
+      type = "bar",
+      marker = list(color = df$color),
+      hoverinfo = "text",
+      name = "Detection Rate"
+    ) %>%
+      plotly::layout(
+        xaxis = list(title = "Protocol ID"),
+        yaxis = list(title = "Detection Rate (%)", showgrid = FALSE),
+        margin = list(l = 60, r = 20, t = 50, b = 60),
+        legend = list(title = list(text = ""))
+      ) %>%
+      plotly::config(
+        displayModeBar = TRUE,
+        modeBarButtonsToAdd = c("resetScale2d")
+      )
+  }
+
   get_forward_primer_col <- function(df) {
     cand <- c("pcr_primer_name_forward", "pcr_primer_forward")
     hit <- intersect(cand, names(df))
@@ -1432,15 +1873,6 @@ app_b_server <- function(input, output, session){
   sampling_points_layer_on <- reactive({
     groups_on <- input$map_groups %||% character(0)
     "Sampling Points" %in% groups_on
-  })
-
-  # ---- meta table (ensures join keys are character) ----
-  meta_all <- reactive({
-    req(occ_all)
-    occ_all %>%
-      dplyr::mutate(
-        occurrenceID = as.character(occurrenceID)
-      )
   })
 
   # Which richness layers are currently ON (including "All")
