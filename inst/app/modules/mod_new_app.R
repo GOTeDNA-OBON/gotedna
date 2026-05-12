@@ -898,31 +898,40 @@ assign_protocol_ID <- function(df,
 app_b_server <- function(input, output, session){
 
   protocol_source <- reactive({
-    df <- gotedna_data$metabarcoding
+    df <- selection_panel_df()
 
-    if (inherits(df, "sf")) {
-      df <- sf::st_drop_geometry(df)
-    }
+    shiny::validate(
+      shiny::need(!is.null(df), "Select a site/cell/polygon to view protocols."),
+      shiny::need(nrow(df) > 0, "No detections available for this filtered selection.")
+    )
+
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0)
+    )
+
+    df <- apply_diversity_dropdown_filters(df, live_filters)
+
+    shiny::validate(
+      shiny::need(nrow(df) > 0, "No detections available for the selected target gene/primer filters.")
+    )
 
     protocol_columns <- c(
-      "samp_size",
-      "size_frac",
-      "filter_material",
-      "samp_mat_process",
-      "samp_store_temp",
-      "samp_store_sol",
-      "target_gene",
-      "pcr_primer_name_forward",
-      "pcr_primer_name_reverse",
-      "pcr_primer_forward",
-      "pcr_primer_reverse",
       "nucl_acid_ext_kit",
       "platform",
       "instrument",
       "seq_kit",
       "otu_db",
       "tax_assign_cat",
-      "otu_seq_comp_appr"
+      "otu_seq_comp_appr",
+      "min_depth_floor",
+      "max_depth_floor",
+      "samp_size_mid",
+      "size_frac",
+      "filter_material",
+      "samp_mat_process",
+      "samp_store_temp",
+      "samp_store_sol"
     )
 
     protocol_columns <- protocol_columns[protocol_columns %in% names(df)]
@@ -931,13 +940,11 @@ app_b_server <- function(input, output, session){
       shiny::need(length(protocol_columns) > 0, "No protocol columns were found.")
     )
 
-    out <- assign_protocol_ID(
+    assign_protocol_ID(
       df = df,
       protocol_columns = protocol_columns,
       protocol_sheet = NULL
-    )
-
-    out$data
+    )$data
   })
 
   meta_all <- reactive({
@@ -1194,6 +1201,14 @@ app_b_server <- function(input, output, session){
     )
   }
 
+  safe_chr <- function(data, col) {
+    if (col %in% names(data)) as.character(data[[col]]) else NA_character_
+  }
+
+  safe_num <- function(data, col) {
+    if (col %in% names(data)) suppressWarnings(as.numeric(data[[col]])) else NA_real_
+  }
+
   selection_map_df <- reactive({
     det <- selected_detections()
 
@@ -1202,23 +1217,49 @@ app_b_server <- function(input, output, session){
     det %>%
       sf::st_drop_geometry() %>%
       dplyr::transmute(
-        id = as.character(id),
-        occurrenceID = as.character(occurrenceID),
-        samp_name = as.character(samp_name),
-        scientificName = as.character(scientificName),
-        category = if ("category" %in% names(.)) as.character(category) else NA_character_,
-        year = as.character(year),
-        month = as.character(month),
-        target_gene = as.character(target_gene),
-        organismQuantity = organismQuantity,
-        kingdom = as.character(kingdom),
-        phylum = as.character(phylum),
-        class = as.character(class),
-        order = as.character(order),
-        family = as.character(family),
-        genus = as.character(genus),
-        pcr_primer_name_forward = as.character(pcr_primer_name_forward),
-        pcr_primer_name_reverse = as.character(pcr_primer_name_reverse)
+        id = safe_chr(., "id"),
+        occurrenceID = safe_chr(., "occurrenceID"),
+        samp_name = safe_chr(., "samp_name"),
+        scientificName = safe_chr(., "scientificName"),
+        year = safe_chr(., "year"),
+        month = safe_chr(., "month"),
+        target_gene = safe_chr(., "target_gene"),
+        organismQuantity = safe_num(., "organismQuantity"),
+        kingdom = safe_chr(., "kingdom"),
+        phylum = safe_chr(., "phylum"),
+        class = safe_chr(., "class"),
+        order = safe_chr(., "order"),
+        family = safe_chr(., "family"),
+        genus = safe_chr(., "genus"),
+        pcr_primer_name_forward = safe_chr(., "pcr_primer_name_forward"),
+        pcr_primer_name_reverse = safe_chr(., "pcr_primer_name_reverse"),
+        eventDate_clean = safe_chr(., "eventDate_clean"),
+        samp_size = safe_num(., "samp_size"),
+        size_frac = safe_chr(., "size_frac"),
+        filter_material = safe_chr(., "filter_material"),
+        samp_mat_process = safe_chr(., "samp_mat_process"),
+        samp_store_temp = safe_chr(., "samp_store_temp"),
+        samp_store_sol = safe_chr(., "samp_store_sol"),
+        nucl_acid_ext_kit = safe_chr(., "nucl_acid_ext_kit"),
+        platform = safe_chr(., "platform"),
+        instrument = safe_chr(., "instrument"),
+        seq_kit = safe_chr(., "seq_kit"),
+        otu_db = safe_chr(., "otu_db"),
+        tax_assign_cat = safe_chr(., "tax_assign_cat"),
+        otu_seq_comp_appr = safe_chr(., "otu_seq_comp_appr"),
+        category = safe_chr(., "category"),
+        minimumDepthInMeters = safe_num(., "minimumDepthInMeters"),
+        maximumDepthInMeters = safe_num(., "maximumDepthInMeters"),
+        min_depth_floor = safe_num(., "min_depth_floor"),
+        max_depth_floor = safe_num(., "max_depth_floor"),
+        samp_size_mid = safe_num(., "samp_size_mid"),
+        datasetID_obis = safe_chr(., "datasetID_obis"),
+        ownerContact = safe_chr(., "ownerContact"),
+        eventDate = safe_chr(., "eventDate"),
+        bibliographicCitation = safe_chr(., "bibliographicCitation"),
+        max_depth_bin = safe_chr(., "max_depth_bin"),
+        min_depth_bin = safe_chr(., "min_depth_bin"),
+        samp_size_bin = safe_chr(., "samp_size_bin")
       )
   })
 
