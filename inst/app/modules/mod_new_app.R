@@ -571,7 +571,7 @@ $(function(){
               "rarefaction_depth",
               "Rarefaction depth",
               value = 5000,
-              min = 1,
+              min = 0,
               max = 1000000000,
               step = 100
             )
@@ -2333,9 +2333,11 @@ app_b_server <- function(input, output, session){
 
     # ---- drawn polygon: still needs spatial filtering ----
     if (!is.null(sel_id)) {
-      pts <- species_sf_all
+
+      pts <- species_sf_all_with_poly
 
       g <- selection_geom()
+
       if (is.null(g) || nrow(pts) == 0) {
         return(NULL)
       }
@@ -4092,7 +4094,7 @@ const obs = new MutationObserver(() => {
     shiny::validate(
       shiny::need(!is.null(depth), "Enter a rarefaction depth."),
       shiny::need(!is.na(depth), "Enter a valid rarefaction depth."),
-      shiny::need(depth > 0, "Rarefaction depth must be greater than 0.")
+      shiny::need(depth >= 0, "Rarefaction depth must be 0 or greater.")
     )
 
     confirmed_rarefaction_depth(as.numeric(depth))
@@ -4175,27 +4177,25 @@ const obs = new MutationObserver(() => {
     mat <- comm_mat_mpa()
     depth <- rarefaction_depth()
 
+    mat <- round(as.matrix(mat))
+    storage.mode(mat) <- "integer"
+
+    # depth = 0 means do NOT rarefy
+    if (isTRUE(depth == 0)) {
+      return(mat)
+    }
+
     lib_sizes <- rowSums(mat, na.rm = TRUE)
     keep <- lib_sizes >= depth
-
-    n_total   <- length(lib_sizes)
-    n_dropped <- sum(!keep)
-    n_kept    <- sum(keep)
-
-    # message("Rarefaction depth used for alpha diversity: ", depth)
-    # message("Samples before rarefaction filtering: ", n_total)
-    # message("Samples dropped below rarefaction depth: ", n_dropped)
-    # message("Samples retained after rarefaction filtering: ", n_kept)
 
     mat <- mat[keep, , drop = FALSE]
 
     shiny::validate(
-      shiny::need(nrow(mat) > 0,
-                  "No filtered samples have enough reads to be rarefied at this depth.")
+      shiny::need(
+        nrow(mat) > 0,
+        "No filtered samples have enough reads to be rarefied at this depth."
+      )
     )
-
-    mat <- round(as.matrix(mat))
-    storage.mode(mat) <- "integer"
 
     set.seed(123)
     vegan::rrarefy(mat, sample = depth)
