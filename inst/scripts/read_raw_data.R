@@ -64,6 +64,7 @@ read_raw_data <- function(
   occurrence_cols <- c(
     "recordedBy",
     "bibliographicCitation",
+    "bathymetry",
     "materialSampleID",
     "organismQuantity",
     "organismQuantityType",
