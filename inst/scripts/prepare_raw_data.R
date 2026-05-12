@@ -31,11 +31,14 @@ required_cols <- c(
   "eventDate_clean",
   "decimalLatitude",
   "decimalLongitude",
-  "organismQuantity"
+  "organismQuantity",
+  "occurrenceStatus",
+  "occurrenceID"
 )
 
 optional_columns <- c(
   'samp_size',
+  'bathymetry',
   'size_frac',
   'filter_material',
   'samp_mat_process',
@@ -152,10 +155,10 @@ gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
 
 gotedna_data$metabarcoding <- D_mb_clean
 
-writeLines(
-  format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
-  "inst/app/data/last_obis_download_ts.txt"
-)
+# writeLines(
+#   format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
+#   "inst/app/data/last_obis_download_ts.txt"
+# )
 
 
 

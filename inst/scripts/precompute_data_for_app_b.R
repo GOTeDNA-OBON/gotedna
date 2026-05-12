@@ -354,8 +354,9 @@ read_data <- function(
 
 #STORED_DATA <- read_data()
 #saveRDS(STORED_DATA, "./data/test_read_data_file.rds")
-STORED_DATA <- readRDS("./data/OBIS_data.rds")
-
+#STORED_DATA <- readRDS("./data/OBIS_data.rds")
+gotedna_data <- readRDS("./inst/app/data/gotedna_data.rds")
+STORED_DATA <- gotedna_data$metabarcoding
 ################DO NOT CHANGE ABOVE CODE
 
 
@@ -367,7 +368,7 @@ occ_all <- STORED_DATA %>%
   dplyr::mutate(
     year             = as.character(year),
     samp_name         = as.character(samp_name),
-    occurrenceStatus  = tolower(as.character(occurrenceStatus)),
+    # occurrenceStatus  = tolower(as.character(occurrenceStatus)),
     decimalLatitude   = suppressWarnings(as.numeric(decimalLatitude)),
     decimalLongitude  = suppressWarnings(as.numeric(decimalLongitude)),
     target_gene       = dplyr::case_when(
@@ -1179,7 +1180,8 @@ APP_DATA <- list(
 )
 
 #Undo hashtags when ready to load and save data
-
+print("CHECK HERE FOR PROTOCOL ID")
+names(species_sf_all)
 # APP_DATA <- mget(ls()) #stores all variables from the environment into APP_DATA
 saveRDS(APP_DATA, "./inst/app/data/v2_essential_app_data_20260424-4.rds") #saves that as a file
 # APP_DATA <- readRDS("./inst/app/data/v2_essential_app_data_20260424.rds") #loads that file
