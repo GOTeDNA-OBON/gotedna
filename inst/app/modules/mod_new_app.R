@@ -586,73 +586,48 @@ $(function(){
       #   )
       # ),
 
-      # ---- DATA SELECTION SECTION ----
-      div(
-        id = "sec_datsel", class = "scroll-section",
-        h3("Data Confirmation and Download"),
-
+        # ---- DATA SELECTION SECTION ----
         div(
-          class = "data-select-grid",
+          id = "sec_datsel",
+          class = "scroll-section",
 
-          # div(
-          #   class = "data-select-item",
-          #   shinyWidgets::pickerInput(
-          #     inputId = "prot_id",
-          #     label = "Select Protocol IDs",
-          #     choices = NULL,
-          #     selected = NULL,
-          #     multiple = TRUE,
-          #     options = shinyWidgets::pickerOptions(
-          #       actionsBox = TRUE,
-          #       liveSearch = TRUE,
-          #       noneSelectedText = "Select protocol ID(s)"
-          #     )
-          #   )
-          # ),
-          #
-          # div(
-          #   class = "data-select-item",
-          #   selectizeInput(
-          #     "div_compare_polygons",
-          #     "Polygon Comparison",
-          #     choices = NULL,
-          #     selected = NULL,
-          #     multiple = TRUE,
-          #     options = list(
-          #       plugins = list("remove_button"),
-          #       placeholder = "Select polygon(s)"
-          #     )
-          #   ),
-          #   div(
-          #     style = "margin-top: 6px; font-size: 13px; color: #666;",
-          #     "Used for diversity plots and statistics after clicking Confirm."
-          #   )
-          # ),
+          h3("Data Confirmation and Download"),
 
           div(
-            class = "data-select-item confirm-slot",
-            div(
-              class = "confirm-btn-row",
-              actionButton(
-                "div_apply",
-                "Confirm",
-                class = "btn btn-primary"
-              ),
-              shinyjs::disabled(
-                downloadButton(
-                  "downloadData",
-                  "Download Data",
-                  class = "btn-download-got"
-                )
-              )
+            class = "confirm-btn-row",
+            style = "
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            margin-top: 20px;
+            margin-bottom: 12px;
+          ",
+
+            actionButton(
+              "div_apply",
+              "Confirm",
+              class = "btn btn-primary btn-lg",
+              style = "min-width: 170px;"
             ),
-            div(
-              class = "download-hint-wrap",
-              textOutput("download_hint", inline = TRUE)
+
+            shinyjs::disabled(
+              downloadButton(
+                "downloadData",
+                "Download Data",
+                class = "btn btn-default btn-lg",
+                style = "min-width: 220px;"
+              )
             )
+          ),
+
+          div(
+            class = "download-hint-wrap",
+            style = "text-align: center;",
+            textOutput("download_hint", inline = TRUE)
           )
-        )
-      ),
+         ),
 
       # ---- DIVERSITY METRICS SECTION ----
       div(
@@ -662,18 +637,6 @@ $(function(){
         # ---- Top controls ----
         div(
           class = "data-select-grid",
-
-          div(
-            class = "data-select-item rarefaction-selection",
-            numericInput(
-              "rarefaction_depth",
-              "Rarefaction depth",
-              value = 0,
-              min = 0,
-              max = 1000000000,
-              step = 100
-            )
-          ),
 
           div(
             class = "data-select-item",
@@ -710,9 +673,32 @@ $(function(){
             )
           ),
 
+          div(
+            class = "data-select-item rarefaction-selection",
+            numericInput(
+              "rarefaction_depth",
+              "Rarefaction depth",
+              value = 0,
+              min = 0,
+              max = 1000000000,
+              step = 100
+            ),
+
+          div(
+            style = "
+            margin-top: 6px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+          ",
+            "Select Confirm again to apply a new rarefaction depth."
+           )
+          ),
+
           div(class = "data-select-item"),
           div(class = "data-select-item")
-        ),
+        )
+      ),
 
         # ---- Alpha plot ----
         fluidRow(
@@ -890,7 +876,6 @@ $(function(){
         )
       )
     )
-  )
 }
 
 assign_protocol_ID <- function(df,
@@ -1520,29 +1505,6 @@ app_b_server <- function(input, output, session){
       dplyr::ungroup()
    })
 
-  observeEvent(input$div_apply, {
-
-    div_unlocked(TRUE)
-
-    shinyjs::html(
-      "alpha_loading_overlay",
-      '<div class="loader"></div>'
-    )
-    shinyjs::removeClass("alpha_loading_overlay", "hidden")
-
-    shinyjs::html(
-      "beta_loading_overlay",
-      '<div class="loader"></div>'
-    )
-    shinyjs::removeClass("beta_loading_overlay", "hidden")
-
-    shinyjs::html(
-      "tax_loading_overlay",
-      '<div class="loader"></div>'
-    )
-    shinyjs::removeClass("tax_loading_overlay", "hidden")
-
-  }, ignoreInit = TRUE)
 
   ############################################################
 
@@ -2786,6 +2748,35 @@ app_b_server <- function(input, output, session){
       server   = TRUE
     )
   }, ignoreInit = FALSE)
+
+  confirmed_rarefaction_depth <- reactiveVal(0)
+
+  rarefaction_depth <- reactive({
+    confirmed_rarefaction_depth()
+  })
+
+  observeEvent(input$div_apply, {
+
+    depth <- suppressWarnings(as.numeric(input$rarefaction_depth))
+
+    if (is.na(depth) || depth < 0) {
+      showNotification("Rarefaction depth must be 0 or greater.", type = "error")
+      return(NULL)
+    }
+
+    confirmed_rarefaction_depth(depth)
+    div_unlocked(TRUE)
+
+    shinyjs::html("alpha_loading_overlay", '<div class="loader"></div>')
+    shinyjs::removeClass("alpha_loading_overlay", "hidden")
+
+    shinyjs::html("beta_loading_overlay", '<div class="loader"></div>')
+    shinyjs::removeClass("beta_loading_overlay", "hidden")
+
+    shinyjs::html("tax_loading_overlay", '<div class="loader"></div>')
+    shinyjs::removeClass("tax_loading_overlay", "hidden")
+
+  }, ignoreInit = TRUE)
 
   primer_choices_reactive <- reactive({
     dd <- diversity_dropdown_data()
@@ -4148,31 +4139,50 @@ const obs = new MutationObserver(() => {
   confirmed_rarefaction_depth <- reactiveVal(NULL)
 
   observeEvent(input$div_apply, {
-    depth <- input$rarefaction_depth
 
-    shiny::validate(
-      shiny::need(!is.null(depth), "Enter a rarefaction depth."),
-      shiny::need(!is.na(depth), "Enter a valid rarefaction depth."),
-      shiny::need(depth >= 0, "Rarefaction depth must be 0 or greater.")
-    )
+    depth <- suppressWarnings(as.numeric(input$rarefaction_depth))
 
-    confirmed_rarefaction_depth(as.numeric(depth))
-
-    # Force alpha rarefaction summary to calculate/print first
-    rr <- isolate(rarefaction_drop_summary())
-
-    message("Rarefaction depth used for alpha diversity: ", rr$depth)
-    message("Total samples in current alpha matrix: ", rr$total_samples)
-    message("Kept after rarefaction filter: ", rr$kept_samples)
-    message("Dropped before rarefaction: ", rr$dropped_samples)
-
-    if (nrow(rr$dropped_table) > 0) {
-      print(rr$dropped_table)
-    } else {
-      message("No samples dropped at this rarefaction depth.")
+    if (is.na(depth) || depth < 0) {
+      showNotification("Rarefaction depth must be 0 or greater.", type = "error")
+      return(NULL)
     }
 
-  }, ignoreInit = TRUE, priority = 100)
+    confirmed_rarefaction_depth(depth)
+    div_unlocked(TRUE)
+
+    message("Rarefaction depth confirmed for alpha diversity: ", depth)
+
+    shinyjs::html("alpha_loading_overlay", '<div class="loader"></div>')
+    shinyjs::removeClass("alpha_loading_overlay", "hidden")
+
+  }, ignoreInit = TRUE)
+
+  # observeEvent(input$div_apply, {
+  #   depth <- confirmed_rarefaction_depth()
+  #
+  #   shiny::validate(
+  #     shiny::need(!is.null(depth), "Enter a rarefaction depth."),
+  #     shiny::need(!is.na(depth), "Enter a valid rarefaction depth."),
+  #     shiny::need(depth >= 0, "Rarefaction depth must be 0 or greater.")
+  #   )
+  #
+  #   confirmed_rarefaction_depth(as.numeric(depth))
+  #
+  #   # Force alpha rarefaction summary to calculate/print first
+  #   # rr <- isolate(rarefaction_drop_summary())
+  #
+  #   message("Rarefaction depth used for alpha diversity: ", rr$depth)
+  #   message("Total samples in current alpha matrix: ", rr$total_samples)
+  #   message("Kept after rarefaction filter: ", rr$kept_samples)
+  #   message("Dropped before rarefaction: ", rr$dropped_samples)
+  #
+  #   if (nrow(rr$dropped_table) > 0) {
+  #     print(rr$dropped_table)
+  #   } else {
+  #     message("No samples dropped at this rarefaction depth.")
+  #   }
+  #
+  # }, ignoreInit = TRUE, priority = 100)
 
   rarefaction_depth <- reactive({
     req(confirmed_rarefaction_depth())
@@ -4231,32 +4241,44 @@ const obs = new MutationObserver(() => {
 
   #Create rarefied matrix for alpha diversity
   comm_mat_mpa_rarefied <- reactive({
+
     req(input$div_apply > 0)
 
     mat <- comm_mat_mpa()
+    req(mat)
+
     depth <- rarefaction_depth()
 
     mat <- round(as.matrix(mat))
     storage.mode(mat) <- "integer"
 
-    # depth = 0 means do NOT rarefy
-    if (isTRUE(depth == 0)) {
+    lib_sizes <- rowSums(mat, na.rm = TRUE)
+
+    message("ALPHA raw samples: ", nrow(mat))
+    message("ALPHA taxa: ", ncol(mat))
+    message("Min library size: ", min(lib_sizes, na.rm = TRUE))
+    message("Median library size: ", median(lib_sizes, na.rm = TRUE))
+    message("Max library size: ", max(lib_sizes, na.rm = TRUE))
+    message("Rarefaction depth used for alpha diversity: ", depth)
+
+    if (depth == 0) {
       return(mat)
     }
 
-    lib_sizes <- rowSums(mat, na.rm = TRUE)
     keep <- lib_sizes >= depth
 
-    mat <- mat[keep, , drop = FALSE]
+    message("ALPHA samples retained after rarefaction: ", sum(keep))
+    message("ALPHA samples removed after rarefaction: ", sum(!keep))
 
     shiny::validate(
       shiny::need(
-        nrow(mat) > 0,
-        "No filtered samples have enough reads to be rarefied at this depth."
+        any(keep),
+        "No samples remain after rarefaction. Try a lower rarefaction depth."
       )
     )
 
-    set.seed(123)
+    mat <- mat[keep, , drop = FALSE]
+
     vegan::rrarefy(mat, sample = depth)
   })
 
@@ -5352,7 +5374,7 @@ const obs = new MutationObserver(() => {
       }
     }
 
-    p %>%
+    p <- p %>%
       plotly::layout(
         font = list(size = 18),
         xaxis = list(
@@ -5383,12 +5405,14 @@ const obs = new MutationObserver(() => {
         showlegend = TRUE
       ) %>%
       htmlwidgets::onRender("
-        function(el,x){
-          setTimeout(function(){
-            $('#beta_loading_overlay').addClass('hidden');
-          },300);
-        }
-      ")
+    function(el,x){
+      setTimeout(function(){
+        $('#alpha_loading_overlay').addClass('hidden');
+      },300);
+    }
+  ")
+
+    p
   })
 
   make_ellipse <- function(df, conf = 0.95, npoints = 100) {
@@ -5612,7 +5636,7 @@ const obs = new MutationObserver(() => {
         )
     }
 
-    p %>%
+    p <- p %>%
       plotly::layout(
         title = list(
           text = plot_title,
@@ -5651,10 +5675,12 @@ const obs = new MutationObserver(() => {
       htmlwidgets::onRender("
     function(el,x){
       setTimeout(function(){
-        $('#alpha_loading_overlay').addClass('hidden');
+        $('#beta_loading_overlay').addClass('hidden');
       },300);
     }
   ")
+
+    p
   })
 
 
