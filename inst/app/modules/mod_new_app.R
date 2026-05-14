@@ -422,30 +422,34 @@ $(function(){
                   tabPanel(
                     "Analysis",
 
-                    h4("Analysis Settings"),
+                    div(
+                      class = "analysis-tab-scroll",
 
-                    shinyWidgets::pickerInput(
-                      inputId = "prot_id",
-                      label = "Select Protocol IDs",
-                      choices = NULL,
-                      selected = NULL,
-                      multiple = TRUE,
-                      options = shinyWidgets::pickerOptions(
-                        actionsBox = TRUE,
-                        liveSearch = TRUE,
-                        noneSelectedText = "Select protocol ID(s)"
-                      )
-                    ),
+                      h4("Analysis Settings"),
 
-                    selectizeInput(
-                      "div_compare_polygons",
-                      "Polygon Comparison",
-                      choices = NULL,
-                      selected = NULL,
-                      multiple = TRUE,
-                      options = list(
-                        plugins = list("remove_button"),
-                        placeholder = "Select polygon(s)"
+                      shinyWidgets::pickerInput(
+                        inputId = "prot_id",
+                        label = "Select Protocol IDs",
+                        choices = NULL,
+                        selected = NULL,
+                        multiple = TRUE,
+                        options = shinyWidgets::pickerOptions(
+                          actionsBox = TRUE,
+                          liveSearch = TRUE,
+                          noneSelectedText = "Select protocol ID(s)"
+                        )
+                      ),
+
+                      selectizeInput(
+                        "div_compare_polygons",
+                        "Polygon Comparison",
+                        choices = NULL,
+                        selected = NULL,
+                        multiple = TRUE,
+                        options = list(
+                          plugins = list("remove_button"),
+                          placeholder = "Select polygon(s)"
+                        )
                       )
                     )
                   )
@@ -1331,6 +1335,16 @@ app_b_server <- function(input, output, session){
     )
   )
 
+  observeEvent(input$div_apply, {
+    div_filters(
+      list(
+        target_gene = input$div_target_gene %||% character(0),
+        primers     = input$div_primer %||% character(0),
+        polygons    = input$div_compare_polygons %||% character(0)
+      )
+    )
+  }, ignoreInit = FALSE)
+
   selection_selection_df <- reactive({
     req(confirmed_map_filters())
 
@@ -1343,13 +1357,12 @@ app_b_server <- function(input, output, session){
 
     if (is.null(df) || nrow(df) == 0) return(df)
 
-    live_filters <- list(
-      target_gene = input$div_target_gene %||% character(0),
-      primers     = input$div_primer %||% character(0),
-      polygons    = input$div_compare_polygons %||% character(0)
-    )
+    confirmed_filters <- div_filters()
 
-    apply_diversity_dropdown_filters(df, live_filters)
+    df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
+
+    df
   })
 
   panel_ids <- reactive({
@@ -1402,14 +1415,12 @@ app_b_server <- function(input, output, session){
       return(df)
     }
 
-    live_filters <- list(
-      target_gene = input$div_target_gene %||% character(0),
-      primers     = input$div_primer %||% character(0),
-      polygons    = input$div_compare_polygons %||% character(0)
-    )
+    confirmed_filters <- div_filters()
 
-    df <- apply_diversity_dropdown_filters(df, live_filters)
-    apply_compare_polygon_filter(df, live_filters$polygons)
+    df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
+
+    df
   })
 
   polygon_membership_base_df <- reactive({
@@ -1481,15 +1492,10 @@ app_b_server <- function(input, output, session){
       return(df)
     }
 
-    #df <- apply_diversity_dropdown_filters(df, div_filters())
-    live_filters <- list(
-      target_gene = input$div_target_gene %||% character(0),
-      primers     = input$div_primer %||% character(0),
-      polygons    = input$div_compare_polygons %||% character(0)
-    )
+    confirmed_filters <- div_filters()
 
-    df <- apply_diversity_dropdown_filters(df, live_filters)
-    df <- apply_compare_polygon_filter(df, live_filters$polygons)
+    df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     if (nrow(df) == 0) {
       return(df)

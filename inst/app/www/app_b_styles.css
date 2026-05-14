@@ -1045,14 +1045,6 @@ table.dataTable.nowrap th {
   gap: 8px;
 }
 
-.protocol-card {
-  font-size: 12px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #f7f7f7;
-  border: 1px solid #ddd;
-}
-
 .protocol-field-title {
   font-size: 11px;
   font-weight: 600;
@@ -1072,4 +1064,18 @@ table.dataTable.nowrap th {
 
 #detection_details_map_toggle .btn {
   width: 100%;
+}
+
+#floating_body .tab-content {
+  min-height: calc(100vh - 220px);
+}
+
+#floating_body .tab-pane {
+  min-height: calc(100vh - 220px);
+}
+
+.analysis-tab-scroll {
+  min-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
