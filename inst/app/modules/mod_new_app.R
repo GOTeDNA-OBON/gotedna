@@ -248,8 +248,8 @@ $(function(){
             class = "nav navbar-nav",
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_map",    "Interactive Map")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_sara",   "Detection Details")),
-            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Explore Protocols")),
-            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_datsel", "Data Selection and Download")),
+            #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Explore Protocols")),
+            tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_datsel", "Data Confirmation and Download")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_div",    "Diversity Metrics")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_pie",    "Taxonomic Pie Chart"))
             #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_dwnld",    "Download Data File")),
@@ -306,127 +306,150 @@ $(function(){
             div(
               id = "floating_body",
               class = "collapse",
+
               div(
-                class = "panel-body",
-                h4("Filter"),
-                selectInput(
-                  "sel_year",
-                  "Year",
-                  choices = c("All"), #use this code if you don't want to be able to select more than one year at a time
-                  selected = "All"),
+                class = "panel-body map-control-panel",
 
-                #choices  = "All",  #use this code to be able to select more than one year at a time
-                #selected = "All",
-                #multiple = TRUE
-                #),
+                tabsetPanel(
+                  id = "map_control_tabs",
+                  type = "tabs",
 
-                #h4("Group"),
+                  # ---------------------------
+                  # TAB 1: SPATIAL FILTERS
+                  # ---------------------------
+                  tabPanel(
+                    "Spatial",
 
-                # --- Row 1: 4 across ---
-                div(
-                  class = "filter-btn-grid-4",
-                  actionButton(
-                    "total_fish",
-                    label = tags$img(
-                      src = "img/species_buttons/fish_centred.png",
-                      alt = "Fish",
-                      style = "height:40px;"  # adjust as needed
+                    h4("Spatial Filters"),
+
+                    selectInput(
+                      "sel_year",
+                      "Year",
+                      choices = c("All"),
+                      selected = "All"
                     ),
-                    title = "Fish",
-                    class = "btn btn-default btn-secondary filter-btn"
+
+                    div(
+                      class = "filter-btn-grid-4",
+                      actionButton("total_fish", label = tags$img(src = "img/species_buttons/fish_centred.png", style = "height:40px;"), title = "Fish", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_sharks", label = tags$img(src = "img/species_buttons/shark.png", style = "height:40px;"), title = "Sharks & Rays", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_mammals", label = tags$img(src = "img/species_buttons/whale2.png", style = "height:40px;"), title = "Mammals", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_reptiles", label = tags$img(src = "img/species_buttons/turtle.png", style = "height:40px;"), title = "Turtles", class = "btn btn-default btn-secondary filter-btn")
+                    ),
+
+                    tags$div(style = "height:8px;"),
+
+                    div(
+                      class = "filter-btn-grid-4",
+                      actionButton("total_birds", label = tags$img(src = "img/species_buttons/bird.png", style = "height:40px;"), title = "Birds", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_molluscs", label = tags$img(src = "img/species_buttons/mollusc.png", style = "height:40px;"), title = "Molluscs", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_arthropods", label = tags$img(src = "img/species_buttons/lobster.png", style = "height:40px;"), title = "Arthropods", class = "btn btn-default btn-secondary filter-btn"),
+                      actionButton("total_plants", label = tags$img(src = "img/species_buttons/plant.png", style = "height:40px;"), title = "Plants & Algae", class = "btn btn-default btn-secondary filter-btn")
+                    ),
+
+                    tags$div(style = "height:8px;"),
+
+                    div(
+                      class = "filter-btn-grid-3",
+                      actionButton("IUCN", "IUCN", title = "IUCN Red List", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
+                      actionButton("SARA", "SARA", title = "Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
+                      actionButton("AIS", "AIS", title = "Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
+                    ),
+
+                    hr(),
+                    h4("Species List"),
+                    uiOutput("species_panel")
                   ),
-                  actionButton(
-                    "total_sharks",
-                    label = tags$img(
-                      src = "img/species_buttons/shark.png",
-                      alt = "Sharks & Rays",
-                      style = "height:40px;"  # adjust as needed
+
+                  # ---------------------------
+                  # TAB 2: DNA / PROTOCOLS
+                  # ---------------------------
+                  tabPanel(
+                    "Methods",
+
+                    h4("DNA Filters"),
+
+                    selectizeInput(
+                      "div_target_gene",
+                      "Target gene",
+                      choices = NULL,
+                      selected = NULL,
+                      multiple = FALSE,
+                      options = list(
+                        placeholder = "Select target gene"
+                      )
                     ),
-                    title = "Sharks & Rays",
-                    class = "btn btn-default btn-secondary filter-btn"
+
+                    selectizeInput(
+                      "div_primer",
+                      "Primer",
+                      choices = NULL,
+                      selected = NULL,
+                      multiple = TRUE,
+                      options = list(
+                        plugins = list("remove_button"),
+                        placeholder = "Select primer(s)"
+                      )
+                    ),
+
+                    div(
+                      class = "primer-btn-row",
+                      actionButton("div_primer_all", "Select all", class = "btn btn-default btn-secondary btn-sm"),
+                      actionButton("div_primer_none", "Deselect all", class = "btn btn-default btn-secondary btn-sm")
+                    ),
+
+                    hr(),
+
+                    h4("Protocol"),
+
+                    selectInput(
+                      "req_protocol",
+                      "Select protocol",
+                      choices = NULL,
+                      selected = NULL,
+                      selectize = TRUE
+                    ),
+
+                    div(
+                      class = "protocol-card-scroll",
+                      uiOutput("protocol_details")
+                    )
                   ),
-                  actionButton(
-                    "total_mammals",
-                    label = tags$img(
-                      src = "img/species_buttons/whale2.png",
-                      alt = "Mammals",
-                      style = "height:40px;"  # adjust as needed
+
+                  # ---------------------------
+                  # TAB 3: ANALYSIS CONTROLS
+                  # ---------------------------
+                  tabPanel(
+                    "Analysis",
+
+                    h4("Analysis Settings"),
+
+                    shinyWidgets::pickerInput(
+                      inputId = "prot_id",
+                      label = "Select Protocol IDs",
+                      choices = NULL,
+                      selected = NULL,
+                      multiple = TRUE,
+                      options = shinyWidgets::pickerOptions(
+                        actionsBox = TRUE,
+                        liveSearch = TRUE,
+                        noneSelectedText = "Select protocol ID(s)"
+                      )
                     ),
-                    title = "Mammals",
-                    class = "btn btn-default btn-secondary filter-btn"
-                  ),
-                  actionButton(
-                    "total_reptiles",
-                    label = tags$img(
-                      src = "img/species_buttons/turtle.png",
-                      alt = "Turtles",
-                      style = "height:40px;"  # adjust as needed
-                    ),
-                    title = "Turtles",
-                    class = "btn btn-default btn-secondary filter-btn"
+
+                    selectizeInput(
+                      "div_compare_polygons",
+                      "Polygon Comparison",
+                      choices = NULL,
+                      selected = NULL,
+                      multiple = TRUE,
+                      options = list(
+                        plugins = list("remove_button"),
+                        placeholder = "Select polygon(s)"
+                      )
+                    )
                   )
-                ),
-
-                tags$div(style="height:8px;"),  # optional spacing between rows
-
-                # --- Row 2: 4 across ---
-                div(
-                  class = "filter-btn-grid-4",
-                  actionButton(
-                    "total_birds",
-                    label = tags$img(
-                      src = "img/species_buttons/bird.png",
-                      alt = "Birds",
-                      style = "height:40px;"  # adjust as needed
-                    ),
-                    title = "Birds",
-                    class = "btn btn-default btn-secondary filter-btn"
-                  ),
-                  actionButton(
-                    "total_molluscs",
-                    label = tags$img(
-                      src = "img/species_buttons/mollusc.png",
-                      alt = "Molluscs",
-                      style = "height:40px;"  # adjust as needed
-                    ),
-                    title = "Molluscs",
-                    class = "btn btn-default btn-secondary filter-btn"
-                  ),
-                  actionButton(
-                    "total_arthropods",
-                    label = tags$img(
-                      src = "img/species_buttons/lobster.png",
-                      alt = "Arthropods",
-                      style = "height:40px;"  # adjust as needed
-                    ),
-                    title = "Arthropods",
-                    class = "btn btn-default btn-secondary filter-btn"
-                  ),
-                  actionButton(
-                    "total_plants",
-                    label = tags$img(
-                      src = "img/species_buttons/plant.png",
-                      alt = "Plants & Algae",
-                      style = "height:40px;"  # adjust as needed
-                    ),
-                    title = "Plants & Algae",
-                    class = "btn btn-default btn-secondary filter-btn"
-                  ),
-                ),
-
-                tags$div(style="height:8px;"),
-
-                # --- Row 3: 2 across ---
-                div(
-                  class = "filter-btn-grid-3",
-                  actionButton("IUCN", "IUCN", title="IUCN Red List", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
-                  actionButton("SARA", "SARA", title="Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
-                  actionButton("AIS",  "AIS",  title="Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
-                ),
-
-                hr(),
-                h4("Species List"),
-                uiOutput("species_panel")
+                )
               )
             )
           )
@@ -435,147 +458,176 @@ $(function(){
 
       # ---- DETECTION TABLE SECTION ----
       div(
-        id = "sec_sara", class = "scroll-section",
+        id = "sec_sara",
+        class = "scroll-section",
+
         tabsetPanel(
-          tabPanel("Detection Details",                                DT::DTOutput("detections_tbl")),
-          tabPanel("IUCN Red List Details",                             DT::DTOutput("iucn_details")),
-          tabPanel("Species at Risk Act (SARA): Schedule 1-3 Details", DT::DTOutput("sara_details")),
-          tabPanel("Aquatic Invasive Species (AIS) Details",           DT::DTOutput("ais_details"))
+          tabPanel(
+            "Detection Details",
+            div(
+              id = "detection_details_body",
+              class = "collapse show detection-table-body",
+              DT::DTOutput("detections_tbl")
+            )
+          ),
+
+          tabPanel(
+            "IUCN Red List Details",
+            div(
+              class = "collapse show detection-table-body",
+              DT::DTOutput("iucn_details")
+            )
+          ),
+
+          tabPanel(
+            "Species at Risk Act (SARA): Schedule 1-3 Details",
+            div(
+              class = "collapse show detection-table-body",
+              DT::DTOutput("sara_details")
+            )
+          ),
+
+          tabPanel(
+            "Aquatic Invasive Species (AIS) Details",
+            div(
+              class = "collapse show detection-table-body",
+              DT::DTOutput("ais_details")
+            )
+          )
+        ),
+        tags$div(
+          style = "
+          margin-top: 6px;
+          margin-bottom: 6px;
+          display: flex;
+          justify-content: flex-end;
+        ",
+
+          tags$button(
+            class = "btn btn-default btn-sm",
+            type = "button",
+            `data-bs-toggle` = "collapse",
+            `data-bs-target` = ".detection-table-body",
+            `aria-expanded` = "true",
+            "Hide/Show Detection Details"
+          )
         )
       ),
 
       # ---- Explore Protocols SECTION ----
-      div(
-        id = "sec_method", class = "scroll-section",
-        h3("Explore Protocols"),
-
-        # ---- Row 1: target gene + primer menus ----
-        div(
-          class = "data-select-grid",
-
-          div(
-            class = "data-select-item",
-            selectizeInput(
-              "div_target_gene",
-              "Target gene",
-              choices = NULL,
-              selected = NULL,
-              multiple = FALSE,
-              options = list(
-                placeholder = "Select target gene(s)"
-              )
-            )
-          ),
-
-          div(
-            class = "data-select-item",
-            selectizeInput(
-              "div_primer",
-              "Primer",
-              choices = NULL,
-              selected = NULL,
-              multiple = TRUE,
-              options = list(
-                plugins = list("remove_button"),
-                placeholder = "Select primer(s)"
-              )
-            ),
-            div(
-              class = "primer-btn-row",
-              actionButton("div_primer_all", "Select all", class = "btn btn-default btn-secondary btn-sm"),
-              actionButton("div_primer_none", "Deselect all", class = "btn btn-default btn-secondary btn-sm")
-            )
-          )
-        ),
-
-        # ---- Row 2: protocol dropdown + cards/plots ----
-        div(
-          id = "data_request_wrap",
-          class = "method-comparison-wrap",
-          h3(" "),
-
-          # h4("Data Request"),
-
-          fluidRow(
-            column(
-              width = 2,
-              selectInput(
-                "req_protocol",
-                "Protocol ID",
-                choices = NULL,
-                selected = NULL,
-                selectize = TRUE
-              )
-            ),
-
-            column(
-              width = 4,
-              uiOutput("protocol_details"),
-            ),
-
-            column(
-              width = 6,
-              plotly::plotlyOutput("protocol_nmds_plot", height = "400px"),
-              plotly::plotlyOutput("protocol_barplot", height = "350px")
-            )
-          )
-        )
-      ),
+      # div(
+      #   id = "sec_method", class = "scroll-section",
+      #   h3("Explore Protocols"),
+      #
+      #   # ---- Row 1: target gene + primer menus ----
+      #   div(
+      #     class = "data-select-grid",
+      #
+      #     div(
+      #       class = "data-select-item",
+      #       selectizeInput(
+      #         "div_target_gene",
+      #         "Target gene",
+      #         choices = NULL,
+      #         selected = NULL,
+      #         multiple = FALSE,
+      #         options = list(
+      #           placeholder = "Select target gene(s)"
+      #         )
+      #       )
+      #     ),
+      #
+      #     div(
+      #       class = "data-select-item",
+      #       selectizeInput(
+      #         "div_primer",
+      #         "Primer",
+      #         choices = NULL,
+      #         selected = NULL,
+      #         multiple = TRUE,
+      #         options = list(
+      #           plugins = list("remove_button"),
+      #           placeholder = "Select primer(s)"
+      #         )
+      #       ),
+      #       div(
+      #         class = "primer-btn-row",
+      #         actionButton("div_primer_all", "Select all", class = "btn btn-default btn-secondary btn-sm"),
+      #         actionButton("div_primer_none", "Deselect all", class = "btn btn-default btn-secondary btn-sm")
+      #       )
+      #     )
+      #   ),
+      #
+      #   # ---- Row 2: protocol dropdown + cards/plots ----
+      #   div(
+      #     id = "data_request_wrap",
+      #     class = "method-comparison-wrap",
+      #     h3(" "),
+      #
+      #     # h4("Data Request"),
+      #
+      #     fluidRow(
+      #       column(
+      #         width = 2,
+      #         selectInput(
+      #           "req_protocol",
+      #           "Protocol ID",
+      #           choices = NULL,
+      #           selected = NULL,
+      #           selectize = TRUE
+      #         )
+      #       ),
+      #
+      #       column(
+      #         width = 4,
+      #         uiOutput("protocol_details"),
+      #       )
+      #     )
+      #   )
+      # ),
 
       # ---- DATA SELECTION SECTION ----
       div(
         id = "sec_datsel", class = "scroll-section",
-        h3("Data Selection and Download"),
+        h3("Data Confirmation and Download"),
 
         div(
           class = "data-select-grid",
 
-          div(
-            class = "data-select-item",
-            shinyWidgets::pickerInput(
-              inputId = "prot_id",
-              label = "Select Protocol IDs",
-              choices = NULL,
-              selected = NULL,
-              multiple = TRUE,
-              options = shinyWidgets::pickerOptions(
-                actionsBox = TRUE,
-                liveSearch = TRUE,
-                noneSelectedText = "Select protocol ID(s)"
-              )
-            )
-          ),
-
-          div(
-            class = "data-select-item",
-            selectizeInput(
-              "div_compare_polygons",
-              "Polygon Comparison",
-              choices = NULL,
-              selected = NULL,
-              multiple = TRUE,
-              options = list(
-                plugins = list("remove_button"),
-                placeholder = "Select polygon(s)"
-              )
-            ),
-            div(
-              style = "margin-top: 6px; font-size: 13px; color: #666;",
-              "Used for diversity plots and statistics after clicking Confirm."
-            )
-          ),
-
-          div(
-            class = "data-select-item rarefaction-selection",
-            numericInput(
-              "rarefaction_depth",
-              "Rarefaction depth",
-              value = 5000,
-              min = 0,
-              max = 1000000000,
-              step = 100
-            )
-          ),
+          # div(
+          #   class = "data-select-item",
+          #   shinyWidgets::pickerInput(
+          #     inputId = "prot_id",
+          #     label = "Select Protocol IDs",
+          #     choices = NULL,
+          #     selected = NULL,
+          #     multiple = TRUE,
+          #     options = shinyWidgets::pickerOptions(
+          #       actionsBox = TRUE,
+          #       liveSearch = TRUE,
+          #       noneSelectedText = "Select protocol ID(s)"
+          #     )
+          #   )
+          # ),
+          #
+          # div(
+          #   class = "data-select-item",
+          #   selectizeInput(
+          #     "div_compare_polygons",
+          #     "Polygon Comparison",
+          #     choices = NULL,
+          #     selected = NULL,
+          #     multiple = TRUE,
+          #     options = list(
+          #       plugins = list("remove_button"),
+          #       placeholder = "Select polygon(s)"
+          #     )
+          #   ),
+          #   div(
+          #     style = "margin-top: 6px; font-size: 13px; color: #666;",
+          #     "Used for diversity plots and statistics after clicking Confirm."
+          #   )
+          # ),
 
           div(
             class = "data-select-item confirm-slot",
@@ -610,6 +662,18 @@ $(function(){
         # ---- Top controls ----
         div(
           class = "data-select-grid",
+
+          div(
+            class = "data-select-item rarefaction-selection",
+            numericInput(
+              "rarefaction_depth",
+              "Rarefaction depth",
+              value = 0,
+              min = 0,
+              max = 1000000000,
+              step = 100
+            )
+          ),
 
           div(
             class = "data-select-item",
@@ -916,6 +980,34 @@ app_b_server <- function(input, output, session){
       shiny::need(nrow(df) > 0, "No detections available for the selected target gene/primer filters.")
     )
 
+    protocol_labels <- c(
+      samp_size = "Sample Volume (L)",
+      samp_size_mid = "Sample Volume (L)",
+      size_frac = "Filter Pore Size",
+      filter_material = "Filter Material",
+      samp_mat_process = "Sample Processing Method",
+      minimumDepthInMeters = "Minimum Depth (m)",
+      maximumDepthInMeters = "Maximum Depth (m)",
+      min_depth_floor = "Minimum Depth (m)",
+      max_depth_floor = "Maximum Depth (m)",
+
+      samp_store_temp = "Storage Temperature (°C)",
+      samp_store_sol = "Storage Solution",
+
+      target_gene = "Target Gene",
+      pcr_primer_forward = "Forward Primer",
+      pcr_primer_reverse = "Reverse Primer",
+      nucl_acid_ext_kit = "DNA Extraction Kit",
+
+      platform = "Sequencing Platform",
+      instrument = "Instrument",
+      seq_kit = "Sequencing Kit",
+
+      otu_db = "Reference Database",
+      tax_assign_cat = "Taxonomic Assignment Method",
+      otu_seq_comp_appr = "OTU/ASV Approach"
+    )
+
     protocol_columns <- c(
       "nucl_acid_ext_kit",
       "platform",
@@ -1135,7 +1227,10 @@ app_b_server <- function(input, output, session){
                 is_na   <- !nzchar(cur2)
 
                 tags$div(
-                  tags$div(class="protocol-field-title", f),
+                  tags$div(
+                    class="protocol-field-title",
+                    protocol_labels[[f]] %||% f
+                  ),
                   tags$div(
                     class = paste("protocol-card", if (changed) "changed", if (is_na) "na"),
                     if (is_na) "—" else cur2
@@ -1149,42 +1244,6 @@ app_b_server <- function(input, output, session){
     )
   })
 
-  output$protocol_nmds_plot <- plotly::renderPlotly({
-    ps <- protocol_summary()
-
-    shiny::validate(
-      shiny::need(nrow(ps) > 2, "NMDS requires more than two protocols.")
-    )
-
-    top_ids <- ps %>%
-      dplyr::slice_head(n = 10) %>%
-      dplyr::pull(protocol_ID)
-
-    filtered_protocol_sheet <- protocol_info() %>%
-      dplyr::filter(protocol_ID %in% top_ids) %>%
-      dplyr::mutate(
-        dplyr::across(
-          where(~ inherits(.x, c("Date", "POSIXct", "POSIXlt"))),
-          as.character
-        )
-      )
-
-    protocol_nmds(filtered_protocol_sheet)
-  })
-
-  output$protocol_barplot <- plotly::renderPlotly({
-    ps <- protocol_summary()
-
-    shiny::validate(
-      shiny::need(nrow(ps) > 0, "No protocol summary available.")
-    )
-
-    top_protocols <- ps %>%
-      dplyr::slice_max(order_by = total_detections, n = 10, with_ties = FALSE) %>%
-      dplyr::arrange(protocol_ID)
-
-    protocol_bargraph(top_protocols)
-  })
 
   add_primer_combo_vec <- function(fwd, rev) {
     fwd <- trimws(fwd)
