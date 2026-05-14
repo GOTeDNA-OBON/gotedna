@@ -3115,13 +3115,14 @@ app_b_server <- function(input, output, session){
         SARA %>% dplyr::select(
           Scientific.Name,
           Common.Name,
-          Rating
+          Rating,
+          Schedule
         ),
         by = c("scientificName" = "Scientific.Name")
       )
 
     out <- det2 %>%
-      dplyr::group_by(scientificName, Rating) %>%
+      dplyr::group_by(scientificName, Common.Name, Rating, Schedule) %>%
       dplyr::summarise(
         Common.Name  = paste(sort(unique(na.omit(Common.Name))), collapse = " |OR| "),
         n_detections = dplyr::n(),
@@ -3146,6 +3147,7 @@ app_b_server <- function(input, output, session){
         scientificName,
         Common.Name,
         Rating,
+        Schedule,
         n_detections,
         n_samples,
         samples,
@@ -3163,6 +3165,7 @@ app_b_server <- function(input, output, session){
         "Species",
         "Common Name",
         "SARA Rating",
+        "SARA Schedule",
         "Number of Detections",
         "Number of Samples",
         "Samples",
