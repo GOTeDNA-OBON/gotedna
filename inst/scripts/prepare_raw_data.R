@@ -1,4 +1,4 @@
-
+library(dbscan)
 
 # Full file paths
 existing_files <- list.files(
@@ -66,6 +66,9 @@ optional_columns <- c(
 processed_datasets <- lapply(names(datasets), function(ds) {
   core_and_extensions <- datasets[[ds]]
   core_and_extensions <- calculate_and_enforce_columns(core_and_extensions, ds)
+  core_and_extensions <- core_and_extensions %>%
+    dplyr::mutate(eventDate = as.Date(eventDate)) %>%
+    dplyr::filter(!is.na(eventDate))
   core_and_extensions
 })
 
@@ -153,10 +156,10 @@ gotedna_data <- gotedna_data0 <- readRDS("./inst/app/data/gotedna_data.rds")
 
 gotedna_data$metabarcoding <- D_mb_clean
 
-writeLines(
-  format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
-  "inst/app/data/last_obis_download_ts.txt"
-)
+# writeLines(
+#   format(round(Sys.time(), "mins"), "%Y-%m-%d %H:%M %Z"),
+#   "inst/app/data/last_obis_download_ts.txt"
+# )
 
 
 
@@ -258,7 +261,7 @@ primer_map <- map_primers(
   max_dist = 10
 )
 
-View(primer_map)
+# View(primer_map)
 
 gotedna_data$metabarcoding <- gotedna_data$metabarcoding %>%
   left_join(
