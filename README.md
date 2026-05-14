@@ -127,10 +127,14 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 
 ## Adding new OBIS data to the GOTeDNA app
 
-load the read_raw_data() function in ./inst/scripts/read_raw_data.R
+initialize the read_raw_data() function in ./inst/scripts/read_raw_data.R
 
 run the read_raw_data() function (this will add any new datasets from OBIS to inst/app/data/raw_OBIS)
 
 read_raw_data() will only download new datasets (those not previously downloaded into GOTeDNA). To replace all datasets with fresh OBIS data, run read_raw_data(replace_files = TRUE)
 
 run through all the code in inst/scripts/prepare_raw_data.R (this will process the new files and save the necessary .rds files for the app)
+
+run devtools::load_all(), library(GOTeDNA), and then run_gotedna_app() to run the app with the new data.
+
+To add these new data to the github repository, you will need to commit and push the new files (and have permissions)
