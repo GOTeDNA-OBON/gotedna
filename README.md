@@ -128,5 +128,7 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 ## Adding new OBIS data to the GOTeDNA app
 
 load the read_raw_data() function in ./inst/scripts/read_raw_data.R
+
 run the read_raw_data() function (this will add any new datasets from OBIS to inst/app/data/raw_OBIS)
+
 run through all the code in inst/scripts/prepare_raw_data.R (this will process the new files and save the necessary .rds files for the app)
