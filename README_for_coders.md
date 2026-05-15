@@ -7,7 +7,7 @@ This document is intended for coders or reviewers who wish to better understand 
 
 # Visual Table of Contents
 
-![](man/guide_figs/Interpretation_Guide_TOC-20260513.png)
+![](man/guide_figs/Interpretation_Guide_TOC_for_coder_README-20260515.png)
 
 # 1\. Data Source Options
 
@@ -68,10 +68,12 @@ When a user clicks “Compute & Visualize” a cascade of observeEvents are run,
   * **calc\_window.R** also includes **drop\_all\_zero\_taxa()** which drops any taxon from a given location if the taxon has never been found at that location with the selected protocol\_ID.  
 * **jaccard\_test()** is defined in **jaccard\_test.R** and calculates how consistent the optimal detection window is among years.
 
-# 4\. Observation Menu (and Explore Protocols)
+# 4\. Explore Protocols
 
 ![](man/guide_figs/prot_explore.png)
 The "Explore Protocols" section is defined in **mod\_select\_figure.R** with id "protocol_details". The NMDS and bar plot have ids **protocol\_nmds\_plot** and **protocol\_bargraph**. The functions for generating the plots live in **R/nmds\_plot.R** and **R/protocol\_bargraph.R**.
+
+# 5\. Observation Menu
 
 ![](man/guide_figs/observation.png)  
 The observation menus are defined in **mod\_select\_figure.R** with ids “threshold” and “prot\_id”. When "Update Figures" the calculations for the figures are rerun with the selected protocol Ids and threshold.
@@ -85,7 +87,7 @@ The observation menus are defined in **mod\_select\_figure.R** with ids “thres
 
 * protocol ID menu is updated with **update\_protocol\_menu()** defined in **mod\_select\_figure.R**. The selected protocol ID, input$prot\_id is used to filter data (see section 3 above).
 
-# 5\. Guidance Panel
+# 6\. Guidance Panel
 
 ![](man/guide_figs/guidance.png)
 
@@ -95,7 +97,7 @@ The guidance panel is defined in **mod\_select\_figure.R** with ids “opt\_samp
 * Confidence (“conf”) displays results from the **calc\_window()** function (see section 3 above)  
 * Consistency among years (“var\_year”) displays results from the **jaccard\_test()** function (see section 3 above)
 
-# 6\. Visualization Panel
+# 7\. Visualization Panel
 
 ## Monthly eDNA Detection Probability
 
@@ -123,7 +125,7 @@ The guidance panel is defined in **mod\_select\_figure.R** with ids “opt\_samp
 
 * set up in **mod\_select\_figure.R** with id “fig\_samples”. The plot is defined in **R/field\_sample\_fig.R**
 
-# 7\. Data Authorship
+# 8\. Data Authorship
 
 ![](man/guide_figs/authorship.png)
 
