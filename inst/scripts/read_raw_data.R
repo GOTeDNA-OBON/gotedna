@@ -185,6 +185,12 @@ read_raw_data <- function(
       dataset_ids <- setdiff(dataset_ids, saved_ds)
     }
   }
+
+  excluded_ds <- c("86167db1-f07f-44a7-b74d-adb654507582",
+                   "a5e3a6f8-d1bc-4912-8954-2daf1dbb97ae",
+                   "a1595b18-06c0-4ff0-a39d-9cc21107ac01")
+
+  dataset_ids <- setdiff(dataset_ids, excluded_ds)
   dataset_ids <- as.character(dataset_ids)
   print("About to start pulling these datasets: ")
   print(dataset_ids)

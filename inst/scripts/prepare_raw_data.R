@@ -1,4 +1,4 @@
-
+library(dbscan)
 
 # Full file paths
 existing_files <- list.files(
@@ -38,6 +38,7 @@ required_cols <- c(
 
 optional_columns <- c(
   'samp_size',
+  'samp_size_unit',
   'bathymetry',
   'size_frac',
   'filter_material',
