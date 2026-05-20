@@ -17,7 +17,7 @@ mpa_polys <- mpa_targets %>%
   st_as_sf() %>%                        # convert back to sf
   mutate(
     site_name = mpa_targets$NAME_E,
-    site_type = "MPA"
+    site_type = "MCA"
   )
 
 esi_polys <- esi_poly %>%
@@ -364,18 +364,61 @@ STORED_DATA <- gotedna_data$metabarcoding
 #Connect code below to stored data object
 
 # ---- standardize types early ----
+# occ_all <- STORED_DATA %>%
+#   dplyr::mutate(
+#     year             = as.character(year),
+#     samp_name         = as.character(samp_name),
+#     # occurrenceStatus  = tolower(as.character(occurrenceStatus)),
+#     decimalLatitude   = suppressWarnings(as.numeric(decimalLatitude)),
+#     decimalLongitude  = suppressWarnings(as.numeric(decimalLongitude)),
+#     target_gene       = dplyr::case_when(
+#       stringr::str_detect(tolower(target_gene), "12s") ~ "12S",
+#       stringr::str_detect(tolower(target_gene), "coi") ~ "COI",
+#       stringr::str_detect(tolower(target_gene), "16s") ~ "16S",
+#       stringr::str_detect(tolower(target_gene), "18s") ~ "18S",
+#       TRUE ~ as.character(target_gene)
+#     )
+#   )
+
 occ_all <- STORED_DATA %>%
   dplyr::mutate(
-    year             = as.character(year),
-    samp_name         = as.character(samp_name),
-    # occurrenceStatus  = tolower(as.character(occurrenceStatus)),
-    decimalLatitude   = suppressWarnings(as.numeric(decimalLatitude)),
-    decimalLongitude  = suppressWarnings(as.numeric(decimalLongitude)),
-    target_gene       = dplyr::case_when(
-      stringr::str_detect(tolower(target_gene), "12s") ~ "12S",
-      stringr::str_detect(tolower(target_gene), "coi") ~ "COI",
+    year = as.character(year),
+    samp_name = as.character(samp_name),
+
+    decimalLatitude  = suppressWarnings(as.numeric(decimalLatitude)),
+    decimalLongitude = suppressWarnings(as.numeric(decimalLongitude)),
+
+    target_gene = dplyr::case_when(
+
+      # 12S
+      stringr::str_detect(tolower(target_gene), "12s|mifish|teleo") ~ "12S",
+
+      # 16S
       stringr::str_detect(tolower(target_gene), "16s") ~ "16S",
-      stringr::str_detect(tolower(target_gene), "18s") ~ "18S",
+
+      # 18S
+      stringr::str_detect(tolower(target_gene), "18s|v4|v9") ~ "18S",
+
+      # COI
+      stringr::str_detect(tolower(target_gene), "coi|cox1|cox-1|mini_coi") ~ "COI",
+
+      # ITS
+      stringr::str_detect(tolower(target_gene), "its1|its2|its") ~ "ITS",
+
+      # 23S
+      stringr::str_detect(tolower(target_gene), "23s") ~ "23S",
+
+      # 28S
+      stringr::str_detect(tolower(target_gene), "28s|lsu") ~ "28S",
+
+      # cytb
+      stringr::str_detect(tolower(target_gene), "cytb|cytochrome b") ~ "cytb",
+
+      # # Plant markers
+      # stringr::str_detect(tolower(target_gene), "rbcl") ~ "rbcL",
+      # stringr::str_detect(tolower(target_gene), "matk") ~ "matK",
+      # stringr::str_detect(tolower(target_gene), "trnl") ~ "trnL",
+
       TRUE ~ as.character(target_gene)
     )
   )
@@ -485,39 +528,69 @@ species_in_polys_all %>%
 crs_ll <- 4326
 
 # 1) Clean + dissolve polygons in 4326
+# poly_union_ll <- all_polys_click %>%
+#   sf::st_make_valid() %>%
+#   sf::st_transform(crs_ll) %>%
+#   sf::st_union() %>%
+#   sf::st_as_sf()
+
 poly_union_ll <- all_polys_click %>%
-  sf::st_make_valid() %>%
-  sf::st_transform(crs_ll) %>%
-  sf::st_union() %>%
-  sf::st_as_sf()
+  st_make_valid() %>%
+  st_transform(4326)
 
 # 2) Choose an "approx 2000 m" grid size expressed in degrees at your latitude
-cell_m <- 2000
+cell_m <- 10000
 
-# centroid latitude (used to approximate meters->degrees)
-cent <- sf::st_coordinates(sf::st_centroid(sf::st_geometry(poly_union_ll)))
+# Approx degree conversion
+cent <- sf::st_coordinates(sf::st_centroid(sf::st_union(sf::st_geometry(poly_union_ll))))
 lat0 <- mean(cent[,2], na.rm = TRUE)
 
 deg_per_m_lat <- 1 / 111320
 deg_per_m_lon <- 1 / (111320 * cos(lat0 * pi/180))
 
-cellsize_deg <- c(cell_m * deg_per_m_lon, cell_m * deg_per_m_lat)  # c(lon_deg, lat_deg)
+cellsize_deg <- c(cell_m * deg_per_m_lon,
+                  cell_m * deg_per_m_lat)
 
-# 3) Build grid in 4326 (upright in leaflet)
+# Build grid
 grid_ll <- sf::st_make_grid(
   poly_union_ll,
   cellsize = cellsize_deg,
-  square   = TRUE
+  square = TRUE
 ) %>%
   sf::st_as_sf() %>%
   dplyr::mutate(cell_id = dplyr::row_number())
 
-# 4) Clip grid ONCE (still 4326)
-grid_clip_ll <- sf::st_intersection(grid_ll, poly_union_ll) %>%
-  sf::st_make_valid() %>%
-  sf::st_collection_extract("POLYGON") %>%
-  (\(x) x[!sf::st_is_empty(x), ])() %>%
-  sf::st_as_sf()
+# Lightweight clipping
+grid_clip_ll <- sf::st_filter(
+  grid_ll,
+  poly_union_ll,
+  .predicate = sf::st_intersects
+)
+
+# # centroid latitude (used to approximate meters->degrees)
+# cent <- sf::st_coordinates(sf::st_centroid(sf::st_geometry(poly_union_ll)))
+# lat0 <- mean(cent[,2], na.rm = TRUE)
+#
+# deg_per_m_lat <- 1 / 111320
+# deg_per_m_lon <- 1 / (111320 * cos(lat0 * pi/180))
+#
+# cellsize_deg <- c(cell_m * deg_per_m_lon, cell_m * deg_per_m_lat)  # c(lon_deg, lat_deg)
+#
+# # 3) Build grid in 4326 (upright in leaflet)
+# grid_ll <- sf::st_make_grid(
+#   poly_union_ll,
+#   cellsize = cellsize_deg,
+#   square   = TRUE
+# ) %>%
+#   sf::st_as_sf() %>%
+#   dplyr::mutate(cell_id = dplyr::row_number())
+#
+# # 4) Clip grid ONCE (still 4326)
+# # grid_clip_ll <- sf::st_intersection(grid_ll, poly_union_ll) %>%
+# #   sf::st_make_valid() %>%
+# #   sf::st_collection_extract("POLYGON") %>%
+# #   (\(x) x[!sf::st_is_empty(x), ])() %>%
+# #   sf::st_as_sf()
 
 # (Leaflet uses 4326 anyway)
 grid_clip <- grid_clip_ll
@@ -606,7 +679,11 @@ RICHNESS_GENE_ALL <- list(
   "12S" = build_gene_all_grid("12S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
   "COI" = build_gene_all_grid("COI", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
   "16S" = build_gene_all_grid("16S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "18S" = build_gene_all_grid("18S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName")
+  "18S" = build_gene_all_grid("18S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
+  "ITS" = build_gene_all_grid("ITS", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
+  "23S" = build_gene_all_grid("23S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
+  "28S" = build_gene_all_grid("28S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
+  "cytb" = build_gene_all_grid("cytb", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName")
 )
 
 
@@ -716,7 +793,11 @@ default_year <- "All"   # or "2024", etc.
 grid_12S_by_year <- RICHNESS_BY_KEY[grep("^12S_", names(RICHNESS_BY_KEY))]
 grid_16S_by_year <- RICHNESS_BY_KEY[grep("^16S_", names(RICHNESS_BY_KEY))]
 grid_18S_by_year <- RICHNESS_BY_KEY[grep("^18S_", names(RICHNESS_BY_KEY))]
-
+grid_COI_by_year <- RICHNESS_BY_KEY[grep("^COI_", names(RICHNESS_BY_KEY))]
+grid_ITS_by_year <- RICHNESS_BY_KEY[grep("^ITS_", names(RICHNESS_BY_KEY))]
+grid_23S_by_year <- RICHNESS_BY_KEY[grep("^23S_", names(RICHNESS_BY_KEY))]
+grid_28S_by_year <- RICHNESS_BY_KEY[grep("^28S_", names(RICHNESS_BY_KEY))]
+grid_cytb_by_year <- RICHNESS_BY_KEY[grep("^cytb_", names(RICHNESS_BY_KEY))]
 
 ## ===== Shared richness colour scale across ALL layers =====
 

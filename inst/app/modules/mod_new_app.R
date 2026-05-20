@@ -951,7 +951,7 @@ assign_protocol_ID <- function(df,
 app_b_server <- function(input, output, session){
 
   protocol_source <- reactive({
-    df <- selection_panel_df()
+    df <- protocol_available_df()
 
     shiny::validate(
       shiny::need(!is.null(df), "Select a site/cell/polygon to view protocols."),
@@ -963,7 +963,11 @@ app_b_server <- function(input, output, session){
       primers     = input$div_primer %||% character(0)
     )
 
-    df <- apply_diversity_dropdown_filters(df, live_filters)
+    df <- apply_diversity_dropdown_filters(
+      df,
+      live_filters,
+      strict_empty_primer = TRUE
+    )
 
     shiny::validate(
       shiny::need(nrow(df) > 0, "No detections available for the selected target gene/primer filters.")
@@ -1026,6 +1030,61 @@ app_b_server <- function(input, output, session){
       protocol_columns = protocol_columns,
       protocol_sheet = NULL
     )$data
+  })
+
+  protocol_available_df <- reactive({
+    df <- selected_detections()
+
+    if (is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    df <- df %>%
+      sf::st_drop_geometry()
+
+    live_filters <- list(
+      year = sel_year_chr(),
+      groups = active_groups(),
+      iucn_on = filter_iucn_on(),
+      sara_on = filter_sara_on(),
+      ais_on = filter_ais_on()
+    )
+
+    df <- apply_species_filters(df, live_filters)
+
+    df <- add_primer_combo(df)
+
+    protocol_columns <- c(
+      "nucl_acid_ext_kit",
+      "platform",
+      "instrument",
+      "seq_kit",
+      "otu_db",
+      "tax_assign_cat",
+      "otu_seq_comp_appr",
+      "min_depth_floor",
+      "max_depth_floor",
+      "samp_size_mid",
+      "size_frac",
+      "filter_material",
+      "samp_mat_process",
+      "samp_store_temp",
+      "samp_store_sol"
+    )
+
+    protocol_columns <- protocol_columns[protocol_columns %in% names(df)]
+
+    if (length(protocol_columns) == 0) {
+      return(df[0, , drop = FALSE])
+    }
+
+    df %>%
+      dplyr::filter(
+        !is.na(.data$target_gene),
+        .data$target_gene != "",
+        !is.na(.data$primer_combo),
+        .data$primer_combo != ""
+      )
   })
 
   meta_all <- reactive({
@@ -1771,17 +1830,22 @@ app_b_server <- function(input, output, session){
     df
   }
 
-  apply_diversity_dropdown_filters <- function(df, filters) {
+  apply_diversity_dropdown_filters <- function(df, filters, strict_empty_primer = FALSE) {
     df <- add_primer_combo(df)
 
-    if (length(filters$target_gene) > 0) {
+    tg_filter     <- filters$target_gene %||% character(0)
+    primer_filter <- filters$primers %||% character(0)
+
+    if (length(tg_filter) > 0) {
       df <- df %>%
-        dplyr::filter(as.character(target_gene) %in% filters$target_gene)
+        dplyr::filter(as.character(.data$target_gene) %in% tg_filter)
     }
 
-    if (length(filters$primers) > 0) {
+    if (length(primer_filter) > 0) {
       df <- df %>%
-        dplyr::filter(primer_combo %in% filters$primers)
+        dplyr::filter(.data$primer_combo %in% primer_filter)
+    } else if (isTRUE(strict_empty_primer)) {
+      df <- df[0, , drop = FALSE]
     }
 
     df
@@ -2116,6 +2180,100 @@ app_b_server <- function(input, output, session){
       }
     }
   })
+
+
+  observe({
+    df <- protocol_available_df()
+
+    message("DNA dropdown rows: ", ifelse(is.null(df), "NULL", nrow(df)))
+
+    if (!is.null(df) && nrow(df) > 0) {
+      message("DNA dropdown genes: ",
+              paste(sort(unique(as.character(df$target_gene))), collapse = ", "))
+    }
+  })
+
+  observeEvent(protocol_available_df(), {
+
+    df <- protocol_available_df()
+
+    if (is.null(df) || nrow(df) == 0) {
+      updateSelectizeInput(session, "div_target_gene", choices = character(0), selected = character(0), server = FALSE)
+      updateSelectizeInput(session, "div_primer", choices = character(0), selected = character(0), server = FALSE)
+      return()
+    }
+
+    gene_choices <- df %>%
+      dplyr::pull(target_gene) %>%
+      as.character() %>%
+      trimws() %>%
+      unique() %>%
+      stats::na.omit() %>%
+      sort()
+
+    current_gene <- isolate(input$div_target_gene)
+
+    selected_gene <- if (length(current_gene) == 1 && current_gene %in% gene_choices) {
+      current_gene
+    } else {
+      gene_choices[1]
+    }
+
+    updateSelectizeInput(
+      session,
+      "div_target_gene",
+      choices = stats::setNames(gene_choices, gene_choices),
+      selected = selected_gene,
+      server = FALSE
+    )
+
+  }, ignoreInit = FALSE)
+
+  observeEvent(
+    list(protocol_available_df(), input$div_target_gene),
+    {
+
+      df <- protocol_available_df()
+
+      if (is.null(df) || nrow(df) == 0) {
+        updateSelectizeInput(session, "div_primer", choices = character(0), selected = character(0), server = FALSE)
+        return()
+      }
+
+      df <- add_primer_combo(df)
+
+      gene <- input$div_target_gene
+
+      if (!is.null(gene) && length(gene) > 0 && nzchar(gene)) {
+        df <- df %>%
+          dplyr::filter(as.character(.data$target_gene) %in% gene)
+      }
+
+      primer_choices <- df %>%
+        dplyr::pull(primer_combo) %>%
+        as.character() %>%
+        trimws() %>%
+        unique() %>%
+        stats::na.omit() %>%
+        sort()
+
+      current_primers <- isolate(input$div_primer)
+      selected_primers <- intersect(current_primers, primer_choices)
+
+      if (length(selected_primers) == 0 && length(primer_choices) > 0) {
+        selected_primers <- primer_choices
+      }
+
+      updateSelectizeInput(
+        session,
+        "div_primer",
+        choices = stats::setNames(primer_choices, primer_choices),
+        selected = selected_primers,
+        server = FALSE
+      )
+    },
+    ignoreInit = FALSE
+  )
 
   compare_polygon_choices <- reactive({
 

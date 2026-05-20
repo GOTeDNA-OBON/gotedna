@@ -1,10 +1,46 @@
-library(GOTeDNA)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(plotly)
 library(DT)
 library(stringr)
+
+#Source all app modules
+
+module_dir <- "modules"
+
+if (!dir.exists(module_dir)) {
+  module_dir <- system.file("app/modules", package = "GOTeDNA")
+}
+
+module_files <- list.files(
+  module_dir,
+  pattern = "\\.R$",
+  full.names = TRUE
+)
+
+invisible(lapply(module_files, source, local = FALSE))
+
+
+app_data_file <- function(filename) {
+  local_path <- file.path("data", filename)
+
+  if (file.exists(local_path)) {
+    return(local_path)
+  }
+
+  package_path <- system.file(
+    file.path("app/data", filename),
+    package = "GOTeDNA"
+  )
+
+  if (package_path == "") {
+    stop("Could not find data file: ", filename)
+  }
+
+  package_path
+}
+
 
 # library(leaflet)
 # library(sf)
@@ -13,8 +49,8 @@ library(stringr)
 # library(bslib)
 cli::cli_alert_info("Packages loaded")
 
-list.files("modules", full.names = TRUE) |>
-  lapply(source)
+# list.files("modules", full.names = TRUE) |>
+#   lapply(source)
 cli::cli_alert_info("Modules loaded")
 
 options(shiny.maxRequestSize = 100 * 1024^2)
@@ -39,17 +75,19 @@ trans_letters <- function(x, pos = 1, fun = toupper) {
 
 # Data
 ## import glossary
-gloss <- read.csv("data/glossary.csv")
+gloss <- read.csv(app_data_file("glossary.csv"))
 gloss$Term <- paste0('<p align ="right"><b>', trimws(gloss$Term), "</b></p>")
 gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
-gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
-last_obis_download_ts <- as.POSIXct(readLines("data/last_obis_download_ts.txt"), tz = Sys.timezone())
+gotedna_data <- gotedna_data0 <- readRDS(app_data_file("gotedna_data.rds"))
+last_obis_download_ts <- as.POSIXct(
+  readLines(app_data_file("last_obis_download_ts.txt")),
+  tz = Sys.timezone()
+)
 
-
-gotedna_station <- gotedna_station0 <- readRDS("data/gotedna_station.rds")
-gotedna_primer <- readRDS("data/gotedna_primer.rds")
+gotedna_station <- gotedna_station0 <- readRDS(app_data_file("gotedna_station.rds"))
+gotedna_primer <- readRDS(app_data_file("gotedna_primer.rds"))
 
 #taxonomic_ranks <- list("kingdom", "phylum", "family", "order", "class", "genus")
 #taxonomic_ranks <- list("domain", "kingdom", "phylum", "class", "order", "family", "genus")
@@ -148,7 +186,7 @@ get_station <- function(x) {
 
 # Primer information for primer tab
 ## import glossary
-primer_seqs <- read.csv("data/primers.csv") |>
+primer_seqs <- read.csv(app_data_file("primers.csv")) |>
   dplyr::rename(
     "Primer set" = "PrimerSet",
     "Type of data" = "Data",
@@ -172,8 +210,7 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
   D_mb_clean
 }
 
-
-default_protocol_info <- readRDS("data/protocol_sheet.rds")
+default_protocol_info <- readRDS(app_data_file("protocol_sheet.rds"))
 
 protocol_labels <- c(
   samp_size = "Sample Volume (L)",
@@ -268,7 +305,9 @@ optional_columns <- c(
 
 
 #
-APP_DATA <- readRDS("data/v2_essential_app_data_20260424-4.rds") #loads that file
+#APP_DATA <- readRDS(system.file("app/data/v2_essential_app_data_20260424-4.rds", package = "GOTeDNA")) #loads that file
+
+APP_DATA <- readRDS(app_data_file("v2_essential_app_data_20260424-4.rds"))
 list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
 rm(APP_DATA)
 gc()

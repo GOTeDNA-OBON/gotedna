@@ -79,9 +79,10 @@ Suggests:
     testthat (>= 3.0.0),
     tibble,
     tidyselect
-RoxygenNote: 7.3.3
 LazyLoad: yes
 VignetteBuilder:
     knitr
 Config/testthat/edition: 3
+Config/build/copy-method: link
 LazyData: true
+Config/roxygen2/version: 8.0.0
