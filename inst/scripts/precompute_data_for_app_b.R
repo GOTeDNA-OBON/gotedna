@@ -617,7 +617,7 @@ poly_union <- all_polys_click %>%
 
 grid <- sf::st_make_grid(
   poly_union,
-  cellsize = 50000,
+  cellsize = 5000,
   square = TRUE
 ) %>%
   sf::st_as_sf() %>%

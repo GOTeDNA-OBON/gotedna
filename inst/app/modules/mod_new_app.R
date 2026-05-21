@@ -3711,21 +3711,12 @@ app_b_server <- function(input, output, session){
         group       = "MPA/AOI total species richness",
         layerId     = ~paste(site_type, site_name, sep="||"),
         fillOpacity = 0.05,
-        color       = "black",
+        color       = "white",
         weight      = 2,
         opacity     = 1,
         popup       = ~site_name,
         options     = pathOptions(pane = "pane_poly_total"),
         highlightOptions = highlightOptions(weight = 3, bringToFront = TRUE)
-      ) %>%
-      addPolygons(
-        data = all_polys_click_leaflet,
-        layerId = ~paste(site_type, site_name, sep = "||"),
-        group = "MPA/AOI Polygons",
-        fill = FALSE,
-        color = "white",
-        weight = 2,
-        opacity = 1
       )
 
     # ---- legends + controls ----
@@ -4180,7 +4171,7 @@ const obs = new MutationObserver(() => {
     add_grid_layer(grid16,  "16S", "n_species", "16S richness")
     add_grid_layer(grid18,  "18S", "n_species", "18S richness")
 
-    gridALL <- if (yr == "All") RICHNESS_ALL else RICHNESS_ALL_BY_YEAR[[yr]] %||% RICHNESS_ALL
+    gridALL <- if (yr == "All") RICHNESS_ALL_LEAFLET else RICHNESS_ALL_BY_YEAR[[yr]] %||% RICHNESS_ALL
     add_grid_layer(gridALL, "All", "n_species_total", "Total richness")
   }, ignoreInit = TRUE)
 
