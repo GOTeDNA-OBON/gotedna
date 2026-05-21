@@ -606,14 +606,39 @@ species_in_polys_all %>%
 ##Species Richness Polygons
 
 # 1) Make a grid over polygons; Work in a projected CRS (Canada Lambert is a good default)
+# points and polygons must be in the projected CRS first
+species_pts_proj <- species_sf_all_proj
+polys_proj <- all_polys_click
+
+# keep only MPAs/AOIs that contain at least one eDNA point
+polys_with_data <- polys_proj[
+  lengths(sf::st_intersects(polys_proj, species_pts_proj)) > 0,
+]
+
+# optional: keep nearby polygons too, e.g. within 25 km of a sample
+polys_near_data <- polys_proj[
+  lengths(sf::st_is_within_distance(polys_proj, species_pts_proj, dist = 25000)) > 0,
+]
+
+all_polys_for_grid <- polys_near_data %>%
+  sf::st_simplify(
+    dTolerance = 200,
+    preserveTopology = TRUE
+  )
 
 # 1) Clean + dissolve polygons in projected CRS (EPSG:3347)
-poly_union <- all_polys_click %>%
+poly_union <- all_polys_for_grid %>%
   sf::st_make_valid() %>%
-  sf::st_union() %>%
-  sf::st_collection_extract("POLYGON") %>%
-  sf::st_make_valid() %>%
+  sf::st_union(by_feature = FALSE) %>%
+  sf::st_cast("MULTIPOLYGON") %>%
   sf::st_as_sf()
+
+# poly_union <- all_polys_click %>%
+#   sf::st_make_valid() %>%
+#   sf::st_union() %>%
+#   sf::st_collection_extract("POLYGON") %>%
+#   sf::st_make_valid() %>%
+#   sf::st_as_sf()
 
 grid <- sf::st_make_grid(
   poly_union,
@@ -629,6 +654,7 @@ grid_clip <- sf::st_intersection(
 ) %>%
   sf::st_collection_extract("POLYGON", warn = FALSE) %>%
   sf::st_make_valid() %>%
+  sf::st_as_sf() %>%
   dplyr::mutate(cell_id = dplyr::row_number())
 
 # 6) Richness in projected CRS (EPSG:3347)

@@ -3701,7 +3701,7 @@ app_b_server <- function(input, output, session){
         data        = all_polys_zones_leaflet,
         group       = "MPA/AOI Zone Boundaries",
         fillOpacity = 0,
-        color       = "black",
+        color       = "white",
         weight      = 1,
         opacity     = 0.8,
         options     = pathOptions(clickable = FALSE, pane = "pane_zones")
