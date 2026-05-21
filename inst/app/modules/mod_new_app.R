@@ -1977,7 +1977,7 @@ app_b_server <- function(input, output, session){
     cid <- suppressWarnings(as.integer(id))
     if (is.na(cid)) return()
 
-    sel_sf <- grid_clip %>%
+    sel_sf <- grid_leaflet %>%
       dplyr::filter(cell_id == cid)
 
     if (nrow(sel_sf) == 0) return()
@@ -2779,7 +2779,7 @@ app_b_server <- function(input, output, session){
       }
 
       yr <- sel_year_chr()
-      pts <- sampling_pts
+      pts <- sampling_pts_leaflet
 
       # Year filter ONLY
       if (yr != "All") {
@@ -3561,18 +3561,18 @@ app_b_server <- function(input, output, session){
     # ---- choose initial year + initial layers safely ----
     yrs <- sort(unique(na.omit(as.character(KEY_TBL$year))))
 
-    init_12S <- if (default_year == "All") RICHNESS_GENE_ALL[["12S"]] else RICHNESS_BY_KEY[[paste0("12S_", default_year)]]
-    init_COI <- if (default_year == "All") RICHNESS_GENE_ALL[["COI"]] else RICHNESS_BY_KEY[[paste0("COI_", default_year)]]
-    init_16S <- if (default_year == "All") RICHNESS_GENE_ALL[["16S"]] else RICHNESS_BY_KEY[[paste0("16S_", default_year)]]
-    init_18S <- if (default_year == "All") RICHNESS_GENE_ALL[["18S"]] else RICHNESS_BY_KEY[[paste0("18S_", default_year)]]
+    init_12S <- if (default_year == "All") RICHNESS_GENE_ALL_LEAFLET[["12S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("12S_", default_year)]]
+    init_COI <- if (default_year == "All") RICHNESS_GENE_ALL_LEAFLET[["COI"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("COI_", default_year)]]
+    init_16S <- if (default_year == "All") RICHNESS_GENE_ALL_LEAFLET[["16S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("16S_", default_year)]]
+    init_18S <- if (default_year == "All") RICHNESS_GENE_ALL_LEAFLET[["18S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("18S_", default_year)]]
 
     init_ALL <- {
       if (default_year == "All") {
-        RICHNESS_ALL
+        RICHNESS_ALL_LEAFLET
       } else if (default_year %in% names(RICHNESS_ALL_BY_YEAR)) {
-        RICHNESS_ALL_BY_YEAR[[default_year]]
+        sf::st_transform(RICHNESS_ALL_BY_YEAR[[default_year]], 4326)
       } else {
-        RICHNESS_ALL
+        RICHNESS_ALL_LEAFLET
       }
     }
 
@@ -3666,7 +3666,7 @@ app_b_server <- function(input, output, session){
     # ---- rest of your map layers ----
     m <- m %>%
       addPolygons(
-        data = depth_layers[["All"]],
+        data = sf::st_transform(depth_layers[["All"]], 4326),
         group = "Sampling Depth",
         layerId = ~cell_id,
         fillColor   = ~final_fill,
@@ -3682,7 +3682,7 @@ app_b_server <- function(input, output, session){
         options = pathOptions(pane = "pane_polys")
       ) %>%
       addCircleMarkers(
-        data        = sampling_pts,
+        data        = sampling_pts_leaflet,
         group       = "Sampling Points",
         radius      = 2,
         stroke      = TRUE,
@@ -3698,7 +3698,7 @@ app_b_server <- function(input, output, session){
         )
       ) %>%
       addPolygons(
-        data        = all_polys_zones,
+        data        = all_polys_zones_leaflet,
         group       = "MPA/AOI Zone Boundaries",
         fillOpacity = 0,
         color       = "black",
@@ -3707,7 +3707,7 @@ app_b_server <- function(input, output, session){
         options     = pathOptions(clickable = FALSE, pane = "pane_zones")
       ) %>%
       addPolygons(
-        data        = all_polys_click,
+        data        = all_polys_click_leaflet,
         group       = "MPA/AOI total species richness",
         layerId     = ~paste(site_type, site_name, sep="||"),
         fillOpacity = 0.05,
@@ -3717,6 +3717,15 @@ app_b_server <- function(input, output, session){
         popup       = ~site_name,
         options     = pathOptions(pane = "pane_poly_total"),
         highlightOptions = highlightOptions(weight = 3, bringToFront = TRUE)
+      ) %>%
+      addPolygons(
+        data = all_polys_click_leaflet,
+        layerId = ~paste(site_type, site_name, sep = "||"),
+        group = "MPA/AOI Polygons",
+        fill = FALSE,
+        color = "white",
+        weight = 2,
+        opacity = 1
       )
 
     # ---- legends + controls ----
@@ -4161,10 +4170,10 @@ const obs = new MutationObserver(() => {
         )
     }
 
-    grid12  <- if (yr == "All") RICHNESS_GENE_ALL[["12S"]] else RICHNESS_BY_KEY[[paste0("12S_", yr)]]
-    gridCOI <- if (yr == "All") RICHNESS_GENE_ALL[["COI"]] else RICHNESS_BY_KEY[[paste0("COI_", yr)]]
-    grid16  <- if (yr == "All") RICHNESS_GENE_ALL[["16S"]] else RICHNESS_BY_KEY[[paste0("16S_", yr)]]
-    grid18  <- if (yr == "All") RICHNESS_GENE_ALL[["18S"]] else RICHNESS_BY_KEY[[paste0("18S_", yr)]]
+    grid12  <- if (yr == "All") RICHNESS_GENE_ALL_LEAFLET[["12S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("12S_", yr)]]
+    gridCOI <- if (yr == "All") RICHNESS_GENE_ALL_LEAFLET[["COI"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("COI_", yr)]]
+    grid16  <- if (yr == "All") RICHNESS_GENE_ALL_LEAFLET[["16S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("16S_", yr)]]
+    grid18  <- if (yr == "All") RICHNESS_GENE_ALL_LEAFLET[["18S"]] else RICHNESS_BY_KEY_LEAFLET[[paste0("18S_", yr)]]
 
     add_grid_layer(grid12,  "12S", "n_species", "12S richness")
     add_grid_layer(gridCOI, "COI", "n_species", "COI richness")
@@ -4187,7 +4196,7 @@ const obs = new MutationObserver(() => {
     yr_key <- selected_depth_layer(input$sel_year)
     if (!yr_key %in% names(depth_layers)) return()
 
-    occ_all <- depth_layers[[yr_key]]
+    occ_all <- sf::st_transform(depth_layers[[yr_key]], 4326)
 
     leafletProxy("map") %>%
       clearGroup("Sampling Depth") %>%

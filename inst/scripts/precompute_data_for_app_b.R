@@ -6,12 +6,40 @@ read_poly_wgs84 <- function(...) {
     st_transform(4326)
 }
 
-mpa_targets <- read_poly_wgs84("mpa_targets.shp")
-esi_poly    <- read_poly_wgs84("EasternShoreIslands_networksite.shp")
-fcbb_poly   <- read_poly_wgs84("FCBB_Proposed_MPA_Boundary_zones.shp")
+# read_poly_wgs84 <- function(...) {
+#   sf::st_read(app_data_file(file.path("polygons", ...)), quiet = TRUE) %>%
+#     sf::st_transform(4326)
+# }
+
+proj_crs <- 3347   # Canada Lambert
+leaflet_crs <- 4326
+
+mpa_targets <- read_poly_wgs84("mpa_targets.gpkg") %>%
+  st_transform(proj_crs)
+
+mpa_global <- read_poly_wgs84("mpa_marine.gpkg") %>%
+  st_transform(proj_crs)
+
+esi_poly <- read_poly_wgs84("EasternShoreIslands_networksite.shp") %>%
+  st_transform(proj_crs)
+
+fcbb_poly <- read_poly_wgs84("FCBB_Proposed_MPA_Boundary_zones.shp") %>%
+  st_transform(proj_crs)
 
 #Combine all polygons into one sf object
 #Add a common name/type to each polygon set
+
+mpa_global_polys <- mpa_global %>%
+  sf::st_geometry() %>%
+  sf::st_as_sf() %>%
+  dplyr::mutate(
+    site_name = dplyr::coalesce(
+      as.character(mpa_global$NAME_E),
+      as.character(mpa_global$NAME)
+    ),
+    site_type = "MCA"
+  )
+
 mpa_polys <- mpa_targets %>%
   st_geometry() %>%                     # keep just geometry
   st_as_sf() %>%                        # convert back to sf
@@ -36,31 +64,61 @@ fcbb_polys <- fcbb_poly %>%
     site_type = "AOI"
   )
 
+
+sf::sf_use_s2(FALSE)
+
 #Bind everything together
 all_polys <- bind_rows(
+  mpa_global_polys,
   mpa_polys,
   esi_polys,
   fcbb_polys
 )
 
-#Ensure it's still sf
-all_polys <- st_as_sf(all_polys)
+all_polys <- sf::st_as_sf(all_polys)
 
-# ---- Clean once ----
+clean_poly <- function(x) {
+
+  x %>%
+    sf::st_make_valid() %>%
+    sf::st_collection_extract("POLYGON", warn = FALSE) %>%
+    dplyr::filter(!sf::st_is_empty(.)) %>%
+    sf::st_as_sf()
+
+}
+
 all_polys_clean <- all_polys %>%
-  st_make_valid() %>%
-  st_collection_extract("POLYGON") %>%
-  (\(x) x[!st_is_empty(x), ])() %>%
-  st_as_sf()
+  clean_poly() %>%
+  st_simplify(
+    dTolerance = 50,
+    preserveTopology = TRUE
+  )
 
-# ---- A) zone outlines (keep every piece) ----
 all_polys_zones <- all_polys_clean
 
-# ---- B) clickable dissolved outlines (one feature per site) ----
 all_polys_click <- all_polys_clean %>%
-  group_by(site_type, site_name) %>%
-  summarise(geometry = st_union(x), .groups = "drop") %>%
-  st_as_sf()
+  dplyr::group_by(site_type, site_name) %>%
+  dplyr::summarise(
+    .groups = "drop"
+  ) %>%
+  sf::st_make_valid() %>%
+  sf::st_as_sf()
+#
+# # ---- Clean once ----
+# all_polys_clean <- all_polys %>%
+#   st_make_valid() %>%
+#   st_collection_extract("POLYGON") %>%
+#   (\(x) x[!st_is_empty(x), ])() %>%
+#   st_as_sf()
+#
+# # ---- A) zone outlines (keep every piece) ----
+# all_polys_zones <- all_polys_clean
+#
+# # ---- B) clickable dissolved outlines (one feature per site) ----
+# all_polys_click <- all_polys_clean %>%
+#   group_by(site_type, site_name) %>%
+#   summarise(geometry = st_union(x), .groups = "drop") %>%
+#   st_as_sf()
 
 
 #-----------------------------------------------------------------------------
@@ -466,6 +524,28 @@ SPECIES_SF_BY_KEY <- purrr::imap(DATA_BY_KEY, ~{
     mutate(target_gene = gene, year = yr)
 })
 
+
+dedupe_by_occurrenceID <- function(df) {
+  if (is.null(df) || nrow(df) == 0) {
+    return(df)
+  }
+
+  if (!"occurrenceID" %in% names(df)) {
+    warning("No occurrenceID column, skipping dedupe")
+    return(df)
+  }
+
+  df %>%
+    dplyr::mutate(
+      occurrenceID = as.character(occurrenceID),
+      id = if ("id" %in% names(.)) as.character(id) else NA_character_
+    ) %>%
+    dplyr::arrange(occurrenceID, id) %>%
+    dplyr::group_by(occurrenceID) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup()
+}
+
 species_sf_all <- dplyr::bind_rows(SPECIES_SF_BY_KEY)
 
 
@@ -473,6 +553,13 @@ species_sf_all <- dplyr::bind_rows(SPECIES_SF_BY_KEY)
 #############################################################
 #Turn species data into sf points  for the spatial join
 
+species_sf_all <- species_sf_all %>%
+  sf::st_transform(proj_crs)
+
+# ---- DEDUPE EARLY ----
+species_sf_all <- dedupe_by_occurrenceID(species_sf_all)
+
+species_sf_all_proj <- species_sf_all
 
 # ---- ONE join: species points -> clickable MPA/AOI polygons ----
 species_in_polys_all <- sf::st_join(
@@ -518,126 +605,89 @@ species_in_polys_all %>%
 
 ##Species Richness Polygons
 
-# 1) Make a grid over polygons
-# 1) Work in a projected CRS (Canada Lambert is a good default)
-##Species Richness Polygons (Option A: projected CRS to avoid s2 errors)
+# 1) Make a grid over polygons; Work in a projected CRS (Canada Lambert is a good default)
 
-##Species Richness Polygons (Option A: build grid in EPSG:4326 so it stays upright in leaflet)
+# 1) Clean + dissolve polygons in projected CRS (EPSG:3347)
+poly_union <- all_polys_click %>%
+  sf::st_make_valid() %>%
+  sf::st_union() %>%
+  sf::st_collection_extract("POLYGON") %>%
+  sf::st_make_valid() %>%
+  sf::st_as_sf()
 
-# 0) Work in lon/lat (leaflet native)
-crs_ll <- 4326
-
-# 1) Clean + dissolve polygons in 4326
-# poly_union_ll <- all_polys_click %>%
-#   sf::st_make_valid() %>%
-#   sf::st_transform(crs_ll) %>%
-#   sf::st_union() %>%
-#   sf::st_as_sf()
-
-poly_union_ll <- all_polys_click %>%
-  st_make_valid() %>%
-  st_transform(4326)
-
-# 2) Choose an "approx 2000 m" grid size expressed in degrees at your latitude
-cell_m <- 10000
-
-# Approx degree conversion
-cent <- sf::st_coordinates(sf::st_centroid(sf::st_union(sf::st_geometry(poly_union_ll))))
-lat0 <- mean(cent[,2], na.rm = TRUE)
-
-deg_per_m_lat <- 1 / 111320
-deg_per_m_lon <- 1 / (111320 * cos(lat0 * pi/180))
-
-cellsize_deg <- c(cell_m * deg_per_m_lon,
-                  cell_m * deg_per_m_lat)
-
-# Build grid
-grid_ll <- sf::st_make_grid(
-  poly_union_ll,
-  cellsize = cellsize_deg,
+grid <- sf::st_make_grid(
+  poly_union,
+  cellsize = 50000,
   square = TRUE
 ) %>%
   sf::st_as_sf() %>%
   dplyr::mutate(cell_id = dplyr::row_number())
 
-# Lightweight clipping
-grid_clip_ll <- sf::st_filter(
-  grid_ll,
-  poly_union_ll,
-  .predicate = sf::st_intersects
-)
+grid_clip <- sf::st_intersection(
+  grid,
+  poly_union
+) %>%
+  sf::st_collection_extract("POLYGON", warn = FALSE) %>%
+  sf::st_make_valid() %>%
+  dplyr::mutate(cell_id = dplyr::row_number())
 
-# # centroid latitude (used to approximate meters->degrees)
-# cent <- sf::st_coordinates(sf::st_centroid(sf::st_geometry(poly_union_ll)))
-# lat0 <- mean(cent[,2], na.rm = TRUE)
-#
-# deg_per_m_lat <- 1 / 111320
-# deg_per_m_lon <- 1 / (111320 * cos(lat0 * pi/180))
-#
-# cellsize_deg <- c(cell_m * deg_per_m_lon, cell_m * deg_per_m_lat)  # c(lon_deg, lat_deg)
-#
-# # 3) Build grid in 4326 (upright in leaflet)
-# grid_ll <- sf::st_make_grid(
-#   poly_union_ll,
-#   cellsize = cellsize_deg,
-#   square   = TRUE
-# ) %>%
-#   sf::st_as_sf() %>%
-#   dplyr::mutate(cell_id = dplyr::row_number())
-#
-# # 4) Clip grid ONCE (still 4326)
-# # grid_clip_ll <- sf::st_intersection(grid_ll, poly_union_ll) %>%
-# #   sf::st_make_valid() %>%
-# #   sf::st_collection_extract("POLYGON") %>%
-# #   (\(x) x[!sf::st_is_empty(x), ])() %>%
-# #   sf::st_as_sf()
-
-# (Leaflet uses 4326 anyway)
-grid_clip <- grid_clip_ll
-
-# 5) Points stay in 4326 too
-SPECIES_SF_BY_KEY_ll <- SPECIES_SF_BY_KEY %>%
-  purrr::map(~sf::st_transform(.x, crs_ll))
-
-#Make an "all points" sf in 4326 (PRESENT only)
-species_sf_all_ll <- dplyr::bind_rows(SPECIES_SF_BY_KEY_ll)
-
-# 6) Richness in 4326 (no CRS mismatch)
+# 6) Richness in projected CRS (EPSG:3347)
 make_richness_layer_fast <- function(grid_sf, pts_sf) {
-  stopifnot(inherits(grid_sf, "sf"), inherits(pts_sf, "sf"))
-  if (!"scientificName" %in% names(pts_sf)) {
-    stop("pts_sf must contain a 'scientificName' column.")
+
+  pts_join <- sf::st_join(
+    pts_sf,
+    grid_sf %>% dplyr::select(cell_id),
+    join = sf::st_within,
+    left = FALSE
+  )
+
+  if (nrow(pts_join) == 0) {
+    return(
+      grid_sf %>%
+        dplyr::mutate(
+          n_species = 0L,
+          has_sampling = FALSE
+        )
+    )
   }
 
-  idx <- sf::st_intersects(grid_sf, pts_sf)
-
-  n_sp <- vapply(idx, function(i) {
-    if (length(i) == 0) return(0L)
-    length(unique(as.character(pts_sf$scientificName[i])))
-  }, integer(1))
+  rich_tbl <- pts_join %>%
+    sf::st_drop_geometry() %>%
+    dplyr::filter(!is.na(scientificName), scientificName != "") %>%
+    dplyr::group_by(cell_id) %>%
+    dplyr::summarise(
+      n_species = dplyr::n_distinct(scientificName),
+      .groups = "drop"
+    )
 
   grid_sf %>%
+    dplyr::left_join(rich_tbl, by = "cell_id") %>%
     dplyr::mutate(
-      n_species    = n_sp,
-      has_sampling = n_sp > 0
+      n_species = tidyr::replace_na(n_species, 0L),
+      has_sampling = n_species > 0
     )
 }
 
+SPECIES_SF_BY_KEY_proj <- species_sf_all_proj %>%
+  split(paste(.$target_gene, .$year, sep = "_"))
+
 RICHNESS_BY_KEY <- purrr::map(
-  SPECIES_SF_BY_KEY_ll,
-  ~make_richness_layer_fast(grid_clip_ll, .x)
+  SPECIES_SF_BY_KEY_proj,
+  ~make_richness_layer_fast(grid_clip, .x)
 )
 
 # optional: all-years combined richness
 RICHNESS_ALL <- make_richness_layer_fast(
-  grid_clip_ll,
-  dplyr::bind_rows(SPECIES_SF_BY_KEY_ll)
+  grid_clip,
+  species_sf_all_proj
 )
 
 # species_sf_all: sf POINTS with at least cell_id, target_gene, scientificName (and year)
 # grid_clip: sf POLYGONS with cell_id + geometry  (your analysis grid)
 
 build_gene_all_grid <- function(gene, grid_sf, pts_sf, tax_col = "scientificName") {
+
+  stopifnot("cell_id" %in% names(pts_sf))
 
   pts_g <- pts_sf %>%
     dplyr::filter(as.character(target_gene) == gene) %>%
@@ -664,45 +714,42 @@ build_gene_all_grid <- function(gene, grid_sf, pts_sf, tax_col = "scientificName
   out
 }
 
-# Use the lon/lat versions you created for the grid + points
-# grid_clip_ll and species_sf_all_ll are both EPSG:4326
-
 species_sf_all_cell <- sf::st_join(
-  species_sf_all_ll,
-  grid_clip_ll %>% dplyr::select(cell_id),
+  species_sf_all_proj,
+  grid_clip %>% dplyr::select(cell_id),
   join = sf::st_within,
   left = FALSE
 )
 
 # Now this will work because pts_sf has cell_id
 RICHNESS_GENE_ALL <- list(
-  "12S" = build_gene_all_grid("12S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "COI" = build_gene_all_grid("COI", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "16S" = build_gene_all_grid("16S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "18S" = build_gene_all_grid("18S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "ITS" = build_gene_all_grid("ITS", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "23S" = build_gene_all_grid("23S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "28S" = build_gene_all_grid("28S", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName"),
-  "cytb" = build_gene_all_grid("cytb", grid_clip_ll, species_sf_all_cell, tax_col = "scientificName")
+  "12S" = build_gene_all_grid("12S", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "COI" = build_gene_all_grid("COI", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "16S" = build_gene_all_grid("16S", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "18S" = build_gene_all_grid("18S", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "ITS" = build_gene_all_grid("ITS", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "23S" = build_gene_all_grid("23S", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "28S" = build_gene_all_grid("28S", grid_clip, species_sf_all_cell, tax_col = "scientificName"),
+  "cytb" = build_gene_all_grid("cytb", grid_clip, species_sf_all_cell, tax_col = "scientificName")
 )
 
-
-## ===== Unified richness palettes + leaflet map (Option A: 4326-only) =====
-
-# Assumes these already exist from your Option A block:
-# - grid_clip_ll (sf, EPSG:4326) with column cell_id
-# - SPECIES_SF_BY_KEY_ll (named list of sf points, EPSG:4326) with scientificName, year, target_gene
-# - RICHNESS_BY_KEY (named list of sf grids, EPSG:4326) with n_species
-# - RICHNESS_ALL (sf grid, EPSG:4326) with n_species (from make_richness_layer_fast)
-# - poly_union_ll or all_polys_click for outlines
+## ===== Unified richness palettes + leaflet map =====
+## Analysis in EPSG:3347
+## Leaflet display in EPSG:4326
 
 # 0) Ensure grid has cell_id
-if (!"cell_id" %in% names(grid_clip_ll)) {
-  grid_clip_ll <- grid_clip_ll %>% dplyr::mutate(cell_id = dplyr::row_number())
+if (!"cell_id" %in% names(grid_clip)) {
+  grid_clip <- grid_clip %>% dplyr::mutate(cell_id = dplyr::row_number())
 }
 
-# 1) Make an "all points" sf in 4326 (present only; should already be present-only, but keep safe)
-species_sf_all_ll <- dplyr::bind_rows(SPECIES_SF_BY_KEY_ll) %>%
+
+
+# 2) Rename ALL grid column consistently for mapping (“total across whatever you used to compute it”)
+# Your RICHNESS_ALL currently has n_species from make_richness_layer_fast().
+RICHNESS_ALL <- RICHNESS_ALL %>%
+  dplyr::rename(n_species_total = n_species)
+
+species_sf_all_proj <- species_sf_all_proj %>%
   dplyr::mutate(
     year             = as.character(year),
     target_gene      = as.character(target_gene),
@@ -714,70 +761,37 @@ species_sf_all_ll <- dplyr::bind_rows(SPECIES_SF_BY_KEY_ll) %>%
     !is.na(scientificName), scientificName != ""
   )
 
-# 2) Rename ALL grid column consistently for mapping (“total across whatever you used to compute it”)
-# Your RICHNESS_ALL currently has n_species from make_richness_layer_fast().
-RICHNESS_ALL <- RICHNESS_ALL %>%
-  dplyr::rename(n_species_total = n_species)
-
-# (Optional) If you want per-year ALL-markers layers in 4326:
-years_all <- sort(unique(na.omit(species_sf_all_ll$year)))
+years_all <- sort(unique(na.omit(species_sf_all_proj$year)))
 
 RICHNESS_ALL_BY_YEAR <- setNames(
   lapply(years_all, function(yr) {
-    pts_y <- species_sf_all_ll %>% dplyr::filter(year == yr)
-    make_richness_layer_fast(grid_clip_ll, pts_y) %>%
+    pts_y <- species_sf_all_proj %>% dplyr::filter(year == yr)
+
+    make_richness_layer_fast(grid_clip, pts_y) %>%
       dplyr::rename(n_species_total = n_species)
   }),
   years_all
 )
 
-# 3) Shared richness palette domain across ALL layers
-max_rich <- max(
-  RICHNESS_ALL$n_species_total,
-  unlist(purrr::map(RICHNESS_BY_KEY, ~ .x$n_species)),
-  unlist(purrr::map(RICHNESS_ALL_BY_YEAR, ~ .x$n_species_total)),
-  na.rm = TRUE
-)
-
-rich_domain <- c(0, max_rich)
-
-wes_cont <- function(name, n = 100) {
-  grDevices::colorRampPalette(
-    wesanderson::wes_palette(name, type = "continuous")
-  )(n)
-}
-
-pal_vec <- wes_cont("Zissou1", 100)
-
-pal_rich <- leaflet::colorNumeric(
-  palette  = pal_vec,
-  domain   = rich_domain,
-  na.color = "transparent"
-)
-
-
-
 # Long table: one row per (cell_id, scientificName, target_gene, year)
-cell_species_all <- purrr::imap_dfr(SPECIES_SF_BY_KEY_ll, ~{
-  key <- .y
-  parts <- strsplit(key, "_")[[1]]
-  gene <- parts[1]
-  yr   <- parts[2]
+cell_species_all <- purrr::map_dfr(SPECIES_SF_BY_KEY_proj, ~{
 
-  idx <- sf::st_intersects(grid_clip_ll, .x)
+  pts_join <- sf::st_join(
+    .x,
+    grid_clip %>% dplyr::select(cell_id),
+    join = sf::st_within,
+    left = FALSE
+  )
 
-  tibble::tibble(cell_id = grid_clip_ll$cell_id) %>%
-    dplyr::mutate(scientificName = purrr::map(idx, \(i) unique(.x$scientificName[i]))) %>%
-    tidyr::unnest(scientificName) %>%
-    dplyr::mutate(target_gene = gene, year = yr) %>%
-    dplyr::filter(!is.na(scientificName), scientificName != "")
+  pts_join %>%
+    sf::st_drop_geometry() %>%
+    dplyr::distinct(
+      cell_id,
+      scientificName,
+      target_gene,
+      year
+    )
 })
-
-
-# 5) Convenience: split RICHNESS_BY_KEY into gene buckets
-grid_12S_by_year <- RICHNESS_BY_KEY[grep("^12S_", names(RICHNESS_BY_KEY))]
-
-grid_16S_by_year <- RICHNESS_BY_KEY[grep("^16S_", names(RICHNESS_BY_KEY))]
 
 
 # 7) Defaults
@@ -821,7 +835,35 @@ max_gene_layers <- max_from_key_layers(RICHNESS_BY_KEY, "n_species")
 max_rich <- max(max_all_markers, max_gene_layers, na.rm = TRUE)
 
 
+rich_domain <- c(0, max_rich)
 
+wes_cont <- function(name, n = 100) {
+  grDevices::colorRampPalette(
+    wesanderson::wes_palette(name, type = "continuous")
+  )(n)
+}
+
+pal_vec <- wes_cont("Zissou1", 100)
+
+pal_rich <- leaflet::colorNumeric(
+  palette  = pal_vec,
+  domain   = rich_domain,
+  na.color = "transparent"
+)
+
+grid_leaflet <- sf::st_transform(grid_clip, leaflet_crs)
+
+RICHNESS_BY_KEY_LEAFLET <- purrr::map(
+  RICHNESS_BY_KEY,
+  ~ sf::st_transform(.x, leaflet_crs)
+)
+
+RICHNESS_ALL_LEAFLET <- sf::st_transform(RICHNESS_ALL, leaflet_crs)
+
+RICHNESS_GENE_ALL_LEAFLET <- purrr::map(
+  RICHNESS_GENE_ALL,
+  ~ sf::st_transform(.x, leaflet_crs)
+)
 
 ##NOTE: Right now the SARA Schedule 1 filter is matching based on the data inputted into the app. Once linking the code to OBIS data, edit so that it matches based on WoRMS AphiaID
 
@@ -954,7 +996,7 @@ SAMPLE_PTS_BY_KEY <- purrr::imap(DATA_BY_YEAR_GENE, ~{
 })
 
 sample_pts_all <- bind_rows(SAMPLE_PTS_BY_KEY) %>%
-  mutate(year = as.character(year))
+  sf::st_transform(proj_crs)
 
 #Compute per-cell depth stats(min,max,median + mixed depth flag)
 depth_on_grid_stats <- function(grid_sf, sample_pts_sf, depth_col = "depth_m",
@@ -967,16 +1009,22 @@ depth_on_grid_stats <- function(grid_sf, sample_pts_sf, depth_col = "depth_m",
   if (sf::st_crs(sample_pts_sf) != sf::st_crs(grid_sf)) {
     sample_pts_sf <- sf::st_transform(sample_pts_sf, sf::st_crs(grid_sf))
   }
-  if (sf::st_crs(all_polys) != sf::st_crs(grid_sf)) {
-    all_polys2 <- sf::st_transform(all_polys, sf::st_crs(grid_sf))
+  if (sf::st_crs(all_polys_click) != sf::st_crs(grid_sf)) {
+    all_polys2 <- sf::st_transform(all_polys_click, sf::st_crs(grid_sf))
   } else {
-    all_polys2 <- all_polys
+    all_polys2 <- all_polys_click
   }
 
-  haspt <- lengths(sf::st_intersects(grid_sf, sample_pts_sf)) > 0
-  grid_with <- sf::st_join(grid_sf, sample_pts_sf, join = sf::st_intersects, left = TRUE)
+  pts_join <- sf::st_join(
+    sample_pts_sf,
+    grid_sf %>% dplyr::select(cell_id),
+    join = sf::st_within,
+    left = FALSE
+  )
 
-  stats_tbl <- grid_with %>%
+  haspt <- unique(pts_join$cell_id)
+
+  stats_tbl <- pts_join %>%
     sf::st_drop_geometry() %>%
     dplyr::group_by(cell_id) %>%
     dplyr::summarise(
@@ -989,15 +1037,21 @@ depth_on_grid_stats <- function(grid_sf, sample_pts_sf, depth_col = "depth_m",
   out <- grid_sf %>%
     dplyr::left_join(stats_tbl, by = "cell_id") %>%
     dplyr::mutate(
-      has_sampling = haspt,
+      has_sampling = cell_id %in% haspt,
       depth_range  = depth_max - depth_min,
-      mixed_depth  = dplyr::if_else(has_sampling & !is.na(depth_range) & depth_range >= mixed_delta_m, TRUE, FALSE)
+      mixed_depth  = dplyr::if_else(
+        has_sampling & !is.na(depth_range) & depth_range >= mixed_delta_m,
+        TRUE,
+        FALSE
+      )
     ) %>%
     sf::st_as_sf()
 
-  sf::st_intersection(out, all_polys2) %>%
-    sf::st_collection_extract("POLYGON") %>%
-    (\(x) x[!sf::st_is_empty(x), ])()
+  sf::st_filter(
+    out,
+    all_polys2,
+    .predicate = sf::st_intersects
+  )
 }
 
 #Compute depth grids by year only
@@ -1056,7 +1110,7 @@ standardize_month_col <- function(df) {
 }
 
 make_point_key <- function(df) {
-  coords <- sf::st_coordinates(df)
+  coords <- sf::st_coordinates(sf::st_transform(df, 4326))
 
   df %>%
     dplyr::mutate(
@@ -1097,12 +1151,13 @@ species_sf_all <- species_sf_all %>%
 
 # --- Sampling points layer for leaflet (keeps year + source_file if present) ---
 
-sampling_pts <- species_sf_all %>%                       #NEW
+sampling_pts_proj <- species_sf_all %>%                       #NEW
   mutate(
     year = if ("year" %in% names(.)) as.character(year) else NA_character_
   ) %>%
   distinct(target_gene, year, samp_name, geometry, .keep_all = TRUE)
 
+sampling_pts_leaflet <- sf::st_transform(sampling_pts_proj, leaflet_crs)
 
 species_sf_min <- species_sf_all %>%
   dplyr::select(
@@ -1149,31 +1204,6 @@ species_sf_all_with_cell <- species_sf_all %>%
 
 #-------------------------------------------------------------
 
-dedupe_by_occurrenceID <- function(df) {
-  if (is.null(df) || nrow(df) == 0) {
-    return(df)
-  }
-
-  if (!"occurrenceID" %in% names(df)) {
-    warning("No occurrenceID column, skipping dedupe")
-    return(df)
-  }
-
-  df %>%
-    dplyr::mutate(
-      occurrenceID = as.character(occurrenceID),
-      id = if ("id" %in% names(.)) as.character(id) else NA_character_
-    ) %>%
-    dplyr::arrange(occurrenceID, id) %>%
-    dplyr::group_by(occurrenceID) %>%
-    dplyr::slice(1) %>%
-    dplyr::ungroup()
-}
-
-
-species_sf_all <- dedupe_by_occurrenceID(species_sf_all)
-species_sf_all_with_poly <- dedupe_by_occurrenceID(species_sf_all_with_poly)
-species_sf_all_with_cell <- dedupe_by_occurrenceID(species_sf_all_with_cell)
 
 diversity_mpa_df <- species_sf_all_with_poly %>%
   sf::st_drop_geometry() %>%
@@ -1226,6 +1256,10 @@ diversity_beta_df <- species_sf_all_with_poly %>%
 
     geometry = geometry
   )
+
+all_polys_click_leaflet <- sf::st_transform(all_polys_click, leaflet_crs)
+all_polys_zones_leaflet <- sf::st_transform(all_polys_zones, leaflet_crs)
+
 #Bundle the outputs in one list:
 APP_DATA <- list(
   # DATA
@@ -1243,13 +1277,20 @@ APP_DATA <- list(
   RICHNESS_ALL_BY_YEAR = RICHNESS_ALL_BY_YEAR,
   RICHNESS_BY_KEY = RICHNESS_BY_KEY,
   RICHNESS_GENE_ALL = RICHNESS_GENE_ALL,
-  sampling_pts = sampling_pts,
+  sampling_pts_proj = sampling_pts_proj,
   SARA = SARA,
   species_sf_all = species_sf_all,
   species_sf_all_with_cell = species_sf_all_with_cell,
   species_sf_all_with_poly = species_sf_all_with_poly,
   species_sf_by_year = species_sf_by_year,
   species_sf_min = species_sf_min,
+  grid_leaflet = grid_leaflet,
+  RICHNESS_BY_KEY_LEAFLET = RICHNESS_BY_KEY_LEAFLET,
+  RICHNESS_ALL_LEAFLET = RICHNESS_ALL_LEAFLET,
+  RICHNESS_GENE_ALL_LEAFLET = RICHNESS_GENE_ALL_LEAFLET,
+  sampling_pts_leaflet = sampling_pts_leaflet,
+  all_polys_click_leaflet = all_polys_click_leaflet,
+  all_polys_zones_leaflet = all_polys_zones_leaflet,
 
   # FUNCTIONS
   pal_rich = pal_rich,
