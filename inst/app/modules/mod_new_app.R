@@ -3718,15 +3718,53 @@ app_b_server <- function(input, output, session){
       )
 
     # ---- legends + controls ----
+    # rich_vals <- init_ALL$n_species_total
+    # rich_vals <- rich_vals[is.finite(rich_vals)]
+    #
+    # legend_range <- range(rich_vals, na.rm = TRUE)
+    #
+    # legend_vals <- pretty(legend_range, n = 4)
+    #
+    # legend_vals <- legend_vals[
+    #   legend_vals >= legend_range[1] &
+    #     legend_vals <= legend_range[2]
+    # ]
+    #
+    # m <- m %>%
+    #   leaflet::addLegend(
+    #     position = "bottomright",
+    #     pal      = pal_rich,
+    #     values   = legend_vals,
+    #     title    = "Species richness from eDNA",
+    #     opacity  = 1,
+    #     className = "legend-base legend-richness-box",
+    #     labFormat = leaflet::labelFormat(digits = 0)
+    #   )
+    #
+    rich_legend_html <- htmltools::HTML("
+<div class='legend-base legend-richness-box custom-richness-legend'>
+  <div class='rich-title'>Species richness<br>from eDNA</div>
+
+  <div class='rich-body'>
+    <div class='rich-gradient'></div>
+
+    <div class='rich-labels'>
+      <div>0</div>
+      <div>20</div>
+      <div>40</div>
+      <div>60</div>
+      <div>80</div>
+    </div>
+  </div>
+</div>
+")
+
     m <- m %>%
-      leaflet::addLegend(
+      leaflet::addControl(
+        html = rich_legend_html,
         position = "bottomright",
-        pal      = pal_rich,
-        values   = init_ALL$n_species_total %||% numeric(0),
-        title    = "Species richness from eDNA",
-        opacity  = 1,
-        className = "legend-base legend-richness-box"
-      ) %>%
+        className = "legend-richness-control"
+      )%>%
       leaflet::addLegend(
         position  = "bottomright",
         colors    = c(depth_legend_cols, "#feb24c"),

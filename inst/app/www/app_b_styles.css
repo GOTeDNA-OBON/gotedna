@@ -759,6 +759,13 @@ table.dataTable.nowrap th {
    Responsive map control scaling
    ========================= */
 
+/* gradient bar height */
+.leaflet-control.legend-richness-box img,
+.leaflet-control.legend-richness-box .legend-gradient,
+.leaflet-control.legend-richness-box canvas {
+  height: 140px !important;
+}
+
 /* default = monitor */
 #map_wrap{
   --ui-scale: 1;
@@ -766,6 +773,12 @@ table.dataTable.nowrap th {
   --floating-left: 70px;
   --floating-top: 10px;
   --legend-w: 190px;
+  --legend-h: 140px;
+  --legend-fs: 15px;
+  --legend-pad-y: 12px;
+  --legend-pad-x: 13px;
+  --legend-line-h: 1.35;
+  --legend-swatch: 18px;
   --monthly-w: 350px;
   --monthly-plot-h: 350px;
   --layers-minw: 220px;
@@ -779,23 +792,38 @@ table.dataTable.nowrap th {
 }
 
 /* laptop-sized screens */
-@media (max-width: 1440px), (max-height: 900px){
+@media (max-width: 1440px), (max-height: 800px){
+
   #map_wrap{
-    --ui-scale: 0.84;
-    --floating-w: 305px;
-    --floating-left: 52px;
-    --floating-top: 8px;
-    --legend-w: 160px;
-    --monthly-w: 260px;
-    --monthly-plot-h: 255px;
-    --layers-minw: 185px;
-    --filter-btn-h: 58px;
-    --filter-btn-short-h: 34px;
-    --filter-btn-fs: 13px;
-    --floating-title-fs: 14px;
-    --legend-fs: 13px;
-    --monthly-title-fs: 13px;
-    --monthly-subtitle-fs: 11px;
+    --legend-w: 120px;
+    --legend-h: 40px;
+    --legend-fs: 10px;
+    --legend-line-h: 0.5;
+    --legend-swatch: 7px;
+    --legend-pad-y: 3px;
+    --legend-pad-x: 5px;
+  }
+
+  /* overall legend */
+  #map_wrap .leaflet-control.legend-richness-box{
+    width: var(--legend-w) !important;
+    padding: var(--legend-pad-y) var(--legend-pad-x) !important;
+    font-size: var(--legend-fs) !important;
+    line-height: var(--legend-line-h) !important;
+  }
+
+  /* gradient bar */
+  #map_wrap .leaflet-control.legend-richness-box img,
+  #map_wrap .leaflet-control.legend-richness-box canvas,
+  #map_wrap .leaflet-control.legend-richness-box div[style*="linear-gradient"]{
+    height: var(--legend-h) !important;
+    width: var(--legend-swatch) !important;
+  }
+
+  /* legend labels */
+  #map_wrap .leaflet-control.legend-richness-box *{
+    font-size: var(--legend-fs) !important;
+    line-height: 0.8 !important;
   }
 }
 
@@ -896,19 +924,19 @@ table.dataTable.nowrap th {
 /* ---------- bottom right: legends ---------- */
 .leaflet-control.legend-base{
   font-size: var(--legend-fs) !important;
-  line-height: 1.35 !important;
+  line-height: var(--legend-line-h) !important;
 }
 
 .leaflet-control.legend-base i{
-  width: calc(18px * var(--ui-scale)) !important;
-  height: calc(18px * var(--ui-scale)) !important;
-  margin-right: calc(8px * var(--ui-scale)) !important;
+  width: var(--legend-swatch) !important;
+  height: var(--legend-swatch) !important;
+  margin-right: calc(var(--legend-swatch) * 0.45) !important;
 }
 
 .leaflet-control.legend-richness-box,
 .leaflet-control.legend-depth-box{
   width: var(--legend-w) !important;
-  padding: calc(12px * var(--ui-scale)) calc(13px * var(--ui-scale)) !important;
+  padding: var(--legend-pad-y) var(--legend-pad-x) !important;
 }
 
 /* ---------- bottom right: monthly plot panel ---------- */
@@ -1078,4 +1106,203 @@ table.dataTable.nowrap th {
   min-height: calc(100vh - 260px);
   overflow-y: auto;
   padding-right: 4px;
+}
+
+#map_wrap .leaflet-control.legend-base i {
+  width: var(--legend-swatch) !important;
+  height: var(--legend-swatch) !important;
+  min-width: var(--legend-swatch) !important;
+  min-height: var(--legend-swatch) !important;
+  max-width: var(--legend-swatch) !important;
+  max-height: var(--legend-swatch) !important;
+  margin-right: calc(var(--legend-swatch) * 0.45) !important;
+}
+
+/* Richness gradient legend */
+.leaflet-control.legend-richness-box img,
+.leaflet-control.legend-richness-box .legend-gradient,
+.leaflet-control.legend-richness-box canvas,
+.leaflet-control.legend-richness-box i {
+  width: var(--legend-swatch) !important;
+  min-width: var(--legend-swatch) !important;
+  max-width: var(--legend-swatch) !important;
+
+  height: var(--legend-h) !important;
+  min-height: var(--legend-h) !important;
+  max-height: var(--legend-h) !important;
+}
+
+/* legend box */
+.leaflet-control.legend-richness-box {
+  width: var(--legend-w) !important;
+  font-size: var(--legend-fs) !important;
+  line-height: var(--legend-line-h) !important;
+  padding: var(--legend-pad-y) var(--legend-pad-x) !important;
+}
+
+#map_wrap .leaflet-control.legend-richness-box * {
+  line-height: 0.9 !important;
+}
+
+#map_wrap .leaflet-control.legend-richness-box img,
+#map_wrap .leaflet-control.legend-richness-box canvas,
+#map_wrap .leaflet-control.legend-richness-box i,
+#map_wrap .leaflet-control.legend-richness-box div[style*="background"],
+#map_wrap .leaflet-control.legend-richness-box div[style*="linear-gradient"] {
+  height: var(--legend-h) !important;
+  max-height: var(--legend-h) !important;
+  min-height: var(--legend-h) !important;
+}
+
+/* Richness legend overall box */
+.legend-richness-box {
+  padding: 6px 8px !important;
+  line-height: 1.0 !important;
+}
+
+/* Gradient color bar */
+.legend-richness-box .legend {
+  height: 70px !important;
+}
+
+/* Individual color segments */
+.legend-richness-box i {
+  height: 12px !important;
+  width: 18px !important;
+}
+
+/* Legend labels */
+.legend-richness-box .legend-labels {
+  font-size: 11px !important;
+  line-height: 1.0 !important;
+}
+
+/* Legend title */
+.legend-richness-box .legend-title {
+  font-size: 12px !important;
+  line-height: 1.0 !important;
+  margin-bottom: 4px !important;
+}
+
+/* =========================
+   DEFAULT = MONITOR
+   ========================= */
+
+.custom-richness-legend {
+  width: 170px !important;
+  padding: 10px 12px !important;
+  background: rgba(255,255,255,0.92) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+  font-size: 15px !important;
+}
+
+.custom-richness-legend .rich-title {
+  font-weight: 700 !important;
+  line-height: 1.0 !important;
+  margin-bottom: 8px !important;
+  font-size: 16px !important;
+}
+
+.custom-richness-legend .rich-body {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.custom-richness-legend .rich-gradient {
+  width: 22px;
+  height: 150px;
+  background: linear-gradient(
+    to bottom,
+    #5BBCD6,
+    #ABDDDE,
+    #Fdd262,
+    #fdae00,
+    #f03b20
+  );
+}
+
+.custom-richness-legend .rich-labels {
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  line-height: 1.1 !important;
+  font-size: 15px !important;
+}
+
+/* =========================
+   LAPTOP SCREENS
+   ========================= */
+
+@media (max-width: 1440px), (max-height: 800px){
+
+  .custom-richness-legend {
+    width: 110px !important;
+    padding: 6px 8px !important;
+    font-size: 14px !important;
+  }
+
+  .custom-richness-legend .rich-title {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .custom-richness-legend .rich-gradient {
+    width: 16px;
+    height: 90px;
+  }
+
+  .custom-richness-legend .rich-labels {
+    height: 90px;
+    font-size: 10px !important;
+  }
+}
+
+/* =========================
+   DEPTH LEGEND - LAPTOP
+   ========================= */
+
+@media (max-width: 1440px), (max-height: 800px){
+
+  /* overall depth legend box */
+  .leaflet-control.legend-depth-box{
+    width: 140px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  /* depth legend title */
+  .leaflet-control.legend-depth-box .legend-title{
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.0 !important;
+  }
+
+  /* color swatches */
+  .leaflet-control.legend-depth-box i{
+    width: 80px !important;
+    height: 80px !important;
+    margin-right: 8px !important;
+  }
+
+  /* each legend row */
+  .leaflet-control.legend-depth-box div{
+    margin-bottom: 4px !important;
+    line-height: 1.5 !important;
+  }
+
+  #map_wrap .leaflet-control.legend-depth-box i {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    margin-right: 8px !important;
+  }
 }
