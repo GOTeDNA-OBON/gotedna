@@ -287,7 +287,7 @@ $(function(){
           absolutePanel(
             id = "floating_panel",
             fixed = FALSE, draggable = FALSE,
-            top = 10, left = 70, width = 360,
+            top = 10, left = 5, width = 360,
 
             tags$button(
               id = "floating_toggle",
