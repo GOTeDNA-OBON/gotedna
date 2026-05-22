@@ -3553,8 +3553,6 @@ app_b_server <- function(input, output, session){
     }
   )
 
-  poly_bbox <- sf::st_bbox(sf::st_buffer(sf::st_union(all_polys_click), dist = 0.2))
-
   # ---- 1) Render the leaflet map ONCE ----
   output$map <- renderLeaflet({
 

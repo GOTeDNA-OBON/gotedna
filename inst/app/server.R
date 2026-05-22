@@ -69,6 +69,8 @@ server <- function(input, output, session) {
 
   outputOptions(output, "app_b_ui", suspendWhenHidden = FALSE)
 
+  app_b_server(input, output, session)
+
   observe({
     choice <- app_choice()
 

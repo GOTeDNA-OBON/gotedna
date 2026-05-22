@@ -1283,6 +1283,7 @@ diversity_beta_df <- species_sf_all_with_poly %>%
     geometry = geometry
   )
 
+#create leaflet versions
 all_polys_click_leaflet <- sf::st_transform(all_polys_click, leaflet_crs)
 all_polys_zones_leaflet <- sf::st_transform(all_polys_zones, leaflet_crs)
 
