@@ -61,37 +61,13 @@ server <- function(input, output, session) {
     }
   })
 
-  app_b_started <- reactiveVal(FALSE)
+  app_b_started <- reactiveVal(TRUE)
 
   output$app_b_ui <- renderUI({
-    req(app_choice() == "B")
-    app_b_ui()
+      app_b_ui()
   })
 
-  observeEvent(app_choice(), {
-    choice <- app_choice()
-
-    if (is.null(choice)) {
-      shinyjs::hide("gotedna_app")
-      shinyjs::hide("new_app")
-      return()
-    }
-
-    if (choice == "A") {
-      shinyjs::show("gotedna_app")
-      shinyjs::hide("new_app")
-    }
-
-    if (choice == "B") {
-      shinyjs::hide("gotedna_app")
-      shinyjs::show("new_app")
-
-      if (!isTRUE(app_b_started())) {
-        app_b_server(input, output, session)
-        app_b_started(TRUE)
-      }
-    }
-  }, ignoreInit = FALSE)
+  outputOptions(output, "app_b_ui", suspendWhenHidden = FALSE)
 
   observe({
     choice <- app_choice()
@@ -112,8 +88,12 @@ server <- function(input, output, session) {
       mod_select_figure_server("slc_fig", r)
 
     } else if (!is.null(choice) && choice == "B") {
+      shinyjs::hide("choice_page")
       shinyjs::hide("gotedna_app")
+      shinyjs::hide("app_b_loading")
+
       shinyjs::show("new_app")
+      shinyjs::show("app_b_footer")
     }
   })
 
@@ -126,9 +106,11 @@ server <- function(input, output, session) {
   })
 
   shinyjs::onclick("logo_mpa", {
-    app_choice(NULL)            # reset choice to show selection page
+    app_choice(NULL)
+    shinyjs::show("choice_page")
     shinyjs::hide("gotedna_app")
     shinyjs::hide("new_app")
+    shinyjs::hide("app_b_loading")
   })
 }
 

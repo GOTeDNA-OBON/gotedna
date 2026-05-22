@@ -55,19 +55,18 @@
 
 /* Full page layout */
 html, body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
-/* Main app container */
-body > .container-fluid {
+#choice_page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 20px;
 }
 
-/* Choice UI section grows */
-#choose_ui {
+#choice_page #choose_ui {
   flex: 1;
   display: flex;
   align-items: center;
@@ -75,7 +74,55 @@ body > .container-fluid {
   flex-direction: column;
 }
 
-#footer {
+#choice_footer {
   margin-top: auto;
   width: 100%;
+  background-color: #2f2f2f;
+  padding: 45px 60px;
+}
+
+#choice_footer .row {
+  align-items: center;
+}
+
+#choice_footer img {
+  max-height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#gotedna_app {
+  padding-top: 75px;
+}
+
+#new_app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 75px;
+}
+
+#new_app > .shiny-html-output {
+  flex: 1;
+}
+
+#new_app #app_b_footer {
+  margin-top: auto;
+  width: 100%;
+  background-color: #2f2f2f;
+  padding: 45px 60px;
+}
+
+#new_app #app_b_footer img {
+  max-height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#choice_page[style*="display: none"] {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }

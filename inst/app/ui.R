@@ -1,23 +1,92 @@
 ui <- fluidPage(
   theme = bslib::bs_theme(version = 5),
   shinyjs::useShinyjs(),
+
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = paste0("app_a_styles.css?v=", Sys.time())),
     tags$link(rel = "stylesheet", type = "text/css", href = "fonts.css"),
     tags$link(rel = "stylesheet", type = "text/css", href = paste0("choice_page_styles.css?v=", Sys.time())),
-    tags$style(type = "text/css", "body {padding-top: 20px;}"),
     tags$script(type = "text/javascript", src = "js/scrollPage.js"),
     tags$script(type = "text/javascript", src = "js/fakeClick.js")
   ),
 
-  # -----------------------------
-  # 1️⃣ Choice UI
-  # -----------------------------
-  uiOutput("choose_ui"),
+  # =========================
+  # CHOICE PAGE ONLY
+  # =========================
 
-  # -----------------------------
-  # 2️⃣ GOTeDNA App (original) – hidden initially
-  # -----------------------------
+  div(
+    id = "choice_page",
+
+    uiOutput("choose_ui"),
+
+    div(
+      id = "choice_footer",
+
+      fluidRow(
+        class = "align-items-center",
+
+        column(
+          3,
+          a(
+            img(
+              title = "Fisheries and Oceans Canada",
+              src = "img/logo_partners/DFO_logo_sq.svg",
+              alt = "DFO Logo",
+              id = "logo_dfo"
+            ),
+            href = "https://www.dfo-mpo.gc.ca/index-eng.html",
+            target = "_blank"
+          )
+        ),
+
+        column(
+          3,
+          a(
+            img(
+              title = "Maine-eDNA",
+              src = "img/logo_partners/logo_Maine_eDNA_nbg_w.png",
+              alt = "Maine eDNA Logo",
+              id = "logo_mswc"
+            ),
+            href = "https://umaine.edu/edna/",
+            target = "_blank"
+          )
+        ),
+
+        column(
+          3,
+          a(
+            img(
+              title = "UN Ocean Decade",
+              src = "img/logo_partners/logo_undossd.svg",
+              alt = "UN Logo",
+              id = "logo_undossd"
+            ),
+            href = "https://oceandecade.org/",
+            target = "_blank"
+          )
+        ),
+
+        column(
+          3,
+          a(
+            img(
+              title = "OBON",
+              src = "img/logo_partners/logo_obon.svg",
+              alt = "OBON Logo",
+              id = "logo_obon"
+            ),
+            href = "https://obon-ocean.org/",
+            target = "_blank"
+          )
+        )
+      )
+    )
+  ),
+
+  # =========================
+  # APP A - Original GOTeDNA App
+  # =========================
   tags$button(
     id = "scroll-top",
     type = "button",
@@ -26,10 +95,12 @@ ui <- fluidPage(
     style = "display:none; position:fixed; bottom:40px; right:40px; z-index:1000;",
     "^ Top"
   ),
+
   div(
     id = "gotedna_app",
     class = "app_A",
     style = "display:none;",
+
     navbarPage(id = "navbar",
                position = "fixed-top",
                # Wrap the logo in an <a> for clickable action
@@ -121,73 +192,83 @@ ui <- fluidPage(
     )
   ),
 
-  # -----------------------------
-  # 3️⃣ Option B placeholder – hidden initially
-  # -----------------------------
+  # =========================
+  # APP B - GOTeDNA-MPA
+  # =========================
   div(
-    id = "new_app",
-    style = "display:none;",
-    uiOutput("app_b_ui")
+    id = "app_b_loading",
+    style = "display:none; padding-top:120px; text-align:center;",
+    h3("Loading GOTeDNA-MPA..."),
+    p("Preparing map and analysis modules.")
   ),
 
-  # -----------------------------
-  # Footer (unchanged)
-  # -----------------------------
   div(
-    id = "footer",
+    id = "new_app",
+    class = "app_B",
+    style = "display:none;",
+
+    uiOutput("app_b_ui"),
+
+  div(
+    id = "app_b_footer",
     fluidRow(
       class = "align-items-center",
+
       column(
         3,
         a(
           img(
             title = "Fisheries and Oceans Canada",
             src = "img/logo_partners/DFO_logo_sq.svg",
-            alt = "Fisheries and Oceans Canada Logo",
+            alt = "DFO Logo",
             id = "logo_dfo"
           ),
           href = "https://www.dfo-mpo.gc.ca/index-eng.html",
           target = "_blank"
         )
       ),
+
       column(
         3,
         a(
           img(
             title = "Maine-eDNA",
             src = "img/logo_partners/logo_Maine_eDNA_nbg_w.png",
-            alt = "Maine-eDNA Logo",
+            alt = "Maine eDNA Logo",
             id = "logo_mswc"
           ),
           href = "https://umaine.edu/edna/",
           target = "_blank"
         )
       ),
+
       column(
         3,
         a(
           img(
-            title = "United Nations Ocean Decade",
+            title = "UN Ocean Decade",
             src = "img/logo_partners/logo_undossd.svg",
-            alt = "United Nations Decade of Ocean Science for Sustainable Development Logo",
+            alt = "UN Logo",
             id = "logo_undossd"
           ),
           href = "https://oceandecade.org/",
           target = "_blank"
         )
       ),
+
       column(
         3,
         a(
           img(
-            title = "Ocean Biomolecular Observing Network",
+            title = "OBON",
             src = "img/logo_partners/logo_obon.svg",
-            alt = "Ocean Biomolecular Observing Network Logo",
+            alt = "OBON Logo",
             id = "logo_obon"
           ),
           href = "https://obon-ocean.org/",
           target = "_blank"
         )
+       )
       )
     )
   )
