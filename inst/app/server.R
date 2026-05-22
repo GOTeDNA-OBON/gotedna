@@ -61,48 +61,67 @@ server <- function(input, output, session) {
     }
   })
 
-  app_b_started <- reactiveVal(TRUE)
+  app_b_started <- reactiveVal(FALSE)
 
-  output$app_b_ui <- renderUI({
-      app_b_ui()
-  })
+  observeEvent(app_choice(), {
 
-  outputOptions(output, "app_b_ui", suspendWhenHidden = FALSE)
-
-  app_b_server(input, output, session)
-
-  observe({
     choice <- app_choice()
 
-    if (!is.null(choice) && choice == "A") {
+    if (is.null(choice)) return()
+
+    if (choice == "A") {
+      shinyjs::hide("choice_page")
       shinyjs::show("gotedna_app")
       shinyjs::hide("new_app")
 
       mod_select_data_server("slc_data", r)
-      # mod_dialog_disclaimers_server("show_dialog", r)
+
       observeEvent(input$show_dialog, r$show_dialog <- TRUE)
       observeEvent(input$show_help, r$show_help <- TRUE)
+
       mod_dialog_map_info_server("show_map_info", r)
       mod_glossary_server("glossary")
       mod_primers_server("primer_seq")
+
       observeEvent(input$show_source, r$show_source <- TRUE)
-      observeEvent(input$reset, { shinyjs::reset("data_authorship") })
+      observeEvent(input$reset, {
+        shinyjs::reset("data_authorship")
+      })
+
       mod_select_figure_server("slc_fig", r)
 
-    } else if (!is.null(choice) && choice == "B") {
+    }
+
+    if (choice == "B") {
+
+      if (!isTRUE(app_b_started())) {
+
+        output$app_b_ui <- renderUI({
+          app_b_ui()
+        })
+
+        outputOptions(output, "app_b_ui",
+                      suspendWhenHidden = FALSE)
+
+        app_b_server(input, output, session)
+
+        app_b_started(TRUE)
+      }
+
       shinyjs::hide("choice_page")
       shinyjs::hide("gotedna_app")
-      shinyjs::hide("app_b_loading")
-
       shinyjs::show("new_app")
       shinyjs::show("app_b_footer")
     }
-  })
+
+  }, ignoreInit = TRUE)
 
 
   # Make sure shinyjs::useShinyjs() is in your UI
+
   shinyjs::onclick("logo_gotedna", {
-    app_choice(NULL)            # reset choice to show choice page
+    app_choice(NULL)
+    shinyjs::show("choice_page")
     shinyjs::hide("gotedna_app")
     shinyjs::hide("new_app")
   })
