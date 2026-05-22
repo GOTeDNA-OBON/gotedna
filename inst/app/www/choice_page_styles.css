@@ -3,8 +3,7 @@
 /* Container styling */
 .choice-container {
   text-align: center;
-  margin-top: 80px;
-  margin-bottom: 80px;
+  margin: 0;
 }
 
 /* Headline */
@@ -52,4 +51,31 @@
   margin-top: 20px;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+/* Full page layout */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* Main app container */
+body > .container-fluid {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Choice UI section grows */
+#choose_ui {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+#footer {
+  margin-top: auto;
+  width: 100%;
 }

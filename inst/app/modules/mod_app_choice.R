@@ -9,8 +9,8 @@ mod_app_choice_ui <- function(id) {
       p("Please select which tool you want to launch."),
 
       div(class = "choice-btn-row",
-          actionButton(ns("app_a"), "Explore eDNA Detection Rates", class = "choice-btn"),
-          actionButton(ns("app_b"), "Explore Biodiversity", class = "choice-btn")
+          actionButton(ns("app_a"), "Explore eDNA Study Design", class = "choice-btn"),
+          actionButton(ns("app_b"), "Explore MPA Biodiversity", class = "choice-btn")
       )
     )
   )
