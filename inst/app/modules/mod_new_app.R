@@ -2577,43 +2577,67 @@ app_b_server <- function(input, output, session){
 
 
   # ---- group filter helper (multi-select; union across selected groups) ----
-  apply_group_filter <- function(occ_all, groups) {
+  apply_group_filter <- function(df, groups = character(0)) {
 
-    group_map <- list(
-      "Fishes"        = list(col = "class",   vals = c("Teleostei")),
-      "Sharks & Rays" = list(col = "class",   vals = c("Elasmobranchii")),
-      "Mammals"       = list(col = "class",   vals = c("Mammalia")),
-      "Turtles"      = list(col = "order",   vals = c("Testudines")),
-      "Birds"         = list(col = "class",   vals = c("Aves")),
-      "Molluscs"      = list(col = "phylum",  vals = c("Mollusca")),
-      "Arthropods"    = list(col = "phylum",  vals = c("Arthropoda")),
-      "Plants & Algae"        = list(
-        list(col = "kingdom", vals = c("Plantae")),
-        list(col = "class",   vals = c("Phaeophyceae"))
-      )
-    )
+    if (is.null(df) || nrow(df) == 0) return(df)
 
-    groups <- as.character(groups %||% character(0))
-    groups <- intersect(groups, names(group_map))
-    if (length(groups) == 0) return(occ_all)
+    groups <- groups %||% character(0)
+    groups <- as.character(groups)
 
-    cols_needed <- unique(vapply(group_map[groups], `[[`, character(1), "col"))
-    missing_cols <- setdiff(cols_needed, names(occ_all))
+    if (length(groups) == 0) return(df)
 
-    if (length(missing_cols) > 0) {
-      # choose ONE behavior:
-      # return(occ_all[0, , drop = FALSE])  # loud fail
-      return(occ_all)                       # silent safe
+    get_col <- function(dat, col) {
+      if (col %in% names(dat)) {
+        x <- as.character(dat[[col]])
+        x[is.na(x)] <- ""
+        trimws(x)
+      } else {
+        rep("", nrow(dat))
+      }
     }
 
-    keep <- rep(FALSE, nrow(occ_all))
-    for (g in groups) {
-      spec <- group_map[[g]]
-      xcol <- tolower(as.character(occ_all[[spec$col]]))
-      keep <- keep | (!is.na(xcol) & xcol %in% tolower(spec$vals))
+    kingdom <- get_col(df, "kingdom")
+    phylum  <- get_col(df, "phylum")
+    class   <- get_col(df, "class")
+    order   <- get_col(df, "order")
+
+    keep <- rep(FALSE, nrow(df))
+
+    if ("Fishes" %in% groups) {
+      keep <- keep | class %in% c("Actinopteri", "Actinopterygii", "Teleostei")
     }
 
-    occ_all[keep, , drop = FALSE]
+    if ("Sharks & Rays" %in% groups) {
+      keep <- keep | class %in% c("Elasmobranchii", "Chondrichthyes")
+    }
+
+    if ("Mammals" %in% groups) {
+      keep <- keep | class == "Mammalia"
+    }
+
+    if ("Turtles" %in% groups) {
+      keep <- keep | order == "Testudines"
+    }
+
+    if ("Birds" %in% groups) {
+      keep <- keep | class == "Aves"
+    }
+
+    if ("Molluscs" %in% groups) {
+      keep <- keep | phylum == "Mollusca"
+    }
+
+    if ("Arthropods" %in% groups) {
+      keep <- keep | phylum == "Arthropoda"
+    }
+
+    if ("Plants & Algae" %in% groups) {
+      keep <- keep |
+        kingdom %in% c("Plantae", "Chromista") |
+        phylum %in% c("Phaeophyceae", "Rhodophyta", "Chlorophyta")
+    }
+
+    df[keep, , drop = FALSE]
   }
 
   # ---- active groups (multi-select) ----
@@ -3991,7 +4015,7 @@ app_b_server <- function(input, output, session){
 
   const h1 = document.createElement('div');
   h1.className = 'layers-heading';
-  h1.textContent = 'Species richness by gene region (grid cells)';
+  h1.textContent = 'Species richness grid cells';
 
   const grid = document.createElement('div');
   grid.className = 'richness-grid';

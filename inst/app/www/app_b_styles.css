@@ -794,6 +794,51 @@ table.dataTable.nowrap th {
 /* laptop-sized screens */
 @media (max-width: 1440px), (max-height: 800px){
 
+  /* overall navbar height */
+  .app_b .navbar{
+    min-height: 50px !important;
+  }
+
+  /* logo/title */
+  .app_b .navbar-brand{
+    font-size: 16px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    height: 50px !important;
+    line-height: 30px !important;
+  }
+
+  /* navbar tabs */
+  .app_b .navbar .navbar-nav > li > a{
+    font-size: 14px !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    line-height: 20px !important;
+  }
+
+  /* reduce map offset from navbar */
+  #map_wrap{
+    height: calc(100vh - 80px) !important;
+  }
+
+  #map{
+    height: calc(100vh - 80px) !important;
+  }
+
+  #map_wrap .leaflet-control-layers {
+    font-size: 12px !important;
+    line-height: 1 !important;
+    width: 225px !important;
+  }
+
+  #map_wrap{
+  --floating-w: 300px;
+  --floating-left: 70px;
+  --floating-top: 10px;
+  }
+
   #map_wrap{
     --legend-w: 120px;
     --legend-h: 40px;
@@ -956,7 +1001,7 @@ table.dataTable.nowrap th {
 /* ---- Custom layout for richness toggles in Leaflet control ---- */
 .leaflet-control-layers .richness-grid{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   column-gap: 10px;
   row-gap: 6px;
   margin-top: 6px;
@@ -1237,6 +1282,22 @@ table.dataTable.nowrap th {
    ========================= */
 
 @media (max-width: 1440px), (max-height: 800px){
+
+  .leaflet-control-layers-overlays input[type='checkbox']{
+    width: 22px !important;
+    height: 13px !important;
+  }
+
+  .leaflet-control-layers-overlays input[type='checkbox']::after{
+    width: 9px !important;
+    height: 9px !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+
+  .leaflet-control-layers-overlays input[type='checkbox']:checked::after{
+    transform: translateX(9px) !important;
+  }
 
   .custom-richness-legend {
     width: 110px !important;
