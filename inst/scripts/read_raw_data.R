@@ -64,6 +64,7 @@ read_raw_data <- function(
   occurrence_cols <- c(
     "recordedBy",
     "bibliographicCitation",
+    "bathymetry",
     "materialSampleID",
     "organismQuantity",
     "organismQuantityType",
@@ -178,10 +179,6 @@ read_raw_data <- function(
     }
     message("Found ", length(dataset_ids), " dataset(s) with DNADerivedData.")
     dataset_ids <- as.character(dataset_ids)
-    existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
-
-    saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
-
     if (!replace_files) {
       existing_files <- list.files("inst/app/data/raw_OBIS", pattern = "^dataset-.*\\.rds$")
       saved_ds <- sub("^dataset-(.*)\\.rds$", "\\1", existing_files)
@@ -194,7 +191,6 @@ read_raw_data <- function(
                    "a1595b18-06c0-4ff0-a39d-9cc21107ac01")
 
   dataset_ids <- setdiff(dataset_ids, excluded_ds)
-
   dataset_ids <- as.character(dataset_ids)
   print("About to start pulling these datasets: ")
   print(dataset_ids)

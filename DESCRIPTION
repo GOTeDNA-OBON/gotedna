@@ -13,6 +13,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1)
 Imports:
+    arcgislayers,
     bslib,
     dbscan,
     dplyr (>= 1.0.0),
@@ -25,29 +26,39 @@ Imports:
     ggplot2,
     grDevices,
     grid,
+    htmltools,
+    htmlwidgets,
     kableExtra,
-    leaflet,
     leaflet.extras,
     lubridate,
     magick,
     magrittr,
     mapedit (>= 0.6.0),
+    multcompView,
+    openxlsx,
     patchwork (>= 1.2),
+    phyloseq,
     plotly,
     purrr,
+    readr,
     readxl,
     robis,
     scales,
-    sf,
+    scico,
     shiny,
+    shinycssloaders,
     shinyscreenshot,
     shinyjs,
     shinyWidgets,
     stats,
+    stringr,
+    taxplore,
     tidyr,
     tinytex,
     vegan,
     viridis,
+    wesanderson,
+    worrms,
     writexl
 Suggests:
     cli,
@@ -56,21 +67,22 @@ Suggests:
     htmlwidgets,
     knitr,
     leafem,
+    leaflet,
     lme4,
     methods,
     readr (>= 2.1.0),
     rlang,
     rmarkdown,
+    sf,
     stringi,
     stringr,
     testthat (>= 3.0.0),
     tibble,
     tidyselect
-Remotes:
-    trafficonese/leaflet.extras
-RoxygenNote: 7.3.3
 LazyLoad: yes
 VignetteBuilder:
     knitr
 Config/testthat/edition: 3
+Config/build/copy-method: link
 LazyData: true
+Config/roxygen2/version: 8.0.0

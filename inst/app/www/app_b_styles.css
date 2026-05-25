@@ -1,0 +1,1369 @@
+/* ---- Global App Font ---- */
+.app_b, .app_b * {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+}
+
+/* Ensure widgets use the same font */
+.app_b .navbar,
+.app_b .navbar-brand,
+.app_b .navbar-nav > li > a,
+.leaflet-control,
+.leaflet-control-layers,
+.leaflet-control-layers label,
+.leaflet-control-layers span,
+.leaflet-control-attribution,
+.leaflet-popup-content,
+.selectize-input,
+.selectize-dropdown,
+.form-control,
+.btn,
+.dataTables_wrapper,
+table.dataTable,
+.panel,
+.panel-heading,
+.panel-body {
+  font-family: 'Segoe UI', 'Arial', sans-serif !important;
+}
+
+/* ---- Typography hierarchy ---- */
+
+/* Main app text */
+.app_b body,
+.app_b p,
+.app_b div,
+.app_b span,
+.app_b label,
+.app_b .form-control,
+.app_b .selectize-input,
+.app_b .selectize-dropdown,
+.app_b .leaflet-control,
+.app_b .dataTables_wrapper,
+.app_b table.dataTable {
+  font-weight: 400 !important;
+}
+
+/* Navbar title */
+.app_b .navbar-brand {
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+}
+
+/* Navbar tabs */
+.app_b .navbar-nav > li > a {
+  font-weight: 500 !important;
+  padding-left: 25px !important;
+  padding-right: 25px !important;
+}
+
+
+/* Section titles like Data Selection, Diversity Metrics, etc. */
+.app_b h3 {
+  font-weight: 700 !important;
+  font-size: 28px !important;
+  letter-spacing: 0.2px;
+}
+
+/* Smaller headings inside panels */
+.app_b h4 {
+  font-weight: 600 !important;
+  font-size: 20px !important;
+}
+
+/* Input labels */
+.shiny-input-container > label,
+.data-select-grid label,
+#monthly_plot_title,
+#monthly_plot_subtitle {
+  font-weight: 500 !important;
+}
+
+/* Buttons */
+.app_b .btn,
+.app_b .filter-btn,
+.app_b .btn-download-got {
+  font-weight: 500 !important;
+}
+
+/* Leaflet legends and map controls */
+.leaflet-control,
+.legend-base {
+  font-weight: 400 !important;
+}
+
+/* Data table headers */
+.app_b table.dataTable thead th {
+  font-weight: 600 !important;
+}
+
+/* Data table body */
+.app_b table.dataTable tbody td {
+  font-weight: 400 !important;
+}
+
+.app_b .navbar { margin-bottom: 10px; }
+
+.app_b .navbar{
+background-color: #2241a7 !important;
+border-color: #2241a7 !important;
+z-index: 20000 !important;
+position: fixed !important;
+width: 100%;
+}
+
+/* navbar text */
+.app_b .navbar .navbar-brand,
+.app_b .navbar .navbar-nav > li > a{
+  color: #ffffff !important;
+}
+
+.app_b .navbar-brand{
+  font-weight: 700 !important;
+  letter-spacing: 0.4px;
+}
+
+/* hover text */
+.app_b .navbar .navbar-nav > li > a:hover,
+.app_b .navbar .navbar-brand:hover{
+  color: #ffffff !important;
+  background-color: rgba(255,255,255,0.08) !important;
+}
+
+/* active tab */
+.app_b .navbar .navbar-nav > .active > a,
+.app_b .navbar .navbar-nav > .active > a:focus,
+.app_b .navbar .navbar-nav > .active > a:hover{
+  color: #ffffff !important;
+  background-color: rgba(0,0,0,0.15) !important;
+}
+
+      /* Map container MUST be the positioning context + CLIP panel to map */
+
+      /* Make the overlays panel wide enough */
+      .leaflet-control-layers-overlays{ min-width: 220px; }
+
+      /* Leaflet layer toggles: left aligned */
+      .leaflet-control-layers-overlays{
+        min-width: 220px;
+        text-align: left !important;
+      }
+      .leaflet-control-layers-overlays label{
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 10px;
+        width: 100%;
+        margin: 6px 0;
+      }
+      .leaflet-control-layers-overlays label span{
+        flex: 1 1 auto;
+        text-align: left !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+      }
+
+      /* Switch itself */
+      .leaflet-control-layers-overlays input[type='checkbox']{
+        flex: 0 0 auto;
+        margin: 0 !important;
+
+        appearance:none;
+        -webkit-appearance:none;
+        width:28px;
+        height:16px;
+        border-radius:999px;
+        background:#cfd6dd;
+        position:relative;
+        cursor:pointer;
+        outline:none;
+        transition:background 0.15s ease-in-out;
+      }
+      .leaflet-control-layers-overlays input[type='checkbox']::after{
+        content:'';
+        position:absolute;
+        top:2px; left:2px;
+        width:12px; height:12px;
+        border-radius:50%;
+        background:white;
+        box-shadow:0 1px 3px rgba(0,0,0,0.25);
+        transition:transform 0.15s ease-in-out;
+      }
+      .leaflet-control-layers-overlays input[type='checkbox']:checked{ background:#2c7be5; }
+      .leaflet-control-layers-overlays input[type='checkbox']:checked::after{
+        transform:translateX(12px);
+      }
+
+html,
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+.app_b {
+  height: auto !important;
+  min-height: 100vh;
+  max-width: 100vw !important;
+  overflow-y: visible !important;
+  overflow-x: clip !important;
+}
+
+.app_b .scroll-section {
+  overflow: visible !important;
+}
+
+.app_b .download-hint-wrap{
+  margin-top: 8px;
+  font-size: 13px;
+  color: #666;
+  text-align: left;
+  width: 100%;
+}
+     /* ---- Floating panel ---- */
+#floating_panel{
+  position: absolute;
+  background: rgba(255,255,255,0.92);
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+
+  /* keep panel inside map bounds */
+  max-width:  calc(100% - 24px);
+  max-height: calc(100% - 24px);
+  left: calc(var(--floating-left) + 0.5rem); /* adds BS5 container padding */
+  /* panel itself should NOT scroll */
+  overflow: hidden;
+
+  /* optional nice defaults */
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+
+#map_wrap{
+  position: relative;
+  height: calc(100vh - 120px);
+  overflow: hidden;
+}
+
+#map{
+  height: calc(100vh - 120px) !important;
+}
+
+#map_loading_overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 15000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.65);
+}
+
+#map_loading_overlay .loader{
+  width: 42px;
+  height: 42px;
+  border: 4px solid #ddd;
+  border-top-color: #2241a7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.custom-loader-wrap{
+  position: relative;
+}
+
+.custom-loading-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 15000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.65);
+}
+
+.custom-loading-overlay .loader{
+  width: 42px;
+  height: 42px;
+  border: 4px solid #ddd;
+  border-top-color: #2241a7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
+
+.custom-loading-overlay.hidden {
+  display: none !important;
+}
+
+.custom-placeholder-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 15000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.82);
+  text-align: center;
+  padding: 30px;
+}
+
+.custom-placeholder-text{
+  font-size: 18px;
+  font-weight: 500;
+  color: #555;
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+.custom-loader-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+#alpha_boxplot,
+#beta_pcoa,
+#tax_krona {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Put Leaflet controls (esp. draw toolbar) above the floating panel */
+#map_wrap .leaflet-top,
+#map_wrap .leaflet-bottom{
+  z-index: 12000 !important;
+}
+
+/* Specifically ensure the draw toolbar is above */
+#map_wrap .leaflet-draw,
+#map_wrap .leaflet-draw-toolbar,
+#map_wrap .leaflet-control-draw{
+  z-index: 13000 !important;
+  position: relative; /* makes z-index apply reliably */
+}
+
+/* Let bootstrap control collapse visibility; we only improve layout */
+#floating_body.collapse.show,
+#floating_body.collapsing{
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+
+  /* REQUIRED for nested scrolling in flex layouts */
+  min-height: 0;
+}
+
+/* Actual scrolling container */
+#floating_body .panel-body{
+  flex: 1 1 auto;
+
+  /* REQUIRED for nested scrolling in flex layouts */
+  min-height: 0;
+
+  /* scrollbar comes back here */
+  overflow-y: auto;
+
+  /* guarantees a scroll region even if flex sizing is finicky */
+  max-height: calc(100% - 52px);
+}
+
+/* Remove collapse animation delay (optional) */
+#floating_body.collapse,
+#floating_body.collapsing{
+  -webkit-transition: none !important;
+  transition: none !important;
+}
+#floating_panel{ transition: none !important; }
+
+
+      /* resizable handles */
+      #floating_panel .ui-resizable-handle{ z-index: 10000; }
+      #floating_panel .ui-resizable-se{
+        width: 14px; height: 14px;
+        right: 2px; bottom: 2px;
+        cursor: se-resize;
+        background: rgba(0,0,0,0.20);
+        border-radius: 3px;
+      }
+      #floating_panel .ui-resizable-e{
+        width: 10px; right: 0px;
+        top: 0; bottom: 0;
+        cursor: e-resize;
+      }
+      #floating_panel .ui-resizable-s{
+        height: 10px; bottom: 0px;
+        left: 0; right: 0;
+        cursor: s-resize;
+      }
+
+      /* Button grids */
+      .filter-btn-grid-4{
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .filter-btn-grid-3{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      @media (max-width: 500px){
+        .filter-btn-grid-4{ grid-template-columns: repeat(2, 1fr); }
+        .filter-btn-grid-3{ grid-template-columns: repeat(3, 1fr); }
+      }
+      .filter-btn{
+        width: 100% !important;
+        height: 70px !important;
+        padding: 6px 10px !important;
+        font-size: 15px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .filter-btn-short{
+        height: 40px !important;
+        padding: 6px 10px !important;
+        font-size: 15px !important;
+      }
+
+/* =========================
+   GROUP FILTER BUTTONS
+   ========================= */
+
+/* Remove Bootstrap orange focus border */
+.filter-btn:focus,
+.filter-btn:active,
+.filter-btn.active,
+.filter-btn:focus:active{
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* OFF state (default look) */
+.filter-btn{
+  background-color: #f7f7f7 !important;
+  border-color: #d0d0d0 !important;
+  color: black;
+}
+
+/* ON state (group buttons) */
+.filter-btn.btn-group-on{
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
+}
+
+/* OFF hover */
+.filter-btn:hover{
+  background-color: #eeeeee !important;
+  color: black;
+}
+
+/* ON hover (different colour) */
+.filter-btn.btn-group-on:hover{
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
+}
+
+/* IUCN button */
+.filter-btn.btn-iucn-on{
+  background-color: red !important;
+  border-color:  #D10000 !important;
+  color: white;
+}
+
+/* IUCN hover when ON */
+.filter-btn.btn-iucn-on:hover{
+  background-color: #D10000 !important;
+  border-color: #D10000 !important;
+  color: white;
+}
+
+/* SARA / AIS buttons */
+.filter-btn.btn-sara-on,
+.filter-btn.btn-ais-on{
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
+}
+
+/* SARA / AIS hover when ON */
+.filter-btn.btn-sara-on:hover,
+.filter-btn.btn-ais-on:hover{
+  background-color: #ABDDDE !important;
+  border-color: #046c9a !important;
+  color: black;
+}
+
+/* Download button (grey button inside blue panel) */
+.btn-download-got,
+.btn-download-got:focus,
+.btn-download-got:active{
+  background-color: #f2f2f2 !important;
+  border-color: #d0d0d0 !important;
+  color: #000000 !important;
+  font-size: 16px !important;
+  padding: 10px 22px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+/* hover state */
+.btn-download-got:hover{
+  background-color: #e6e6e6 !important;
+  border-color: #d0d0d0 !important;
+  color: #000000 !important;
+}
+
+      /* Floating toggle header */
+      #floating_toggle{
+        width: 100%;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 10px 12px;
+      }
+      #floating_toggle .caret-icon { transition: transform 150ms ease; }
+      #floating_toggle[aria-expanded='true'] .caret-icon { transform: rotate(180deg); }
+
+      .scroll-section { scroll-margin-top: 80px; }
+
+      /* Legends */
+      .leaflet-control.legend-base{
+        font-family: Arial !important;
+        font-size: 15px !important;
+        font-weight: 400 !important;
+        line-height: 1.45 !important;
+        color: #222 !important;
+      }
+      .leaflet-control.legend-base i{
+        width: 18px !important;
+        height: 18px !important;
+        display: inline-block !important;
+        margin-right: 8px !important;
+        vertical-align: middle !important;
+        float: none !important;
+      }
+      .leaflet-control.legend-richness-box,
+      .leaflet-control.legend-depth-box{
+        background: rgba(255,255,255,0.92) !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+        border: 1px solid rgba(0,0,0,0.15) !important;
+        padding: 14px 16px !important;
+        width: 190px !important;
+      }
+      .legend-hidden{ display:none !important; }
+
+/* ---- Data selection layout ---- */
+
+.data-select-grid{
+  display: grid;
+  grid-template-columns: 250px 300px 300px 300px;
+  column-gap: 50px;
+  row-gap: 0;
+  align-items: start;
+}
+
+.data-select-item{
+  min-width: 0;
+}
+
+.data-select-item .form-group{
+  margin-bottom: 0 !important;
+}
+
+.data-select-grid .selectize-control{
+  margin-bottom: 0 !important;
+}
+
+.primer-btn-row{
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+/* right-side action buttons */
+.confirm-slot{
+  align-self: start;
+  margin-top: 24px;
+}
+
+.confirm-btn-row{
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.confirm-btn-row .btn{
+  height: 38px !important;   /* same height for both */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+}
+
+.confirm-btn-row .btn-primary{
+  flex: 0 0 110px;           /* Confirm width */
+}
+
+.confirm-btn-row .btn-download-got{
+  flex: 0 0 160px;           /* Download width */
+  padding: 6px 12px !important;
+  font-size: 14px !important;
+}
+
+@media (max-width: 1200px){
+  .data-select-grid{
+    grid-template-columns: 1fr 1fr;
+    row-gap: 12px;
+  }
+
+  .confirm-slot{
+    margin-top: 0;
+  }
+
+  .confirm-btn-row{
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+/* optional: reduce spacing under labels a bit */
+.data-select-grid label{
+  margin-bottom: 4px !important;
+}
+
+@media (max-width: 1200px){
+  .data-select-grid{
+    grid-template-columns: 1fr 1fr;
+    row-gap: 12px;
+  }
+
+  .confirm-slot{
+    margin-top: 0;
+  }
+
+  .confirm-slot .btn{
+    width: auto;
+  }
+}
+
+table.dataTable.nowrap td,
+table.dataTable.nowrap th {
+  white-space: nowrap;
+}
+
+/* circular monthly plot panel */
+#monthly_plot_control{
+  position: absolute;
+  z-index: 11000;
+  width: 340px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  border: 1px solid rgba(0,0,0,0.15);
+  padding: 8px 8px 2px 8px;
+  display: none;
+}
+
+#monthly_plot_title{
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+#monthly_plot_subtitle{
+  font-size: 12px;
+  color: #444;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+/* remove default leaflet control margins when we manually position items */
+#monthly_plot_control{
+  margin: 0 !important;
+}
+
+.leaflet-control.legend-richness-box,
+.leaflet-control.legend-depth-box{
+  margin: 0 !important;
+}
+
+/* remove leaflet's default control spacing */
+#monthly_plot_control,
+.leaflet-control.legend-richness-box,
+.leaflet-control.legend-depth-box{
+  margin: 0 !important;
+}
+
+/* when we manually reposition legends, absolute positioning behaves more predictably */
+.leaflet-right .leaflet-control.legend-richness-box,
+.leaflet-right .leaflet-control.legend-depth-box{
+  position: absolute !important;
+}
+
+/* ---- Prevent Detection Details section from pushing page width ---- */
+
+#sec_sara {
+  width: 100%;
+  max-width: 100%;
+}
+
+#sec_sara .tab-content,
+#sec_sara .tab-pane,
+#sec_sara .dataTables_wrapper,
+#sec_sara .html-widget,
+#sec_sara .datatables {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Keep horizontal scroll INSIDE the DT widget */
+#sec_sara .dataTables_scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  box-sizing: border-box;
+}
+
+#sec_sara .dataTables_scrollHead,
+#sec_sara .dataTables_scrollBody,
+#sec_sara .dataTables_scrollFoot {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Optional: keeps the table from forcing parent wider */
+#sec_sara table.dataTable {
+  width: 100% !important;
+}
+
+/* =========================
+   Responsive map control scaling
+   ========================= */
+
+/* gradient bar height */
+.leaflet-control.legend-richness-box img,
+.leaflet-control.legend-richness-box .legend-gradient,
+.leaflet-control.legend-richness-box canvas {
+  height: 140px !important;
+}
+
+/* default = monitor */
+#map_wrap{
+  --ui-scale: 1;
+  --floating-w: 360px;
+  --floating-left: 70px;
+  --floating-top: 10px;
+  --legend-w: 190px;
+  --legend-h: 140px;
+  --legend-fs: 15px;
+  --legend-pad-y: 12px;
+  --legend-pad-x: 13px;
+  --legend-line-h: 1.35;
+  --legend-swatch: 18px;
+  --monthly-w: 350px;
+  --monthly-plot-h: 350px;
+  --layers-minw: 220px;
+  --filter-btn-h: 70px;
+  --filter-btn-short-h: 40px;
+  --filter-btn-fs: 15px;
+  --floating-title-fs: 16px;
+  --legend-fs: 15px;
+  --monthly-title-fs: 15px;
+  --monthly-subtitle-fs: 12px;
+}
+
+/* laptop-sized screens */
+@media (max-width: 1440px), (max-height: 800px){
+
+  /* overall navbar height */
+  .app_b .navbar{
+    min-height: 50px !important;
+  }
+
+  /* logo/title */
+  .app_b .navbar-brand{
+    font-size: 16px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    height: 50px !important;
+    line-height: 30px !important;
+  }
+
+  /* navbar tabs */
+  .app_b .navbar .navbar-nav > li > a{
+    font-size: 14px !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    line-height: 20px !important;
+  }
+
+  /* reduce map offset from navbar */
+  #map_wrap{
+    height: calc(100vh - 80px) !important;
+  }
+
+  #map{
+    height: calc(100vh - 80px) !important;
+  }
+
+  #map_wrap .leaflet-control-layers {
+    font-size: 12px !important;
+    line-height: 1 !important;
+    width: 225px !important;
+  }
+
+  #map_wrap{
+  --floating-w: 300px;
+  --floating-left: 70px;
+  --floating-top: 10px;
+  }
+
+  #map_wrap{
+    --legend-w: 120px;
+    --legend-h: 40px;
+    --legend-fs: 10px;
+    --legend-line-h: 0.5;
+    --legend-swatch: 7px;
+    --legend-pad-y: 3px;
+    --legend-pad-x: 5px;
+  }
+
+  /* overall legend */
+  #map_wrap .leaflet-control.legend-richness-box{
+    width: var(--legend-w) !important;
+    padding: var(--legend-pad-y) var(--legend-pad-x) !important;
+    font-size: var(--legend-fs) !important;
+    line-height: var(--legend-line-h) !important;
+  }
+
+  /* gradient bar */
+  #map_wrap .leaflet-control.legend-richness-box img,
+  #map_wrap .leaflet-control.legend-richness-box canvas,
+  #map_wrap .leaflet-control.legend-richness-box div[style*="linear-gradient"]{
+    height: var(--legend-h) !important;
+    width: var(--legend-swatch) !important;
+  }
+
+  /* legend labels */
+  #map_wrap .leaflet-control.legend-richness-box *{
+    font-size: var(--legend-fs) !important;
+    line-height: 0.8 !important;
+  }
+}
+
+/* ---------- top left: layer control ---------- */
+.leaflet-control-layers-overlays{
+  min-width: var(--layers-minw) !important;
+}
+
+.leaflet-control-layers{
+  font-size: calc(14px * var(--ui-scale)) !important;
+}
+
+.leaflet-control-layers label{
+  gap: calc(10px * var(--ui-scale)) !important;
+  margin: calc(6px * var(--ui-scale)) 0 !important;
+}
+
+.leaflet-control-layers-overlays input[type='checkbox']{
+  width: calc(28px * var(--ui-scale)) !important;
+  height: calc(16px * var(--ui-scale)) !important;
+}
+
+.leaflet-control-layers-overlays input[type='checkbox']::after{
+  top: calc(2px * var(--ui-scale)) !important;
+  left: calc(2px * var(--ui-scale)) !important;
+  width: calc(12px * var(--ui-scale)) !important;
+  height: calc(12px * var(--ui-scale)) !important;
+}
+
+.leaflet-control-layers-overlays input[type='checkbox']:checked::after{
+  transform: translateX(calc(12px * var(--ui-scale))) !important;
+}
+
+/* ---------- top right: floating panel ---------- */
+#floating_panel{
+  width: var(--floating-w) !important;
+  margin-left: 60px;
+}
+
+#floating_toggle{
+  font-size: var(--floating-title-fs) !important;
+  padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale)) !important;
+  background-color: rgba(255,255,255,0.92);
+  color: #444;
+}
+
+#floating_body .panel-body{
+  padding: calc(15px * var(--ui-scale)) !important;
+}
+
+#floating_panel h4{
+  font-size: calc(20px * var(--ui-scale)) !important;
+  margin-top: 0 !important;
+  margin-bottom: calc(10px * var(--ui-scale)) !important;
+}
+
+#floating_panel .shiny-input-container label{
+  font-size: calc(14px * var(--ui-scale)) !important;
+}
+
+#floating_panel .form-control,
+#floating_panel .selectize-input,
+#floating_panel .selectize-dropdown{
+  font-size: calc(13px * var(--ui-scale)) !important;
+}
+
+#floating_panel .filter-btn{
+  height: var(--filter-btn-h) !important;
+  font-size: var(--filter-btn-fs) !important;
+  padding: calc(2px * var(--ui-scale)) calc(8px * var(--ui-scale)) !important;
+}
+
+#floating_panel .filter-btn img {
+  width: 100%;       /* fill the button width */
+  height: 100%;      /* fill the button height */
+  object-fit: contain; /* scale proportionally to fit inside */
+  display: block;    /* remove inline spacing */
+}
+
+#floating_panel .filter-btn-short{
+  height: var(--filter-btn-short-h) !important;
+  font-size: var(--filter-btn-fs) !important;
+}
+
+#floating_panel .filter-btn-grid-4,
+#floating_panel .filter-btn-grid-3{
+  gap: calc(8px * var(--ui-scale)) !important;
+}
+
+/* species list text in floating panel */
+#floating_panel,
+#floating_panel li,
+#floating_panel summary,
+#floating_panel details{
+  font-size: calc(13px * var(--ui-scale)) !important;
+}
+
+/* ---------- bottom right: legends ---------- */
+.leaflet-control.legend-base{
+  font-size: var(--legend-fs) !important;
+  line-height: var(--legend-line-h) !important;
+}
+
+.leaflet-control.legend-base i{
+  width: var(--legend-swatch) !important;
+  height: var(--legend-swatch) !important;
+  margin-right: calc(var(--legend-swatch) * 0.45) !important;
+}
+
+.leaflet-control.legend-richness-box,
+.leaflet-control.legend-depth-box{
+  width: var(--legend-w) !important;
+  padding: var(--legend-pad-y) var(--legend-pad-x) !important;
+}
+
+/* ---------- bottom right: monthly plot panel ---------- */
+#monthly_plot_control{
+  width: var(--monthly-w) !important;
+  padding: calc(8px * var(--ui-scale)) calc(8px * var(--ui-scale)) calc(2px * var(--ui-scale)) calc(8px * var(--ui-scale)) !important;
+}
+
+#monthly_plot_title{
+  font-size: var(--monthly-title-fs) !important;
+}
+
+#monthly_plot_subtitle{
+  font-size: var(--monthly-subtitle-fs) !important;
+}
+
+/* ---- Custom layout for richness toggles in Leaflet control ---- */
+.leaflet-control-layers .richness-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 10px;
+  row-gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  align-items: start;
+}
+
+.leaflet-control-layers .richness-grid label{
+  margin: 0 !important;
+  width: 100%;
+}
+
+.leaflet-control-layers .richness-spacer{
+  min-height: 1px;
+}
+
+.leaflet-control-layers .layers-heading{
+  font-weight: 600;
+  margin: 8px 0 6px 0;
+  line-height: 1.2;
+}
+
+.leaflet-control-layers .layers-sep{
+  border-top: 1px solid rgba(0,0,0,0.12);
+  margin: 8px 0;
+}
+
+/* ---- Protocol Cards ---- */
+
+.protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.protocol-field-title {
+  font-size: 13px;
+  font-weight: 400 !important;
+  margin-bottom: 4px;
+  color: #0b2a2a;
+}
+
+.protocol-card {
+  background: #EAF7FB;            /* pastel baby blue */
+  border: 1px solid rgba(49, 180, 219, 0.75); /* deepskyblue border */
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0b2a2a;                 /* readable dark text */
+  box-shadow: 0 1px 6px rgba(44, 98, 203, 0.10);
+  transition: background-color 250ms ease, border-color 250ms ease, box-shadow 250ms ease, color 250ms ease;
+}
+
+/* changed card = darker */
+.protocol-card.changed {
+  background: #9ADBE8;            /* royalblue (DARKEST = changed) */
+  border-color: #2f9ae6;          /* dodgerblue border */
+  color: #0b2a2a;
+  box-shadow: 0 0 0 3px rgba(32, 224, 98, 0.35); /* spring green glow */
+}
+
+/* optional: for missing values */
+.protocol-card.na {
+  background: #EAF7FB;            /* pastel baby blue */
+  border-color: #31b4db;          /* deepskyblue */
+  color: #0b2a2a;
+  opacity: 0.9;
+}
+
+.protocol-group-title{
+  font-weight: 700 !important;
+  font-size: 15px;
+  margin: 14px 0 8px 0;
+  color: #0b2a2a;
+}
+
+/* remove the extra top offset */
+.protocol-details-wrap { margin-top: 0 !important; }
+
+/* only the FIRST section title gets no top margin */
+.protocol-details-wrap .protocol-group-title:first-of-type{
+  margin-top: 0 !important;
+}
+
+/* normal spacing for every section title */
+.protocol-group-title{
+  font-weight: 700;
+  margin: 14px 0 8px 0;   /* <-- this is the separation you lost */
+}
+
+/* but DON'T push the first title down */
+.protocol-details-wrap .protocol-group-title:first-of-type{
+  margin-top: 0;
+}
+
+.protocol-grid { margin-bottom: 10px; }
+
+.protocol-card-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-top: 10px;
+}
+
+.protocol-details-wrap {
+  padding-bottom: 12px;
+}
+
+.protocol-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.protocol-field-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 3px;
+}
+
+.protocol-group-title {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+#detection_details_map_toggle {
+  z-index: 1000;
+}
+
+#detection_details_map_toggle .btn {
+  width: 100%;
+}
+
+#floating_body .tab-content {
+  min-height: calc(100vh - 220px);
+}
+
+#floating_body .tab-pane {
+  min-height: calc(100vh - 220px);
+}
+
+.analysis-tab-scroll {
+  min-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+#map_wrap .leaflet-control.legend-base i {
+  width: var(--legend-swatch) !important;
+  height: var(--legend-swatch) !important;
+  min-width: var(--legend-swatch) !important;
+  min-height: var(--legend-swatch) !important;
+  max-width: var(--legend-swatch) !important;
+  max-height: var(--legend-swatch) !important;
+  margin-right: calc(var(--legend-swatch) * 0.45) !important;
+}
+
+/* Richness gradient legend */
+.leaflet-control.legend-richness-box img,
+.leaflet-control.legend-richness-box .legend-gradient,
+.leaflet-control.legend-richness-box canvas,
+.leaflet-control.legend-richness-box i {
+  width: var(--legend-swatch) !important;
+  min-width: var(--legend-swatch) !important;
+  max-width: var(--legend-swatch) !important;
+
+  height: var(--legend-h) !important;
+  min-height: var(--legend-h) !important;
+  max-height: var(--legend-h) !important;
+}
+
+/* legend box */
+.leaflet-control.legend-richness-box {
+  width: var(--legend-w) !important;
+  font-size: var(--legend-fs) !important;
+  line-height: var(--legend-line-h) !important;
+  padding: var(--legend-pad-y) var(--legend-pad-x) !important;
+}
+
+#map_wrap .leaflet-control.legend-richness-box * {
+  line-height: 0.9 !important;
+}
+
+#map_wrap .leaflet-control.legend-richness-box img,
+#map_wrap .leaflet-control.legend-richness-box canvas,
+#map_wrap .leaflet-control.legend-richness-box i,
+#map_wrap .leaflet-control.legend-richness-box div[style*="background"],
+#map_wrap .leaflet-control.legend-richness-box div[style*="linear-gradient"] {
+  height: var(--legend-h) !important;
+  max-height: var(--legend-h) !important;
+  min-height: var(--legend-h) !important;
+}
+
+/* Richness legend overall box */
+.legend-richness-box {
+  padding: 6px 8px !important;
+  line-height: 1.0 !important;
+}
+
+/* Gradient color bar */
+.legend-richness-box .legend {
+  height: 70px !important;
+}
+
+/* Individual color segments */
+.legend-richness-box i {
+  height: 12px !important;
+  width: 18px !important;
+}
+
+/* Legend labels */
+.legend-richness-box .legend-labels {
+  font-size: 11px !important;
+  line-height: 1.0 !important;
+}
+
+/* Legend title */
+.legend-richness-box .legend-title {
+  font-size: 12px !important;
+  line-height: 1.0 !important;
+  margin-bottom: 4px !important;
+}
+
+/* =========================
+   DEFAULT = MONITOR
+   ========================= */
+
+.custom-richness-legend {
+  width: 170px !important;
+  padding: 10px 12px !important;
+  background: rgba(255,255,255,0.92) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+  font-size: 15px !important;
+}
+
+.custom-richness-legend .rich-title {
+  font-weight: 700 !important;
+  line-height: 1.0 !important;
+  margin-bottom: 8px !important;
+  font-size: 16px !important;
+}
+
+.custom-richness-legend .rich-body {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.custom-richness-legend .rich-gradient {
+  width: 22px;
+  height: 150px;
+  background: linear-gradient(
+    to bottom,
+    #5BBCD6,
+    #ABDDDE,
+    #Fdd262,
+    #fdae00,
+    #f03b20
+  );
+}
+
+.custom-richness-legend .rich-labels {
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  line-height: 1.1 !important;
+  font-size: 15px !important;
+}
+
+/* =========================
+   LAPTOP SCREENS
+   ========================= */
+
+@media (max-width: 1440px), (max-height: 800px){
+
+  .leaflet-control-layers-overlays input[type='checkbox']{
+    width: 22px !important;
+    height: 13px !important;
+  }
+
+  .leaflet-control-layers-overlays input[type='checkbox']::after{
+    width: 9px !important;
+    height: 9px !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+
+  .leaflet-control-layers-overlays input[type='checkbox']:checked::after{
+    transform: translateX(9px) !important;
+  }
+
+  .custom-richness-legend {
+    width: 110px !important;
+    padding: 6px 8px !important;
+    font-size: 14px !important;
+  }
+
+  .custom-richness-legend .rich-title {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .custom-richness-legend .rich-gradient {
+    width: 16px;
+    height: 90px;
+  }
+
+  .custom-richness-legend .rich-labels {
+    height: 90px;
+    font-size: 10px !important;
+  }
+}
+
+/* =========================
+   DEPTH LEGEND - LAPTOP
+   ========================= */
+
+@media (max-width: 1440px), (max-height: 800px){
+
+  /* overall depth legend box */
+  .leaflet-control.legend-depth-box{
+    width: 140px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  /* depth legend title */
+  .leaflet-control.legend-depth-box .legend-title{
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.0 !important;
+  }
+
+  /* color swatches */
+  .leaflet-control.legend-depth-box i{
+    width: 80px !important;
+    height: 80px !important;
+    margin-right: 8px !important;
+  }
+
+  /* each legend row */
+  .leaflet-control.legend-depth-box div{
+    margin-bottom: 4px !important;
+    line-height: 1.5 !important;
+  }
+
+  #map_wrap .leaflet-control.legend-depth-box i {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    margin-right: 8px !important;
+  }
+}

@@ -26,7 +26,11 @@ install.packages("pak")
 
 pak::pak(c(
   "trafficonese/leaflet.extras",
+<<<<<<< HEAD
   "GOTeDNA-OBON/gotedna"
+=======
+  "AnaisLacoursiereRoussel/GOTeDNA"
+>>>>>>> source/main
 ))
 ```
 
@@ -124,6 +128,7 @@ The GOTeDNA app displays the following visualizations for each selected taxon an
 ###### Monthly water sampling effort and proportion of samples having positive eDNA detection.
 
 ![](man/figures/README-field-4.png)
+<<<<<<< HEAD
 
 ## Adding new OBIS data to the GOTeDNA app
 
@@ -138,3 +143,5 @@ run through all the code in inst/scripts/prepare_raw_data.R (this will process t
 run devtools::load_all(), library(GOTeDNA), and then run_gotedna_app() to run the app with the new data.
 
 To add these new data to the github repository, you will need to commit and push the new files (and have permissions)
+=======
+>>>>>>> source/main

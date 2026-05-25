@@ -1,17 +1,18 @@
-window.onscroll = function() {scrollFunction()};
+window.onscroll = function() { scrollFunction(); };
 
 function scrollFunction() {
-  if (document.documentElement.scrollTop > 300 || document.body.scrollTop > 300) {
-    document.getElementById("scroll-top").style.display = "block";
-  } else {
-     document.getElementById("scroll-top").style.display = "none";
-  }
-};
+  var scrollBtn = document.getElementById("scroll-top");
+  if (!scrollBtn) return;  // exit if button doesn't exist
 
-// Handle the click event on the scroll-top button
+  if (document.documentElement.scrollTop > 300 || document.body.scrollTop > 300) {
+    scrollBtn.style.display = "block";
+  } else {
+    scrollBtn.style.display = "none";
+  }
+}
+
 function topFunction() {
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
 }
-
 

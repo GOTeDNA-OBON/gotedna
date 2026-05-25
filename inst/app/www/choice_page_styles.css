@@ -1,0 +1,128 @@
+/* choice_page_styles.css */
+
+/* Container styling */
+.choice-container {
+  text-align: center;
+  margin: 0;
+}
+
+/* Headline */
+.choice-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Description text */
+.choice-container p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+/* Button row */
+.choice-btn-row {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  gap: 20px; /* space between buttons */
+  flex-wrap: wrap; /* wrap on small screens */
+}
+
+/* Buttons */
+.choice-btn {
+  width: 250px;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  background-color: #2241a7; /* DFO blue */
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out; /* smooth hover animation */
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16); /* subtle shadow */
+}
+
+.choice-btn:hover {
+  background-color: #005C91; /* slightly darker on hover */
+  transform: translateY(-2px); /* lift effect */
+  box-shadow: 0 6px 12px rgba(0,0,0,0.24); /* slightly stronger shadow */
+}
+
+/* Only style the disclaimer modal */
+.disclaimer_modal .modal-dialog {
+  margin-top: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Full page layout */
+html, body {
+  min-height: 100%;
+  margin: 0;
+}
+
+#choice_page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+
+#choice_page #choose_ui {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+#choice_footer {
+  margin-top: auto;
+  width: 100%;
+  background-color: #2f2f2f;
+  padding: 45px 60px;
+}
+
+#choice_footer .row {
+  align-items: center;
+}
+
+#choice_footer img {
+  max-height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#gotedna_app {
+  padding-top: 75px;
+}
+
+#new_app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 75px;
+}
+
+#new_app > .shiny-html-output {
+  flex: 1;
+}
+
+#new_app #app_b_footer {
+  margin-top: auto;
+  width: 100%;
+  background-color: #2f2f2f;
+  padding: 45px 60px;
+}
+
+#new_app #app_b_footer img {
+  max-height: 90px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#choice_page[style*="display: none"] {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}

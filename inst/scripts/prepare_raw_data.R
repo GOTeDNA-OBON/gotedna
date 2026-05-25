@@ -31,12 +31,15 @@ required_cols <- c(
   "eventDate_clean",
   "decimalLatitude",
   "decimalLongitude",
-  "organismQuantity"
+  "organismQuantity",
+  "occurrenceStatus",
+  "occurrenceID"
 )
 
 optional_columns <- c(
   'samp_size',
   'samp_size_unit',
+  'bathymetry',
   'size_frac',
   'filter_material',
   'samp_mat_process',
@@ -66,9 +69,6 @@ optional_columns <- c(
 processed_datasets <- lapply(names(datasets), function(ds) {
   core_and_extensions <- datasets[[ds]]
   core_and_extensions <- calculate_and_enforce_columns(core_and_extensions, ds)
-  core_and_extensions <- core_and_extensions %>%
-    dplyr::mutate(eventDate = as.Date(eventDate)) %>%
-    dplyr::filter(!is.na(eventDate))
   core_and_extensions
 })
 

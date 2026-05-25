@@ -1,22 +1,56 @@
-library(GOTeDNA)
 library(dplyr)
-library(magrittr)
 library(ggplot2)
 library(patchwork)
 library(plotly)
 library(DT)
 library(stringr)
 
+#Source all app modules
+
+module_dir <- "modules"
+
+if (!dir.exists(module_dir)) {
+  module_dir <- system.file("app/modules", package = "GOTeDNA")
+}
+
+module_files <- list.files(
+  module_dir,
+  pattern = "\\.R$",
+  full.names = TRUE
+)
+
+invisible(lapply(module_files, source, local = FALSE))
+
+
+app_data_file <- function(filename) {
+  local_path <- file.path("data", filename)
+
+  if (file.exists(local_path)) {
+    return(local_path)
+  }
+
+  package_path <- system.file(
+    file.path("app/data", filename),
+    package = "GOTeDNA"
+  )
+
+  if (package_path == "") {
+    stop("Could not find data file: ", filename)
+  }
+
+  package_path
+}
+
+
 # library(leaflet)
 # library(sf)
 # library(shiny)
 # library(shinyjs)
 # library(bslib)
-# library(plotly)
 cli::cli_alert_info("Packages loaded")
 
-list.files("modules", full.names = TRUE) |>
-  lapply(source)
+# list.files("modules", full.names = TRUE) |>
+#   lapply(source)
 cli::cli_alert_info("Modules loaded")
 
 options(shiny.maxRequestSize = 100 * 1024^2)
@@ -41,17 +75,19 @@ trans_letters <- function(x, pos = 1, fun = toupper) {
 
 # Data
 ## import glossary
-gloss <- read.csv("data/glossary.csv")
+gloss <- read.csv(app_data_file("glossary.csv"))
 gloss$Term <- paste0('<p align ="right"><b>', trimws(gloss$Term), "</b></p>")
 gloss$Definition <- trimws(gloss$Definition)
 
 ## import GOTeDNA data
-gotedna_data <- gotedna_data0 <- readRDS("data/gotedna_data.rds")
-last_obis_download_ts <- as.POSIXct(readLines("data/last_obis_download_ts.txt"), tz = Sys.timezone())
+gotedna_data <- gotedna_data0 <- readRDS(app_data_file("gotedna_data.rds"))
+last_obis_download_ts <- as.POSIXct(
+  readLines(app_data_file("last_obis_download_ts.txt")),
+  tz = Sys.timezone()
+)
 
-
-gotedna_station <- gotedna_station0 <- readRDS("data/gotedna_station.rds")
-gotedna_primer <- readRDS("data/gotedna_primer.rds")
+gotedna_station <- gotedna_station0 <- readRDS(app_data_file("gotedna_station.rds"))
+gotedna_primer <- readRDS(app_data_file("gotedna_primer.rds"))
 
 #taxonomic_ranks <- list("kingdom", "phylum", "family", "order", "class", "genus")
 #taxonomic_ranks <- list("domain", "kingdom", "phylum", "class", "order", "family", "genus")
@@ -150,7 +186,7 @@ get_station <- function(x) {
 
 # Primer information for primer tab
 ## import glossary
-primer_seqs <- read.csv("data/primers.csv") |>
+primer_seqs <- read.csv(app_data_file("primers.csv")) |>
   dplyr::rename(
     "Primer set" = "PrimerSet",
     "Type of data" = "Data",
@@ -159,8 +195,8 @@ primer_seqs <- read.csv("data/primers.csv") |>
     "Fragment length (bp)" = "bp"
   )
 
-
 big_OBIS_data_pull <- function(dataset_ids = NULL) {
+# big_OBIS_data_pull <- function(dataset_ids = c("74b70871-91bd-4b74-91ce-34e9611ce27d", "858f3eb9-7fee-4764-bf7f-04098922f162")) {
   D_mb <- read_data(
     dataset_ids    = dataset_ids,
     scientificname = NULL,
@@ -171,12 +207,10 @@ big_OBIS_data_pull <- function(dataset_ids = NULL) {
   )
 
   D_mb_clean <- add_detected_column(D_mb)
-  D_mb_clean <- dplyr::distinct(D_mb_clean)
   D_mb_clean
 }
 
-
-default_protocol_info <- readRDS("data/protocol_sheet.rds")
+default_protocol_info <- readRDS(app_data_file("protocol_sheet.rds"))
 
 protocol_labels <- c(
   samp_size = "Sample Volume (L)",
@@ -246,7 +280,6 @@ required_cols <- c(
 
 optional_columns <- c(
   'samp_size',
-  'samp_size_unit',
   'size_frac',
   'filter_material',
   'samp_mat_process',
@@ -269,3 +302,50 @@ optional_columns <- c(
   'hab'
 )
 
+
+
+#
+#APP_DATA <- readRDS(system.file("app/data/v2_essential_app_data_20260424-4.rds", package = "GOTeDNA")) #loads that file
+
+APP_DATA <- readRDS(app_data_file("v2_essential_app_data_20260424-4.rds"))
+list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their original names
+rm(APP_DATA)
+gc()
+
+#Load libraries
+library(sf)
+library(dplyr)
+library(leaflet)
+library(leaflet.extras)
+library(arcgislayers)
+library(tidyr)
+library(ggplot2)
+library(scico)
+library(wesanderson)
+library(htmltools)
+library(htmlwidgets)
+library(DT)
+library(shinyjs)
+library(stringr)
+library(openxlsx)
+library(purrr)
+library(readr)
+library(robis)
+library(bslib)
+library(shiny)
+
+#install.packages("BiocManager") *NEW
+#BiocManager::install("phyloseq")
+library(phyloseq)
+
+#install.packages("remotes")
+#remotes::install_github("markschl/taxplore")
+library(taxplore)  #Here is the link for taxplore tutorial in Shiny: https://markschl.github.io/taxplore/articles/tutorial.html#shiny-apps
+
+library(plotly)
+library(worrms)
+library(vegan)
+library(forcats)
+library(shinycssloaders)
+library(multcompView)
+#may need to add devtools to the DESCRIPTION folder
