@@ -1290,6 +1290,7 @@ all_polys_zones_leaflet <- sf::st_transform(all_polys_zones, leaflet_crs)
 #Bundle the outputs in one list:
 APP_DATA <- list(
   # DATA
+  occ_all = occ_all,
   AIS = AIS,
   all_polys_click = all_polys_click,
   all_polys_zones = all_polys_zones,

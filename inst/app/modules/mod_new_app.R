@@ -1037,7 +1037,7 @@ app_b_server <- function(input, output, session){
   })
 
   protocol_available_df <- reactive({
-    df <- selected_detections()
+    df <- occ_all
 
     if (is.null(df) || nrow(df) == 0) {
       return(df)
@@ -1119,11 +1119,29 @@ app_b_server <- function(input, output, session){
   })
 
   protocol_summary <- reactive({
-    protocol_data() %>%
+    df <- protocol_data()
+
+    message("Protocol data rows: ", nrow(df))
+    message("Detected values:")
+    print(table(df$detected, useNA = "ifany"))
+
+    sample_attempts <- df %>%
+      dplyr::distinct(protocol_ID, samp_name)
+
+    detected_samples <- df %>%
       dplyr::group_by(protocol_ID, samp_name) %>%
       dplyr::summarise(
         detected_sample = any(detected == 1, na.rm = TRUE),
         .groups = "drop"
+      )
+
+    sample_attempts %>%
+      dplyr::left_join(
+        detected_samples,
+        by = c("protocol_ID", "samp_name")
+      ) %>%
+      dplyr::mutate(
+        detected_sample = dplyr::coalesce(detected_sample, FALSE)
       ) %>%
       dplyr::group_by(protocol_ID) %>%
       dplyr::summarise(
