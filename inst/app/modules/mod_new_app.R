@@ -408,7 +408,7 @@ $(function(){
 
                     selectInput(
                       "req_protocol",
-                      "Select protocol",
+                      "Explore Protocols",
                       choices = NULL,
                       selected = NULL,
                       selectize = TRUE
