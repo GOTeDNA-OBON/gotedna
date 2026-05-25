@@ -2820,6 +2820,23 @@ app_b_server <- function(input, output, session){
     iconAnchorY = 14
   )
 
+  prep_marker_pts <- function(x) {
+    x <- sf::st_transform(x, 4326)
+
+    coords <- sf::st_coordinates(x)
+
+    x %>%
+      sf::st_drop_geometry() %>%
+      dplyr::mutate(
+        decimalLongitude = as.numeric(coords[, 1]),
+        decimalLatitude  = as.numeric(coords[, 2])
+      ) %>%
+      dplyr::filter(
+        is.finite(decimalLongitude),
+        is.finite(decimalLatitude)
+      )
+  }
+
   # redraw points when year changes
   observeEvent(
     list(sel_year_chr(), sampling_points_layer_on(), filter_iucn_on(), filter_sara_on(), filter_ais_on()),
@@ -2841,65 +2858,54 @@ app_b_server <- function(input, output, session){
 
       proxy %>% clearGroup("Sampling Points")
 
-      if (isTRUE(filter_iucn_on())) {
-        pts_iucn <- pts %>%
-          dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+      pts_marker <- prep_marker_pts(pts)
+
+      safe_add_markers <- function(data, icon) {
+        if (is.null(data) || nrow(data) == 0) return(proxy)
 
         proxy %>%
           addMarkers(
-            data = pts_iucn,
-            icon = iucn_icon,
+            data = data,
+            lng = ~decimalLongitude,
+            lat = ~decimalLatitude,
+            icon = icon,
             group = "Sampling Points",
             options = markerOptions(pane = "pane_points"),
             label = ~paste0(
               scientificName,
-              ifelse(is.na(category), "", paste0(" | IUCN: ", category)),
               ifelse(is.na(year), "", paste0(" | Year: ", year)),
               ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
             )
           )
+      }
+
+      if (isTRUE(filter_iucn_on())) {
+        pts_iucn <- pts_marker %>%
+          dplyr::filter(!is.na(category), trimws(as.character(category)) != "")
+
+        safe_add_markers(pts_iucn, iucn_icon)
       }
 
       if (isTRUE(filter_sara_on())) {
-        pts_sara <- pts %>%
+        pts_sara <- pts_marker %>%
           dplyr::filter(scientificName %in% sara_set())
 
-        proxy %>%
-          addMarkers(
-            data = pts_sara,
-            icon = sara_icon,
-            group = "Sampling Points",
-            options = markerOptions(pane = "pane_points"),
-            label = ~paste0(
-              scientificName,
-              ifelse(is.na(year), "", paste0(" | Year: ", year)),
-              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
-            )
-          )
+        safe_add_markers(pts_sara, sara_icon)
       }
 
       if (isTRUE(filter_ais_on())) {
-        pts_ais <- pts %>%
+        pts_ais <- pts_marker %>%
           dplyr::filter(scientificName %in% ais_set())
 
-        proxy %>%
-          addMarkers(
-            data = pts_ais,
-            icon = ais_icon,
-            group = "Sampling Points",
-            options = markerOptions(pane = "pane_points"),
-            label = ~paste0(
-              scientificName,
-              ifelse(is.na(year), "", paste0(" | Year: ", year)),
-              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
-            )
-          )
+        safe_add_markers(pts_ais, ais_icon)
       }
 
       if (!isTRUE(filter_iucn_on()) && !isTRUE(filter_sara_on()) && !isTRUE(filter_ais_on())) {
         proxy %>%
           addCircleMarkers(
-            data = pts,
+            data = pts_marker,
+            lng = ~decimalLongitude,
+            lat = ~decimalLatitude,
             group = "Sampling Points",
             radius = 2,
             stroke = TRUE,
@@ -2907,11 +2913,7 @@ app_b_server <- function(input, output, session){
             opacity = 1,
             fillOpacity = 0.8,
             options = pathOptions(pane = "pane_points"),
-            label = ~paste0(
-              "Marker: ", target_gene,
-              ifelse(is.na(year), "", paste0(" | Year: ", year)),
-              ifelse(is.na(samp_name), "", paste0(" | Sample: ", samp_name))
-            )
+            label = ~paste0("Marker: ", target_gene)
           )
       }
     },
