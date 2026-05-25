@@ -3948,13 +3948,13 @@ app_b_server <- function(input, output, session){
                           return false;
                         }
 
-                       function updateMonthlyPlotVisibility(){
+                        function updateMonthlyPlotVisibility(){
   const plotBox = document.getElementById('monthly_plot_control');
   if(!plotBox) return;
 
   const monthlyOn = isChecked(monthlyPlotName);
 
-  const richLegend  = el.querySelector('.legend-richness-box');
+  const richLegend  = el.querySelector('.legend-richness-control');
   const depthLegend = el.querySelector('.legend-depth-box');
 
   let activeLegend = null;
@@ -3969,34 +3969,21 @@ app_b_server <- function(input, output, session){
   const defaultLegendRight = 10;
   const defaultLegendBottom = 10;
 
-  // Monthly plot OFF
   if(!monthlyOn){
     plotBox.style.display = 'none';
-    plotBox.style.left = 'auto';
-    plotBox.style.right = 'auto';
-    plotBox.style.top = 'auto';
-    plotBox.style.bottom = 'auto';
 
-    if(richLegend){
-      richLegend.style.left = 'auto';
-      richLegend.style.right = defaultLegendRight + 'px';
-      richLegend.style.top = 'auto';
-      richLegend.style.bottom = defaultLegendBottom + 'px';
-      richLegend.style.margin = '0px';
-    }
-
-    if(depthLegend){
-      depthLegend.style.left = 'auto';
-      depthLegend.style.right = defaultLegendRight + 'px';
-      depthLegend.style.top = 'auto';
-      depthLegend.style.bottom = defaultLegendBottom + 'px';
-      depthLegend.style.margin = '0px';
-    }
+    [richLegend, depthLegend].forEach(function(lg){
+      if(!lg) return;
+      lg.style.left = 'auto';
+      lg.style.right = defaultLegendRight + 'px';
+      lg.style.top = 'auto';
+      lg.style.bottom = defaultLegendBottom + 'px';
+      lg.style.margin = '0px';
+    });
 
     return;
   }
 
-  // Monthly plot ON
   plotBox.style.display = 'block';
   plotBox.style.left = 'auto';
   plotBox.style.right = pad + 'px';
@@ -4005,14 +3992,15 @@ app_b_server <- function(input, output, session){
   plotBox.style.margin = '0px';
 
   if(activeLegend){
-    const plotW = plotBox.offsetWidth || 320;
+  const plotW = plotBox.offsetWidth || 320;
+  const isRich = activeLegend.classList.contains('legend-richness-control');
 
-    activeLegend.style.left = 'auto';
-    activeLegend.style.right = (plotW + gap + pad) + 'px';
-    activeLegend.style.top = 'auto';
-    activeLegend.style.bottom = pad + 'px';
-    activeLegend.style.margin = '0px';
-  }
+  activeLegend.style.left = 'auto';
+  activeLegend.style.right = (plotW + gap + pad) + 'px';
+  activeLegend.style.top = 'auto';
+  activeLegend.style.bottom = (isRich ? (pad - 14) : pad) + 'px';
+  activeLegend.style.margin = '0px';
+}
 }
 
                         function insertHeadings(){
@@ -4080,22 +4068,27 @@ app_b_server <- function(input, output, session){
                         // ---- LEGEND SWAP ---- //
 
                         function updateLegends(){
-                        const richLegend  = el.querySelector('.legend-richness-box');
-                        const depthLegend = el.querySelector('.legend-depth-box');
+  const richLegendOuter = el.querySelector('.legend-richness-control');
+  const richLegendBox   = el.querySelector('.legend-richness-box');
+  const depthLegend     = el.querySelector('.legend-depth-box');
 
-                        const depthOn = isChecked(depthName);
-                        const anyRichOn = anyChecked(richness);
+  const depthOn = isChecked(depthName);
+  const anyRichOn = anyChecked(richness);
 
-                        if(depthLegend){
-                        depthLegend.classList.toggle('legend-hidden', !depthOn);
-                        }
+  if(depthLegend){
+    depthLegend.classList.toggle('legend-hidden', !depthOn);
+  }
 
-                        if(richLegend){
-                        richLegend.classList.toggle('legend-hidden', depthOn || !anyRichOn);
-                        }
+  if(richLegendOuter){
+    richLegendOuter.classList.toggle('legend-hidden', depthOn || !anyRichOn);
+  }
 
-                        updateMonthlyPlotVisibility();
-                        }
+  if(richLegendBox){
+    richLegendBox.classList.toggle('legend-hidden', depthOn || !anyRichOn);
+  }
+
+  updateMonthlyPlotVisibility();
+}
 
                         function wireExclusivity(){
                           const rows = getOverlayRows();
