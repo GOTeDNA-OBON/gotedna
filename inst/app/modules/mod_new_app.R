@@ -1121,10 +1121,6 @@ app_b_server <- function(input, output, session){
   protocol_summary <- reactive({
     df <- protocol_data()
 
-    message("Protocol data rows: ", nrow(df))
-    message("Detected values:")
-    print(table(df$detected, useNA = "ifany"))
-
     sample_attempts <- df %>%
       dplyr::distinct(protocol_ID, samp_name)
 
@@ -2986,14 +2982,25 @@ app_b_server <- function(input, output, session){
     confirmed_rarefaction_depth(depth)
     div_unlocked(TRUE)
 
+    first_beta_tax_load <- !isTRUE(beta_tax_loaded())
+
+    # Alpha always reloads
     shinyjs::html("alpha_loading_overlay", '<div class="loader"></div>')
     shinyjs::removeClass("alpha_loading_overlay", "hidden")
 
-    shinyjs::html("beta_loading_overlay", '<div class="loader"></div>')
-    shinyjs::removeClass("beta_loading_overlay", "hidden")
+    # Beta/tax only show loading image on first Confirm
+    if (first_beta_tax_load) {
+      shinyjs::html("beta_loading_overlay", '<div class="loader"></div>')
+      shinyjs::removeClass("beta_loading_overlay", "hidden")
 
-    shinyjs::html("tax_loading_overlay", '<div class="loader"></div>')
-    shinyjs::removeClass("tax_loading_overlay", "hidden")
+      shinyjs::html("tax_loading_overlay", '<div class="loader"></div>')
+      shinyjs::removeClass("tax_loading_overlay", "hidden")
+
+      beta_tax_loaded(TRUE)
+    } else {
+      shinyjs::addClass("beta_loading_overlay", "hidden")
+      shinyjs::addClass("tax_loading_overlay", "hidden")
+    }
 
   }, ignoreInit = TRUE)
 
@@ -3167,6 +3174,8 @@ app_b_server <- function(input, output, session){
     filter_ais_on(new_state)
     if (new_state) shinyjs::addClass("AIS", "btn-ais-on") else shinyjs::removeClass("AIS", "btn-ais-on")
   })
+
+  beta_tax_loaded <- reactiveVal(FALSE)
 
   download_ready <- reactiveVal(FALSE)
 
