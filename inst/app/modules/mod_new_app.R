@@ -326,13 +326,6 @@ $(function(){
 
                     h4("Spatial Filters"),
 
-                    selectInput(
-                      "sel_year",
-                      "Year",
-                      choices = c("All"),
-                      selected = "All"
-                    ),
-
                     div(
                       class = "filter-btn-grid-4",
                       actionButton("total_fish", label = tags$img(src = "img/species_buttons/fish_centred.png", style = "height:40px;"), title = "Fish", class = "btn btn-default btn-secondary filter-btn"),
@@ -358,6 +351,15 @@ $(function(){
                       actionButton("IUCN", "IUCN", title = "IUCN Red List", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                       actionButton("SARA", "SARA", title = "Species at Risk", class = "btn btn-default btn-secondary filter-btn filter-btn-short"),
                       actionButton("AIS", "AIS", title = "Aquatic Invasive Species", class = "btn btn-default btn-secondary filter-btn filter-btn-short")
+                    ),
+
+                    tags$div(style = "height:16px;"),
+
+                    selectInput(
+                      "sel_year",
+                      "Year",
+                      choices = c("All"),
+                      selected = "All"
                     ),
 
                     hr(),
@@ -1421,6 +1423,26 @@ app_b_server <- function(input, output, session){
       )
     )
   }, ignoreInit = FALSE)
+
+  taxonomy_selection_df <- reactive({
+    req(confirmed_map_filters())
+
+    df <- selection_map_df()
+
+    df <- apply_species_filters(
+      df,
+      confirmed_map_filters()
+    )
+
+    if (is.null(df) || nrow(df) == 0) return(df)
+
+    confirmed_filters <- div_filters()
+
+    df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+
+    # intentionally do NOT apply polygon comparison filter here
+    df
+  })
 
   selection_selection_df <- reactive({
     req(confirmed_map_filters())
@@ -5949,16 +5971,8 @@ const obs = new MutationObserver(() => {
 
   output$tax_krona <- taxplore::renderKronaChart({
     req(div_unlocked())
-    ids <- selection_ids()
 
-    shiny::validate(
-      shiny::need(
-        !is.null(ids) && length(ids) > 0,
-        "Select a cell/polygon (or draw a polygon) to display a Krona chart."
-      )
-    )
-
-    det0 <- selection_selection_df()
+    det0 <- taxonomy_selection_df()
 
     shiny::validate(
       shiny::need(nrow(det0) > 0, "No data available for this selection."),
