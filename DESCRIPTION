@@ -52,7 +52,7 @@ Imports:
     shinyWidgets,
     stats,
     stringr,
-    taxplore,
+    taxplore (>= 0.1.0),
     tidyr,
     tinytex,
     vegan,
@@ -79,6 +79,9 @@ Suggests:
     testthat (>= 3.0.0),
     tibble,
     tidyselect
+Remotes:
+    markschl/taxplore,
+    trafficonese/leaflet.extras
 LazyLoad: yes
 VignetteBuilder:
     knitr

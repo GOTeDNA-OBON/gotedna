@@ -48,7 +48,7 @@ Imports:
     shinyjs,
     shinyWidgets,
     stringr,
-    taxplore,
+    taxplore (>= 0.1.0),
     tidyr,
     tinytex,
     vegan,
@@ -56,9 +56,9 @@ Imports:
     worrms,
     writexl
 Remotes:
-    trafficonese/leaflet.extras,
-    AnaisLacoursiereRoussel/GOTeDNA,
-    markschl/taxplore
+    markschl/taxplore,
+    trafficonese/leaflet.extras
+    GOTeDNA-OBON/gotedna
 RoxygenNote: 7.3.3
 LazyLoad: yes
 VignetteBuilder:

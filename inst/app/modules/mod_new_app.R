@@ -281,7 +281,11 @@ $(function(){
             class = "leaflet-control",
             div(id = "monthly_plot_title", "Monthly Number of Samples Collected"),
             div(id = "monthly_plot_subtitle", textOutput("monthly_plot_subtitle", inline = TRUE)),
-            plotOutput("monthly_circular_plot", height = "250px", width = "100%")
+            plotOutput(
+              "monthly_circular_plot",
+              height = "350px",
+              width = "100%"
+            )
           ),
 
           absolutePanel(
@@ -2378,15 +2382,19 @@ app_b_server <- function(input, output, session){
 
   output$monthly_circular_plot <- renderPlot({
 
+    small_screen <- session$clientData$output_map_width < 1440
+
+    month_font <- if (small_screen) 2.8 else 4.2
+    count_font <- if (small_screen) 2.0 else 3.0
+    base_font  <- if (small_screen) 8 else 12
+
     groups_on <- input$map_groups %||% character(0)
     monthly_on <- "Monthly Sampling Plot" %in% groups_on
 
-    # Only render once the monthly plot layer is actually turned on
     req(monthly_on)
 
     det <- selection_map_df()
 
-    # ---- default placeholder before any cell/polygon is selected ----
     if (is.null(det) || nrow(det) == 0) {
       p_empty <- ggplot2::ggplot(
         data.frame(x = 0.5, y = 0.5, lab = "Select or draw a polygon"),
@@ -2394,7 +2402,7 @@ app_b_server <- function(input, output, session){
       ) +
         ggplot2::geom_text(
           ggplot2::aes(label = lab),
-          size = 6,
+          size = if (small_screen) 4 else 6,
           colour = "grey35"
         ) +
         ggplot2::xlim(0, 1) +
@@ -2403,7 +2411,7 @@ app_b_server <- function(input, output, session){
         ggplot2::theme(
           plot.background  = ggplot2::element_rect(fill = NA, colour = NA),
           panel.background = ggplot2::element_rect(fill = NA, colour = NA),
-          plot.margin = ggplot2::margin(10, 10, 10, 10)
+          plot.margin = ggplot2::margin(2, 2, 2, 2)
         )
 
       print(p_empty)
@@ -2427,7 +2435,7 @@ app_b_server <- function(input, output, session){
 
     outer_max    <- max(1, ceiling(ymax * 1.10))
     inner_offset <- outer_max * 0.42
-    label_radius <- outer_max * 1.28
+    label_radius <- outer_max * if (small_screen) 1.10 else 1.28
     top_pad      <- outer_max * 0.06
 
     ring_vals <- c(0, 0.25, 0.50, 0.75, 1.00) * outer_max + inner_offset
@@ -2442,7 +2450,7 @@ app_b_server <- function(input, output, session){
       month_cols
     )
 
-    ggplot2::ggplot(
+    p <- ggplot2::ggplot(
       dat,
       ggplot2::aes(
         x = month_chr,
@@ -2453,7 +2461,7 @@ app_b_server <- function(input, output, session){
       ggplot2::geom_hline(
         yintercept = ring_vals,
         colour = "grey80",
-        linewidth = 0.5
+        linewidth = if (small_screen) 0.3 else 0.5
       ) +
       ggplot2::geom_col(
         width = 0.88,
@@ -2464,7 +2472,7 @@ app_b_server <- function(input, output, session){
           y = n_samples + inner_offset + outer_max * 0.10,
           label = n_samples
         ),
-        size = 3.0,
+        size = count_font,
         color = "black"
       ) +
       ggplot2::geom_text(
@@ -2475,7 +2483,7 @@ app_b_server <- function(input, output, session){
           label = month_chr
         ),
         inherit.aes = FALSE,
-        size = 4.2,
+        size = month_font,
         color = "black"
       ) +
       ggplot2::coord_polar(start = -pi / 12) +
@@ -2487,7 +2495,7 @@ app_b_server <- function(input, output, session){
         values = fill_vals,
         guide = "none"
       ) +
-      ggplot2::theme_minimal(base_size = 12) +
+      ggplot2::theme_minimal(base_size = base_font) +
       ggplot2::theme(
         axis.title = ggplot2::element_blank(),
         axis.text.y = ggplot2::element_blank(),
@@ -2496,8 +2504,11 @@ app_b_server <- function(input, output, session){
         panel.grid = ggplot2::element_blank(),
         plot.background = ggplot2::element_rect(fill = NA, colour = NA),
         panel.background = ggplot2::element_rect(fill = NA, colour = NA),
-        plot.margin = ggplot2::margin(2, 6, 2, 6)
+        plot.margin = ggplot2::margin(2, 2, 2, 2)
       )
+
+    print(p)
+
   }, res = 110)
 
   # your existing outputs here:

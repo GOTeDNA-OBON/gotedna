@@ -791,6 +791,17 @@ table.dataTable.nowrap th {
   --monthly-subtitle-fs: 12px;
 }
 
+/* monitor monthly plot */
+#monthly_plot_control{
+  width: var(--monthly-w) !important;
+}
+
+#monthly_circular_plot,
+#monthly_circular_plot img{
+  height: var(--monthly-plot-h) !important;
+  max-height: var(--monthly-plot-h) !important;
+}
+
 /* laptop-sized screens */
 @media (max-width: 1440px), (max-height: 800px){
 
@@ -819,27 +830,13 @@ table.dataTable.nowrap th {
   }
 
   /* reduce map offset from navbar */
-  #map_wrap{
+#map_wrap{
     height: calc(100vh - 80px) !important;
-  }
 
-  #map{
-    height: calc(100vh - 80px) !important;
-  }
+    --floating-w: 300px;
+    --floating-left: 70px;
+    --floating-top: 10px;
 
-  #map_wrap .leaflet-control-layers {
-    font-size: 12px !important;
-    line-height: 1 !important;
-    width: 225px !important;
-  }
-
-  #map_wrap{
-  --floating-w: 300px;
-  --floating-left: 70px;
-  --floating-top: 10px;
-  }
-
-  #map_wrap{
     --legend-w: 120px;
     --legend-h: 40px;
     --legend-fs: 10px;
@@ -847,30 +844,46 @@ table.dataTable.nowrap th {
     --legend-swatch: 7px;
     --legend-pad-y: 3px;
     --legend-pad-x: 5px;
+
+    --monthly-w: 300px;
+    --monthly-plot-h: 150px;
   }
 
-  /* overall legend */
-  #map_wrap .leaflet-control.legend-richness-box{
-    width: var(--legend-w) !important;
-    padding: var(--legend-pad-y) var(--legend-pad-x) !important;
-    font-size: var(--legend-fs) !important;
-    line-height: var(--legend-line-h) !important;
+  #map{
+    height: calc(100vh - 80px) !important;
   }
 
-  /* gradient bar */
-  #map_wrap .leaflet-control.legend-richness-box img,
-  #map_wrap .leaflet-control.legend-richness-box canvas,
-  #map_wrap .leaflet-control.legend-richness-box div[style*="linear-gradient"]{
-    height: var(--legend-h) !important;
-    width: var(--legend-swatch) !important;
+  #map_wrap .leaflet-control-layers{
+    font-size: 12px !important;
+    line-height: 1 !important;
+    width: 225px !important;
   }
 
-  /* legend labels */
-  #map_wrap .leaflet-control.legend-richness-box *{
-    font-size: var(--legend-fs) !important;
-    line-height: 0.8 !important;
+#monthly_plot_control{
+    width: 300px !important;
+    max-height: 260px !important;
+  }
+
+  #monthly_circular_plot,
+  #monthly_circular_plot img{
+    height: 170px !important;
+    max-height: 170px !important;
   }
 }
+
+  #monthly_plot_title{
+    font-size: 12px !important;
+    line-height: 1.0 !important;
+    margin-bottom: 2px !important;
+  }
+
+  #monthly_plot_subtitle{
+    font-size: 10px !important;
+    line-height: 1.0 !important;
+    margin-bottom: 2px !important;
+  }
+}
+
 
 /* ---------- top left: layer control ---------- */
 .leaflet-control-layers-overlays{

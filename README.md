@@ -26,11 +26,8 @@ install.packages("pak")
 
 pak::pak(c(
   "trafficonese/leaflet.extras",
-<<<<<<< HEAD
+  "markschl/taxplore",
   "GOTeDNA-OBON/gotedna"
-=======
-  "AnaisLacoursiereRoussel/GOTeDNA"
->>>>>>> source/main
 ))
 ```
 
