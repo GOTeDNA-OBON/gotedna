@@ -676,7 +676,6 @@ $(function(){
                 "Shannon" = "shannon",
                 "Simpson" = "simpson",
                 "Inverse Simpson" = "invsimpson",
-                "ACE" = "ace",
                 "Pielou's Evenness" = "pielou"
               ),
               selected = "observed"
@@ -5039,7 +5038,6 @@ const obs = new MutationObserver(() => {
       shannon    = vegan::diversity(mat, index = "shannon"),
       simpson    = vegan::diversity(mat, index = "simpson"),
       invsimpson = vegan::diversity(mat, index = "invsimpson"),
-      ace        = vegan::estimateR(mat)["S.ACE", ],
       pielou = {
         shannon_vals <- vegan::diversity(mat, index = "shannon")
         richness_vals <- vegan::specnumber(mat)
@@ -5198,7 +5196,6 @@ const obs = new MutationObserver(() => {
               shannon    = vegan::diversity(mat_poly_rarefied, index = "shannon"),
               simpson    = vegan::diversity(mat_poly_rarefied, index = "simpson"),
               invsimpson = vegan::diversity(mat_poly_rarefied, index = "invsimpson"),
-              ace        = vegan::estimateR(mat_poly_rarefied)["S.ACE", ],
               pielou     = {
                 richness <- vegan::specnumber(mat_poly_rarefied)
                 shannon  <- vegan::diversity(mat_poly_rarefied, index = "shannon")
@@ -5562,7 +5559,6 @@ const obs = new MutationObserver(() => {
       shannon    = "Shannon diversity",
       simpson    = "Simpson diversity",
       invsimpson = "Inverse Simpson diversity",
-      ace        = "ACE estimated richness",
       pielou     = "Pielou's evenness",
       "Alpha diversity"
     )
