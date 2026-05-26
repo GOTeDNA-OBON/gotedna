@@ -690,7 +690,7 @@ $(function(){
               "Rarefaction depth",
               value = 0,
               min = 0,
-              max = 1000000000,
+              max = 10000000,
               step = 100
             ),
 
