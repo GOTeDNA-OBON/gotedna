@@ -3434,10 +3434,15 @@ app_b_server <- function(input, output, session){
       options = list(
         pageLength = 10,
         scrollX = TRUE,
-        autoWidth = FALSE,
-        scrollCollapse = TRUE
+        autoWidth = TRUE,
+        scrollCollapse = TRUE,
+        initComplete = DT::JS(
+          "function(settings, json) {",
+          "  this.api().columns.adjust();",
+          "}"
+        )
       ),
-      class = "nowrap"
+      class = "nowrap stripe hover"
     )
   })
 

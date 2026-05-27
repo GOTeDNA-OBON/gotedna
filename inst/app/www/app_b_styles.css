@@ -753,7 +753,8 @@ table.dataTable.nowrap th {
 
 /* Optional: keeps the table from forcing parent wider */
 #sec_sara table.dataTable {
-  width: 100% !important;
+  width: max-content !important;
+  min-width: 100% !important;
 }
 
 /* =========================
