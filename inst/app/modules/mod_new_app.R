@@ -322,9 +322,9 @@ $(function(){
                   # TAB 1: SPATIAL FILTERS
                   # ---------------------------
                   tabPanel(
-                    "1) Spatial",
+                    "1) Interest",
 
-                    h4("Spatial Filters"),
+                    h4("Taxa and Temporal Filters"),
 
                     div(
                       class = "filter-btn-grid-4",
