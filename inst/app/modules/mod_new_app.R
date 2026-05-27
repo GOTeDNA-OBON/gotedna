@@ -322,7 +322,7 @@ $(function(){
                   # TAB 1: SPATIAL FILTERS
                   # ---------------------------
                   tabPanel(
-                    "Spatial",
+                    "1) Spatial",
 
                     h4("Spatial Filters"),
 
@@ -371,7 +371,7 @@ $(function(){
                   # TAB 2: DNA / PROTOCOLS
                   # ---------------------------
                   tabPanel(
-                    "Methods",
+                    "2) Methods",
 
                     h4("DNA Filters"),
 
@@ -426,7 +426,7 @@ $(function(){
                   # TAB 3: ANALYSIS CONTROLS
                   # ---------------------------
                   tabPanel(
-                    "Analysis",
+                    "3) Analysis",
 
                     div(
                       class = "analysis-tab-scroll",
@@ -1523,7 +1523,7 @@ app_b_server <- function(input, output, session){
 
   polygon_membership_base_df <- reactive({
     pts <- diversity_beta_df
-    polys <- drawn_polys()
+    polys <- confirmed_drawn_polys()
 
     if (is.null(pts) || nrow(pts) == 0) {
       return(pts)
@@ -1929,8 +1929,12 @@ app_b_server <- function(input, output, session){
   )
 
   drawn_polys <- reactiveVal(empty_drawn_sf)
+  confirmed_drawn_polys <- reactiveVal(empty_drawn_sf)
   selected_draw_id <- reactiveVal(NULL)
 
+  observeEvent(input$div_apply, {
+    confirmed_drawn_polys(drawn_polys())
+  }, ignoreInit = TRUE)
 
   # ---- helper: convert leaflet.draw feature -> sf polygon (EPSG:4326) ----
   feature_to_sf <- function(feature) {
@@ -3128,33 +3132,37 @@ app_b_server <- function(input, output, session){
 
     poly_labels <- rep(NA_character_, nrow(pts_sf))
 
-    # existing MPA/AOI polygons
     if (!is.null(all_polys_click) && nrow(all_polys_click) > 0) {
-      mpa_hits <- sf::st_intersects(pts_sf, all_polys_click)
+      polys_mpa <- all_polys_click
+
+      if (sf::st_crs(pts_sf) != sf::st_crs(polys_mpa)) {
+        polys_mpa <- sf::st_transform(polys_mpa, sf::st_crs(pts_sf))
+      }
+
+      mpa_hits <- sf::st_intersects(pts_sf, polys_mpa)
 
       mpa_labels <- vapply(seq_along(mpa_hits), function(i) {
         hit <- mpa_hits[[i]]
         if (length(hit) == 0) return(NA_character_)
-
-        labs <- all_polys_click$site_name[hit]
-
-        paste(unique(labs), collapse = " | ")
+        paste(unique(polys_mpa$site_name[hit]), collapse = " | ")
       }, character(1))
 
       poly_labels <- mpa_labels
     }
 
-    # drawn polygons
-    polys_drawn <- drawn_polys()
+    polys_drawn <- confirmed_drawn_polys()
+
     if (!is.null(polys_drawn) && nrow(polys_drawn) > 0) {
+      if (sf::st_crs(pts_sf) != sf::st_crs(polys_drawn)) {
+        polys_drawn <- sf::st_transform(polys_drawn, sf::st_crs(pts_sf))
+      }
+
       drawn_hits <- sf::st_intersects(pts_sf, polys_drawn)
 
       drawn_labels <- vapply(seq_along(drawn_hits), function(i) {
         hit <- drawn_hits[[i]]
         if (length(hit) == 0) return(NA_character_)
-
-        labs <- polys_drawn$draw_label[hit]
-        paste(unique(labs), collapse = " | ")
+        paste(unique(polys_drawn$draw_label[hit]), collapse = " | ")
       }, character(1))
 
       poly_labels <- ifelse(
@@ -4330,15 +4338,18 @@ const obs = new MutationObserver(() => {
   })
 
   # ---- diversity detections for all MPA/AOI polygons ----
-  diversity_detections_mpa <- reactive({
-    mpa_membership_selection_df()
+  diversity_detections_alpha <- reactive({
+    dplyr::bind_rows(
+      mpa_membership_selection_df(),
+      polygon_membership_selection_df()
+    )
   })
 
   #Diversity plots
 
   # --- build sample x taxon matrix from current selection ---
   comm_mat_mpa <- reactive({
-    det <- diversity_detections_mpa()
+    det <- diversity_detections_alpha()
     req(det)
 
     occ_all <- det %>%
@@ -4566,7 +4577,7 @@ const obs = new MutationObserver(() => {
   beta_terminal_printed_key <- reactiveVal(NULL)
 
   sample_meta_mpa <- reactive({
-    det <- diversity_detections_mpa()
+    det <- diversity_detections_alpha()
     req(det)
 
     meta <- det %>%
