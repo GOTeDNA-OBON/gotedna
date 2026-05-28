@@ -848,7 +848,7 @@ table.dataTable.nowrap th {
 #map_wrap{
     height: calc(100vh - 80px) !important;
 
-    --floating-w: 300px;
+    --floating-w: 350px;
     --floating-left: 70px;
     --floating-top: 10px;
 
