@@ -2475,8 +2475,8 @@ app_b_server <- function(input, output, session){
     outer_max    <- max(1, ceiling(ymax * 1.10))
     inner_offset <- outer_max * 0.42
     label_radius <- outer_max * if (small_screen) 1.35 else 1.28
-    top_pad      <- outer_max * if (small_screen) 0.18 else 0.06
-    plot_limit <- outer_max * if (small_screen) 1.95 else 1.65
+
+    plot_limit <- inner_offset + label_radius + outer_max * if (small_screen) 0.18 else 0.14
 
     ring_vals <- c(0, 0.25, 0.50, 0.75, 1.00) * outer_max + inner_offset
 
