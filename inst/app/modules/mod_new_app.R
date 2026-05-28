@@ -2474,8 +2474,9 @@ app_b_server <- function(input, output, session){
 
     outer_max    <- max(1, ceiling(ymax * 1.10))
     inner_offset <- outer_max * 0.42
-    label_radius <- outer_max * if (small_screen) 1.10 else 1.28
-    top_pad      <- outer_max * 0.06
+    label_radius <- outer_max * if (small_screen) 1.35 else 1.28
+    top_pad      <- outer_max * if (small_screen) 0.18 else 0.06
+    plot_limit <- outer_max * if (small_screen) 1.95 else 1.65
 
     ring_vals <- c(0, 0.25, 0.50, 0.75, 1.00) * outer_max + inner_offset
 
@@ -2525,10 +2526,9 @@ app_b_server <- function(input, output, session){
         size = month_font,
         color = "black"
       ) +
-      ggplot2::coord_polar(start = -pi / 12) +
-      ggplot2::scale_y_continuous(
-        limits = c(0, inner_offset + label_radius + top_pad),
-        expand = c(0, 0)
+      ggplot2::coord_polar(start = -pi / 12, clip = "off") +
+      scale_y_continuous(
+        limits = c(0, plot_limit)
       ) +
       ggplot2::scale_fill_manual(
         values = fill_vals,
@@ -2536,15 +2536,15 @@ app_b_server <- function(input, output, session){
       ) +
       ggplot2::theme_minimal(base_size = base_font) +
       ggplot2::theme(
-        axis.title = ggplot2::element_blank(),
-        axis.text.y = ggplot2::element_blank(),
-        axis.text.x = ggplot2::element_blank(),
-        axis.ticks = ggplot2::element_blank(),
-        panel.grid = ggplot2::element_blank(),
-        plot.background = ggplot2::element_rect(fill = NA, colour = NA),
-        panel.background = ggplot2::element_rect(fill = NA, colour = NA),
-        plot.margin = ggplot2::margin(2, 2, 2, 2)
-      )
+          axis.title = ggplot2::element_blank(),
+          axis.text.y = ggplot2::element_blank(),
+          axis.text.x = ggplot2::element_blank(),
+          axis.ticks = ggplot2::element_blank(),
+          panel.grid = ggplot2::element_blank(),
+          plot.background = ggplot2::element_rect(fill = NA, colour = NA),
+          panel.background = ggplot2::element_rect(fill = NA, colour = NA),
+          plot.margin = ggplot2::margin(8, 8, 8, 8)
+        )
 
     print(p)
 
