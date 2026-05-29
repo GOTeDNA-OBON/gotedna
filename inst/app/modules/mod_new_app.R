@@ -1039,7 +1039,7 @@ app_b_server <- function(input, output, session){
   })
 
   protocol_available_df <- reactive({
-    df <- occ_all
+    df <- selected_detections()
 
     if (is.null(df) || nrow(df) == 0) {
       return(df)
