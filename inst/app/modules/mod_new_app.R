@@ -887,6 +887,7 @@ $(function(){
     )
 }
 
+
 assign_protocol_ID <- function(df,
                                protocol_columns,
                                protocol_sheet = NULL) {
@@ -1033,7 +1034,7 @@ app_b_server <- function(input, output, session){
     assign_protocol_ID(
       df = df,
       protocol_columns = protocol_columns,
-      protocol_sheet = NULL
+      protocol_sheet = protocol_sheet
     )$data
   })
 

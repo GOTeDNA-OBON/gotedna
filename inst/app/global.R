@@ -312,6 +312,13 @@ list2env(APP_DATA, .GlobalEnv) #pulls everything out of APP_DATA into their orig
 rm(APP_DATA)
 gc()
 
+protocol_sheet <- readRDS(app_data_file("protocol_sheet.rds"))
+
+if (is.null(protocol_sheet) || nrow(protocol_sheet) == 0) {
+  stop("protocol_sheet was not loaded.")
+}
+
+
 #Load libraries
 library(sf)
 library(dplyr)
