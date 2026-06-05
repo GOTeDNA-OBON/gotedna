@@ -3685,8 +3685,8 @@ app_b_server <- function(input, output, session){
       addMapPane("pane_zones",      zIndex = 410) %>%
       addMapPane("pane_poly_total", zIndex = 420) %>%
       addMapPane("pane_points",     zIndex = 430) %>%
-      addMapPane("pane_drawn_top",    zIndex = 900) %>%   #new code
-      addMapPane("pane_selected_top", zIndex = 950) %>%   #new code
+      addMapPane("pane_drawn_top",    zIndex = 900) %>%
+      addMapPane("pane_selected_top", zIndex = 950) %>%
       addProviderTiles(providers$CartoDB.Positron, group = "CartoDB Positron") %>%
       addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean Basemap") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery") %>%
@@ -3755,7 +3755,7 @@ app_b_server <- function(input, output, session){
       fillColor   = ~pal_rich(n_species_total),
       fillOpacity = ~ifelse(has_sampling, 0.8, 0.01),
       color       = NA,
-      label       = ~ifelse(has_sampling, paste("Total richness:", n_species_total), "No sampling in this cell"),
+      label       = ~ifelse(has_sampling, paste("Total Species Richness:", n_species_total), "No sampling in this cell"),
       options     = pathOptions(pane = "pane_polys"),
       highlightOptions = highlightOptions(weight = 2, bringToFront = TRUE)
     )
@@ -3796,7 +3796,7 @@ app_b_server <- function(input, output, session){
       ) %>%
       addPolygons(
         data        = all_polys_zones_leaflet,
-        group       = "MPA/AOI Zone Boundaries",
+        group       = "Polygon Zone Boundaries",
         fillOpacity = 0,
         color       = "white",
         weight      = 1,
@@ -3805,7 +3805,7 @@ app_b_server <- function(input, output, session){
       ) %>%
       addPolygons(
         data        = all_polys_click_leaflet,
-        group       = "MPA/AOI total species richness",
+        group       = "Site Polygon",
         layerId     = ~paste(site_type, site_name, sep="||"),
         fillOpacity = 0.05,
         color       = "white",
@@ -3893,9 +3893,9 @@ app_b_server <- function(input, output, session){
       addLayersControl(
         baseGroups = c("CartoDB Positron", "Esri Ocean Basemap", "Esri World Imagery"),
         overlayGroups = c(
-          "MPA/AOI total species richness",
+          "Site Polygon",
           "All", "12S", "COI", "16S", "18S",
-          "MPA/AOI Zone Boundaries",
+          "Polygon Zone Boundaries",
           "Sampling Points",
           "Sampling Depth",
           "Monthly Sampling Plot"
@@ -3925,7 +3925,7 @@ app_b_server <- function(input, output, session){
                         ]);
 
                         const context = new Set([
-                          'MPA/AOI Zone Boundaries',
+                          'Polygon Zone Boundaries',
                           'Sampling Points',
                           'Sampling Depth',
                           'Monthly Sampling Plot'
@@ -4051,6 +4051,22 @@ app_b_server <- function(input, output, session){
   const ctrl = el.querySelector('.leaflet-control-layers');
   if(!ctrl) return;
 
+const baseBox = ctrl.querySelector('.leaflet-control-layers-base');
+
+if(baseBox && !baseBox.querySelector('.cartography-heading')){
+  const h0 = document.createElement('div');
+  h0.className = 'layers-heading cartography-heading';
+  h0.textContent = 'Cartography';
+
+  const firstBaseRow = baseBox.querySelector('label');
+
+  if(firstBaseRow){
+    baseBox.insertBefore(h0, firstBaseRow);
+  } else {
+    baseBox.appendChild(h0);
+  }
+}
+
   const overlayBox = ctrl.querySelector('.leaflet-control-layers-overlays');
   if(!overlayBox) return;
 
@@ -4071,6 +4087,23 @@ app_b_server <- function(input, output, session){
     }
   });
 
+let totalRichnessRow = null;
+
+rows.forEach(r => {
+  const nm = labelText(r);
+  if(nm === 'Site Polygon'){
+    totalRichnessRow = r;
+  }
+});
+
+if(totalRichnessRow && !overlayBox.querySelector('.site-richness-heading')){
+  const h0 = document.createElement('div');
+  h0.className = 'layers-heading site-richness-heading';
+  h0.textContent = 'Total Species Richness';
+
+  overlayBox.insertBefore(h0, totalRichnessRow);
+}
+
   // If our custom layout already exists, do nothing
   if(overlayBox.querySelector('.richness-grid')){
     return;
@@ -4078,7 +4111,7 @@ app_b_server <- function(input, output, session){
 
   const h1 = document.createElement('div');
   h1.className = 'layers-heading';
-  h1.textContent = 'Species richness grid cells';
+  h1.textContent = 'Grid Cell Species Richness';
 
   const grid = document.createElement('div');
   grid.className = 'richness-grid';
@@ -4300,7 +4333,7 @@ const obs = new MutationObserver(() => {
     add_grid_layer(grid18,  "18S", "n_species", "18S richness")
 
     gridALL <- if (yr == "All") RICHNESS_ALL_LEAFLET else RICHNESS_ALL_BY_YEAR[[yr]] %||% RICHNESS_ALL
-    add_grid_layer(gridALL, "All", "n_species_total", "Total richness")
+    add_grid_layer(gridALL, "All", "n_species_total", "Total Species Richness")
   }, ignoreInit = TRUE)
 
   #Depth toggle
@@ -6135,14 +6168,15 @@ const obs = new MutationObserver(() => {
     }
 
     if (is.null(click) || is.null(click$id)) {
-      return(em("Click a grid cell or an MPA/AOI outline, or draw a polygon."))
+      return(em("Click a Marine Conservation Area outline or draw a polygon.
+                (Hint: Turn off the 'Site Polygon' switch to view species list by grid cell)"))
     }
 
     if (grepl("\\|\\|", click$id)) {
       groups_on <- input$map_groups %||% character(0)
-      show_poly_total <- "MPA/AOI total species richness" %in% groups_on
+      show_poly_total <- "Site Polygon" %in% groups_on
       if (!show_poly_total) {
-        return(em("Turn ON “MPA/AOI total species richness” to view polygon species lists."))
+        return(em("Turn ON “Site” to view polygon species lists."))
       }
 
       parts  <- strsplit(click$id, "\\|\\|")[[1]]
@@ -6180,7 +6214,7 @@ const obs = new MutationObserver(() => {
 
     cid <- suppressWarnings(as.integer(click$id))
     if (is.na(cid)) {
-      return(em("Click a grid cell or an MPA/AOI outline."))
+      return(em("Click a grid cell or a polygon outline."))
     }
 
     pts <- species_sf_by_year[[yr]]
@@ -6245,7 +6279,7 @@ const obs = new MutationObserver(() => {
 
     if (is.null(det_raw) || nrow(det_raw) == 0) {
       return(DT::datatable(
-        data.frame(Message = "Click an MPA/AOI polygon/grid cell, or draw a polygon, to view detection details"),
+        data.frame(Message = "Click a polygon/grid cell, or draw a polygon, to view detection details"),
         rownames = FALSE,
         options = list(dom = "t")
       ))
