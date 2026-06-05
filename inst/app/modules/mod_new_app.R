@@ -4936,11 +4936,15 @@ const obs = new MutationObserver(() => {
       shiny::need(nlevels(md$group_label) > 1, "At least 2 polygons are needed for beta comparison.")
     )
 
+    set.seed(123)
+
     permanova <- vegan::adonis2(
       d ~ group_label,
       data = md,
       permutations = 999
     )
+
+    set.seed(123)
 
     anosim_res <- vegan::anosim(
       x = d,
@@ -5580,6 +5584,8 @@ const obs = new MutationObserver(() => {
       "Alpha diversity"
     )
 
+    metric_axis_label <- metric_label
+
     rank_label   <- tools::toTitleCase(gsub("_", " ", active_tax_rank()))
     gene_label   <- div_filters()$target_gene
     primer_label <- div_filters()$primers
@@ -5681,7 +5687,7 @@ const obs = new MutationObserver(() => {
           rangemode = "tozero"
         ),
         yaxis = list(
-          title = list(text = metric_label, font = list(size = 20)),
+          title = list(text = metric_axis_label, font = list(size = 20)),
           tickfont = list(size = 16),
           showgrid = FALSE,
           showline = TRUE,
@@ -5731,7 +5737,7 @@ const obs = new MutationObserver(() => {
     out
   }
 
-  #Beta diversity *NEW
+  #Beta diversity
   output$beta_pcoa <- plotly::renderPlotly({
     if (!is.null(beta_overlap_warning())) {
       return(NULL)
@@ -5821,12 +5827,6 @@ const obs = new MutationObserver(() => {
     } else {
       ""
     }
-
-    plot_title <- paste0(
-      "Beta diversity (PCoA; ", method_label, ") at ",
-      rank_label, " level",
-      gene_suffix, primer_suffix
-    )
 
     plot_df <- plot_df %>%
       dplyr::mutate(
@@ -5933,10 +5933,6 @@ const obs = new MutationObserver(() => {
 
     p <- p %>%
       plotly::layout(
-        title = list(
-          text = plot_title,
-          font = list(size = 20)
-        ),
         font = list(size = 18),
         xaxis = list(
           title = list(
