@@ -1376,6 +1376,19 @@ app_b_server <- function(input, output, session){
     )
   }
 
+  protocol_lookup <- reactive({
+    species_sf_all %>%
+      sf::st_drop_geometry() %>%
+      add_protocol_ids() %>%
+      dplyr::select(
+        occurrenceID,
+        samp_name,
+        scientificName,
+        target_gene,
+        protocol_ID
+      ) %>%
+      dplyr::distinct()
+  })
 
   selection_map_df <- reactive({
     det <- selected_detections()
@@ -1429,7 +1442,12 @@ app_b_server <- function(input, output, session){
         min_depth_bin = safe_chr(., "min_depth_bin"),
         samp_size_bin = safe_chr(., "samp_size_bin")
       )
-    df <- add_protocol_ids(df)
+    df <- df %>%
+      dplyr::select(-dplyr::any_of("protocol_ID")) %>%
+      dplyr::left_join(
+        protocol_lookup(),
+        by = c("occurrenceID", "samp_name", "scientificName", "target_gene")
+      )
 
     df
   })
@@ -1477,7 +1495,7 @@ app_b_server <- function(input, output, session){
         polygons    = input$div_compare_polygons %||% character(0)
       )
     )
-  }, ignoreInit = FALSE)
+  }, ignoreInit = TRUE)
 
   protocol_cols <- c(
     "nucl_acid_ext_kit",
@@ -1527,7 +1545,22 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
-    df <- apply_protocol_filter(df, confirmed_filters$protocols)
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_filters$protocols, collapse = ", "))
+
+    confirmed_prot <- confirmed_protocols()
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_prot, collapse = ", "))
+
+    df <- apply_protocol_filter(df, confirmed_prot)
+
+    message("PROTOCOLS AFTER FILTER in <name>:")
+    print(table(df$protocol_ID, useNA = "ifany"))
+
+    message("SELECTED SITE protocol IDs after filter:")
+    print(table(df$protocol_ID, useNA = "ifany"))
 
     # intentionally do NOT apply polygon comparison filter here
     df
@@ -1548,8 +1581,24 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
-    df <- apply_protocol_filter(df, confirmed_filters$protocols)
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_filters$protocols, collapse = ", "))
+
+    confirmed_prot <- confirmed_protocols()
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_prot, collapse = ", "))
+
+    df <- apply_protocol_filter(df, confirmed_prot)
+
+    message("PROTOCOLS AFTER FILTER in <name>:")
+    print(table(df$protocol_ID, useNA = "ifany"))
+
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
+
+    message("MPA/BETA protocol IDs after filter:")
+    print(table(df$protocol_ID, useNA = "ifany"))
 
     df
   })
@@ -1564,20 +1613,6 @@ app_b_server <- function(input, output, session){
     df <- selection_selection_df()
     if (is.null(df) || nrow(df) == 0) return(character(0))
     unique(df$id)
-  })
-
-  protocol_lookup <- reactive({
-    species_sf_all %>%
-      sf::st_drop_geometry() %>%
-      add_protocol_ids() %>%
-      dplyr::select(
-        occurrenceID,
-        samp_name,
-        scientificName,
-        target_gene,
-        protocol_ID
-      ) %>%
-      dplyr::distinct()
   })
 
   mpa_membership_base_df <- reactive({
@@ -1642,7 +1677,20 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
-    df <- apply_protocol_filter(df, confirmed_filters$protocols)
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_filters$protocols, collapse = ", "))
+
+    confirmed_prot <- confirmed_protocols()
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_prot, collapse = ", "))
+
+    df <- apply_protocol_filter(df, confirmed_prot)
+
+    message("PROTOCOLS AFTER FILTER in <name>:")
+    print(table(df$protocol_ID, useNA = "ifany"))
+
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     df
@@ -1721,7 +1769,20 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
-    df <- apply_protocol_filter(df, confirmed_filters$protocols)
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_filters$protocols, collapse = ", "))
+
+    confirmed_prot <- confirmed_protocols()
+
+    message("Confirmed protocols entering filter: ",
+            paste(confirmed_prot, collapse = ", "))
+
+    df <- apply_protocol_filter(df, confirmed_prot)
+
+    message("PROTOCOLS AFTER FILTER in <name>:")
+    print(table(df$protocol_ID, useNA = "ifany"))
+
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     if (nrow(df) == 0) {
