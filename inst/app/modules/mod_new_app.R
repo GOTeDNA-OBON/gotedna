@@ -1038,6 +1038,47 @@ app_b_server <- function(input, output, session){
     )$data
   })
 
+  safe_chr <- function(data, col) {
+    if (col %in% names(data)) as.character(data[[col]]) else NA_character_
+  }
+
+  safe_num <- function(data, col) {
+    if (col %in% names(data)) suppressWarnings(as.numeric(data[[col]])) else NA_real_
+  }
+
+  add_protocol_ids <- function(df) {
+    protocol_columns <- c(
+      "nucl_acid_ext_kit",
+      "platform",
+      "instrument",
+      "seq_kit",
+      "otu_db",
+      "tax_assign_cat",
+      "otu_seq_comp_appr",
+      "min_depth_floor",
+      "max_depth_floor",
+      "samp_size_mid",
+      "size_frac",
+      "filter_material",
+      "samp_mat_process",
+      "samp_store_temp",
+      "samp_store_sol"
+    )
+
+    protocol_columns <- protocol_columns[protocol_columns %in% names(df)]
+
+    if (length(protocol_columns) == 0) {
+      df$protocol_ID <- NA_integer_
+      return(df)
+    }
+
+    assign_protocol_ID(
+      df = df,
+      protocol_columns = protocol_columns,
+      protocol_sheet = protocol_sheet
+    )$data
+  }
+
   protocol_available_df <- reactive({
     df <- selected_detections()
 
@@ -1083,6 +1124,8 @@ app_b_server <- function(input, output, session){
     if (length(protocol_columns) == 0) {
       return(df[0, , drop = FALSE])
     }
+
+    df <- add_protocol_ids(df)
 
     df %>%
       dplyr::filter(
@@ -1162,8 +1205,7 @@ app_b_server <- function(input, output, session){
 
     names(choices) <- paste0(
       "Protocol ", ps$protocol_ID,
-      " (", ps$total_detections, " detections | ",
-      sprintf("%.1f", ps$detection_rate), "%)"
+      " (", ps$total_detections, " detections)"
     )
 
     # ---- Single protocol dropdown ----
@@ -1190,12 +1232,18 @@ app_b_server <- function(input, output, session){
 
     }, once = TRUE)
 
-    # ---- Multi-protocol picker ----
+    current_prot <- isolate(input$prot_id)
+
+    valid_selected <- intersect(
+      as.character(current_prot %||% character(0)),
+      as.character(ps$protocol_ID)
+    )
+
     shinyWidgets::updatePickerInput(
       session,
       inputId = "prot_id",
       choices = choices,
-      selected = NULL
+      selected = valid_selected
     )
 
   }, ignoreInit = FALSE)
@@ -1328,20 +1376,13 @@ app_b_server <- function(input, output, session){
     )
   }
 
-  safe_chr <- function(data, col) {
-    if (col %in% names(data)) as.character(data[[col]]) else NA_character_
-  }
-
-  safe_num <- function(data, col) {
-    if (col %in% names(data)) suppressWarnings(as.numeric(data[[col]])) else NA_real_
-  }
 
   selection_map_df <- reactive({
     det <- selected_detections()
 
     if (is.null(det) || nrow(det) == 0) return(det)
 
-    det %>%
+    df <- det %>%
       sf::st_drop_geometry() %>%
       dplyr::transmute(
         id = safe_chr(., "id"),
@@ -1388,6 +1429,9 @@ app_b_server <- function(input, output, session){
         min_depth_bin = safe_chr(., "min_depth_bin"),
         samp_size_bin = safe_chr(., "samp_size_bin")
       )
+    df <- add_protocol_ids(df)
+
+    df
   })
 
   selection_panel_df <- reactive({
@@ -1410,19 +1454,57 @@ app_b_server <- function(input, output, session){
     list(
       target_gene = character(0),
       primers     = character(0),
+      protocols   = character(0),
       polygons      = character(0)
     )
   )
 
   observeEvent(input$div_apply, {
+    cat("\nCONFIRMED PROTOCOL IDS:\n")
+    print(input$prot_id)
+
     div_filters(
       list(
         target_gene = input$div_target_gene %||% character(0),
         primers     = input$div_primer %||% character(0),
+        protocols  = input$prot_id %||% character(0),
         polygons    = input$div_compare_polygons %||% character(0)
       )
     )
   }, ignoreInit = FALSE)
+
+  protocol_cols <- c(
+    "nucl_acid_ext_kit",
+    "platform",
+    "instrument",
+    "seq_kit",
+    "otu_db",
+    "tax_assign_cat",
+    "otu_seq_comp_appr",
+    "min_depth_floor",
+    "max_depth_floor",
+    "samp_size_mid",
+    "size_frac",
+    "filter_material",
+    "samp_mat_process",
+    "samp_store_temp",
+    "samp_store_sol"
+  )
+
+  apply_protocol_filter <- function(df, protocols = NULL) {
+    protocols <- as.character(protocols %||% character(0))
+
+    if (length(protocols) == 0 || is.null(df) || nrow(df) == 0) {
+      return(df)
+    }
+
+    if (!"protocol_ID" %in% names(df)) {
+      return(df[0, , drop = FALSE])
+    }
+
+    df %>%
+      dplyr::filter(as.character(protocol_ID) %in% protocols)
+  }
 
   taxonomy_selection_df <- reactive({
     req(confirmed_map_filters())
@@ -1439,6 +1521,7 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_protocol_filter(df, confirmed_filters$protocols)
 
     # intentionally do NOT apply polygon comparison filter here
     df
@@ -1459,6 +1542,7 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_protocol_filter(df, confirmed_filters$protocols)
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     df
@@ -1476,17 +1560,52 @@ app_b_server <- function(input, output, session){
     unique(df$id)
   })
 
+  protocol_lookup <- reactive({
+    species_sf_all %>%
+      sf::st_drop_geometry() %>%
+      add_protocol_ids() %>%
+      dplyr::select(
+        occurrenceID,
+        samp_name,
+        scientificName,
+        target_gene,
+        protocol_ID
+      ) %>%
+      dplyr::distinct()
+  })
 
   mpa_membership_base_df <- reactive({
 
     if (is.null(diversity_mpa_df)) {
       stop("mpa_membership_base_df: diversity_mpa_df is NULL")
     }
-    diversity_mpa_df %>%
+    df <- diversity_mpa_df %>%
       dplyr::filter(
         !is.na(site_name), trimws(site_name) != "",
         !is.na(site_type), trimws(site_type) != ""
       )
+
+    message("\nMPA protocol columns present:")
+    print(intersect(protocol_cols, names(df)))
+
+    message("Rows before add_protocol_ids: ", nrow(df))
+
+    df <- df %>%
+      dplyr::select(-dplyr::any_of("protocol_ID")) %>%
+      dplyr::left_join(
+        protocol_lookup(),
+        by = c(
+          "occurrenceID",
+          "samp_name",
+          "scientificName",
+          "target_gene"
+        )
+      )
+
+    message("Protocol IDs after add_protocol_ids:")
+    print(table(df$protocol_ID, useNA = "ifany"))
+
+    df
   })
 
   mpa_membership_panel_df <- reactive({
@@ -1517,6 +1636,7 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_protocol_filter(df, confirmed_filters$protocols)
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     df
@@ -1564,6 +1684,7 @@ app_b_server <- function(input, output, session){
       dplyr::slice(1) %>%
       dplyr::ungroup()
 
+    out <- add_protocol_ids(out)
     out
   })
 
@@ -1594,6 +1715,7 @@ app_b_server <- function(input, output, session){
     confirmed_filters <- div_filters()
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
+    df <- apply_protocol_filter(df, confirmed_filters$protocols)
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
     if (nrow(df) == 0) {
@@ -2321,41 +2443,45 @@ app_b_server <- function(input, output, session){
 
   compare_polygon_choices <- reactive({
 
-    live_filters <- list(
-      target_gene = input$div_target_gene %||% character(0),
-      primers     = input$div_primer %||% character(0)
+    df <- dplyr::bind_rows(
+      mpa_membership_panel_df(),
+      polygon_membership_panel_df()
     )
 
-    base_df <- mpa_membership_panel_df()
-
-    if (!is.null(base_df) && nrow(base_df) > 0) {
-      base_df <- apply_diversity_dropdown_filters(base_df, live_filters)
+    if (is.null(df) || nrow(df) == 0) {
+      return(character(0))
     }
 
-    draw_df <- polygon_membership_panel_df()
+    live_filters <- list(
+      target_gene = input$div_target_gene %||% character(0),
+      primers     = input$div_primer %||% character(0),
+      protocols   = input$prot_id %||% character(0)
+    )
 
-    if (!is.null(draw_df) && nrow(draw_df) > 0) {
-      draw_df <- apply_diversity_dropdown_filters(draw_df, live_filters)
-    }
+    df <- apply_diversity_dropdown_filters(df, live_filters)
+    df <- apply_protocol_filter(df, live_filters$protocols)
 
-    get_site_choices <- function(df, user_only = FALSE) {
-      if (is.null(df) || nrow(df) == 0) return(character(0))
-
-      if (isTRUE(user_only) && "site_type" %in% names(df)) {
-        df <- df %>% dplyr::filter(site_type == "User")
-      }
-
+    message("\nCOMPARE POLYGON DEBUG")
+    message("Selected protocols: ", paste(live_filters$protocols, collapse = ", "))
+    print(
       df %>%
-        dplyr::filter(!is.na(site_name), site_name != "") %>%
-        dplyr::pull(site_name) %>%
-        as.character() %>%
-        unique()
+        dplyr::count(site_name, protocol_ID, sort = TRUE)
+    )
+
+    if (!is.null(df) && nrow(df) > 0 && all(c("site_name", "protocol_ID") %in% names(df))) {
+      print(
+        df %>%
+          dplyr::count(site_name, protocol_ID, sort = TRUE)
+      )
+    } else {
+      message("No rows after protocol filter, or site_name/protocol_ID missing.")
     }
 
-    base_groups  <- get_site_choices(base_df)
-    drawn_groups <- get_site_choices(draw_df, user_only = TRUE)
-
-    sort(unique(c(base_groups, drawn_groups)))
+    df %>%
+      dplyr::filter(!is.na(site_name), trimws(site_name) != "") %>%
+      dplyr::pull(site_name) %>%
+      unique() %>%
+      sort()
   })
 
 
@@ -3098,14 +3224,12 @@ app_b_server <- function(input, output, session){
     cur_sel <- isolate(input$div_compare_polygons %||% character(0))
     sel_keep <- intersect(cur_sel, choices)
 
-    freezeReactiveValue(input, "div_compare_polygons")
-
     updateSelectizeInput(
-      session  = session,
-      inputId  = "div_compare_polygons",
-      choices  = choices,
+      session,
+      "div_compare_polygons",
+      choices = choices,
       selected = sel_keep,
-      server   = TRUE
+      server = TRUE
     )
   }, ignoreInit = FALSE)
 
@@ -3561,9 +3685,6 @@ app_b_server <- function(input, output, session){
       tryCatch({
         message("Download started")
 
-        filters <- div_filters()
-        message("div_filters read")
-
         yr <- sel_year_chr()
         message("Year: ", yr)
 
@@ -3579,20 +3700,40 @@ app_b_server <- function(input, output, session){
         dat <- apply_species_filters(dat)
         message("After floating panel filters rows: ", nrow(dat))
 
-        dat <- apply_diversity_dropdown_filters(dat, filters)
+        confirmed_filters <- div_filters()
+
+        dat <- apply_diversity_dropdown_filters(dat, confirmed_filters)
         message("After diversity filters rows: ", nrow(dat))
+
+        dat <- dat %>%
+          dplyr::select(-dplyr::any_of("protocol_ID")) %>%
+          dplyr::left_join(
+            protocol_lookup(),
+            by = c("occurrenceID", "samp_name", "scientificName", "target_gene")
+          )
+
+        message("Protocol IDs before protocol filter:")
+        print(table(dat$protocol_ID, useNA = "ifany"))
+
+        message("Download selected protocols: ", paste(confirmed_filters$protocols, collapse = ", "))
+
+        dat <- apply_protocol_filter(dat, confirmed_filters$protocols)
+
+        message("After protocol filter rows: ", nrow(dat))
+        message("Protocol IDs after protocol filter:")
+        print(table(dat$protocol_ID, useNA = "ifany"))
 
         message("Adding polygon selection")
         dat <- add_polygon_selection(dat)
         message("Polygon selection added")
 
-        if (length(filters$polygons) > 0) {
+        if (length(confirmed_filters$polygons) > 0) {
           dat <- dat %>%
             dplyr::filter(!is.na(polygon_selection)) %>%
             dplyr::filter(
               vapply(
                 strsplit(as.character(polygon_selection), " \\| "),
-                function(x) any(x %in% filters$polygons),
+                function(x) any(x %in% confirmed_filters$polygons),
                 logical(1)
               )
             )
