@@ -1449,6 +1449,8 @@ app_b_server <- function(input, output, session){
     apply_species_filters(df, live_filters)
   })
 
+  confirmed_protocols <- reactiveVal(character(0))
+
   # ---- confirmed diversity controls ----
   div_filters <- reactiveVal(
     list(
@@ -1460,14 +1462,18 @@ app_b_server <- function(input, output, session){
   )
 
   observeEvent(input$div_apply, {
+    confirmed_prot <- as.character(input$prot_id %||% character(0))
+
     cat("\nCONFIRMED PROTOCOL IDS:\n")
-    print(input$prot_id)
+    print(confirmed_prot)
+
+    confirmed_protocols(confirmed_prot)
 
     div_filters(
       list(
         target_gene = input$div_target_gene %||% character(0),
         primers     = input$div_primer %||% character(0),
-        protocols  = input$prot_id %||% character(0),
+        protocols   = confirmed_prot,
         polygons    = input$div_compare_polygons %||% character(0)
       )
     )
@@ -3715,9 +3721,11 @@ app_b_server <- function(input, output, session){
         message("Protocol IDs before protocol filter:")
         print(table(dat$protocol_ID, useNA = "ifany"))
 
-        message("Download selected protocols: ", paste(confirmed_filters$protocols, collapse = ", "))
+        download_protocols <- confirmed_protocols()
 
-        dat <- apply_protocol_filter(dat, confirmed_filters$protocols)
+        message("Download selected protocols: ", paste(download_protocols, collapse = ", "))
+
+        dat <- apply_protocol_filter(dat, download_protocols)
 
         message("After protocol filter rows: ", nrow(dat))
         message("Protocol IDs after protocol filter:")
