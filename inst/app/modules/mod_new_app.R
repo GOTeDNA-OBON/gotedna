@@ -302,7 +302,7 @@ $(function(){
               `aria-expanded` = "false",
               `aria-controls` = "floating_body",
               tagList(
-                tags$span("Select a Site"),
+                tags$span("Data Filtration"),
                 tags$span(class = "caret-icon", HTML("&#9662;"))
               )
             ),
@@ -3128,7 +3128,11 @@ app_b_server <- function(input, output, session){
             opacity = 1,
             fillOpacity = 0.8,
             options = pathOptions(pane = "pane_points"),
-            label = ~paste0("Marker: ", target_gene)
+            label = ~paste0(
+              "Sample: ", samp_name,
+              ifelse(is.na(year), "", paste0(" | Year: ", year)),
+              ifelse(is.na(target_gene), "", paste0(" | Marker: ", target_gene))
+            )
           )
       }
     },

@@ -221,6 +221,7 @@ body {
   width: 100%;
 }
      /* ---- Floating panel ---- */
+
 #floating_panel{
   position: absolute;
   background: rgba(255,255,255,0.92);
@@ -948,8 +949,8 @@ table.dataTable.nowrap th {
 }
 
 #floating_panel h4{
-  font-size: calc(20px * var(--ui-scale)) !important;
-  margin-top: 0 !important;
+  font-size: calc(15px * var(--ui-scale)) !important;
+  margin-top: 15px !important;
   margin-bottom: calc(10px * var(--ui-scale)) !important;
 }
 
