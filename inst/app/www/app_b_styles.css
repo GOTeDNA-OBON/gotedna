@@ -242,6 +242,53 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.25);
 }
 
+/* Multi-select tags */
+#floating_panel .selectize-control.multi .selectize-input > div {
+  background: #EAF7FB !important;
+  border: 1px solid rgba(49, 180, 219, 0.75)!important;
+  color: #000 !important;
+}
+
+/* Hover state */
+#floating_panel .selectize-control.multi .selectize-input > div:hover {
+  background: #9ADBE8 !important;
+}
+
+/* Active option in dropdown menu */
+#floating_panel .selectize-dropdown .active {
+  background-color: #EAF7FB !important;
+  color: #000 !important;
+}
+
+/* Selected Protocol ID button */
+#floating_panel #prot_id + .btn.dropdown-toggle {
+  background-color: #EAF7FB !important;
+  border: 1px solid rgba(49, 180, 219, 0.75) !important;
+  color: #000 !important;
+}
+
+/* Open/focus state */
+#floating_panel #prot_id + .btn.dropdown-toggle:focus,
+#floating_panel #prot_id + .btn.dropdown-toggle:hover {
+  background-color: #9ADBE8 !important;
+  border-color: rgba(49, 180, 219, 0.75) !important;
+  color: #000 !important;
+}
+
+/* Selected items inside dropdown */
+#floating_panel .bootstrap-select .dropdown-menu li.selected > a,
+#floating_panel .bootstrap-select .dropdown-menu li.selected > a span.text {
+  background-color: #EAF7FB !important;
+  color: #000 !important;
+}
+
+/* Highlighted/hovered dropdown option */
+#floating_panel .bootstrap-select .dropdown-menu li.active > a,
+#floating_panel .bootstrap-select .dropdown-menu li a:hover {
+  background-color: #9ADBE8 !important;
+  color: #000 !important;
+}
+
 #map_wrap{
   position: relative;
   height: calc(100vh - 120px);

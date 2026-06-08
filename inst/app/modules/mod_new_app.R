@@ -1546,23 +1546,10 @@ app_b_server <- function(input, output, session){
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_filters$protocols, collapse = ", "))
-
     confirmed_prot <- confirmed_protocols()
-
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_prot, collapse = ", "))
 
     df <- apply_protocol_filter(df, confirmed_prot)
 
-    message("PROTOCOLS AFTER FILTER in <name>:")
-    print(table(df$protocol_ID, useNA = "ifany"))
-
-    message("SELECTED SITE protocol IDs after filter:")
-    print(table(df$protocol_ID, useNA = "ifany"))
-
-    # intentionally do NOT apply polygon comparison filter here
     df
   })
 
@@ -1582,23 +1569,11 @@ app_b_server <- function(input, output, session){
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_filters$protocols, collapse = ", "))
-
     confirmed_prot <- confirmed_protocols()
-
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_prot, collapse = ", "))
 
     df <- apply_protocol_filter(df, confirmed_prot)
 
-    message("PROTOCOLS AFTER FILTER in <name>:")
-    print(table(df$protocol_ID, useNA = "ifany"))
-
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
-
-    message("MPA/BETA protocol IDs after filter:")
-    print(table(df$protocol_ID, useNA = "ifany"))
 
     df
   })
@@ -1626,11 +1601,6 @@ app_b_server <- function(input, output, session){
         !is.na(site_type), trimws(site_type) != ""
       )
 
-    message("\nMPA protocol columns present:")
-    print(intersect(protocol_cols, names(df)))
-
-    message("Rows before add_protocol_ids: ", nrow(df))
-
     df <- df %>%
       dplyr::select(-dplyr::any_of("protocol_ID")) %>%
       dplyr::left_join(
@@ -1642,9 +1612,6 @@ app_b_server <- function(input, output, session){
           "target_gene"
         )
       )
-
-    message("Protocol IDs after add_protocol_ids:")
-    print(table(df$protocol_ID, useNA = "ifany"))
 
     df
   })
@@ -1678,18 +1645,9 @@ app_b_server <- function(input, output, session){
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_filters$protocols, collapse = ", "))
-
     confirmed_prot <- confirmed_protocols()
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_prot, collapse = ", "))
-
     df <- apply_protocol_filter(df, confirmed_prot)
-
-    message("PROTOCOLS AFTER FILTER in <name>:")
-    print(table(df$protocol_ID, useNA = "ifany"))
 
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
@@ -1770,18 +1728,9 @@ app_b_server <- function(input, output, session){
 
     df <- apply_diversity_dropdown_filters(df, confirmed_filters)
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_filters$protocols, collapse = ", "))
-
     confirmed_prot <- confirmed_protocols()
 
-    message("Confirmed protocols entering filter: ",
-            paste(confirmed_prot, collapse = ", "))
-
     df <- apply_protocol_filter(df, confirmed_prot)
-
-    message("PROTOCOLS AFTER FILTER in <name>:")
-    print(table(df$protocol_ID, useNA = "ifany"))
 
     df <- apply_compare_polygon_filter(df, confirmed_filters$polygons)
 
@@ -2527,22 +2476,6 @@ app_b_server <- function(input, output, session){
 
     df <- apply_diversity_dropdown_filters(df, live_filters)
     df <- apply_protocol_filter(df, live_filters$protocols)
-
-    message("\nCOMPARE POLYGON DEBUG")
-    message("Selected protocols: ", paste(live_filters$protocols, collapse = ", "))
-    print(
-      df %>%
-        dplyr::count(site_name, protocol_ID, sort = TRUE)
-    )
-
-    if (!is.null(df) && nrow(df) > 0 && all(c("site_name", "protocol_ID") %in% names(df))) {
-      print(
-        df %>%
-          dplyr::count(site_name, protocol_ID, sort = TRUE)
-      )
-    } else {
-      message("No rows after protocol filter, or site_name/protocol_ID missing.")
-    }
 
     df %>%
       dplyr::filter(!is.na(site_name), trimws(site_name) != "") %>%
