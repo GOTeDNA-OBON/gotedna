@@ -248,12 +248,9 @@ $(function(){
             class = "nav navbar-nav",
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_map",    "Interactive Map")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_sara",   "Detection Details")),
-            #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_method", "Explore Protocols")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_datsel", "Data Confirmation and Download")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_div",    "Diversity Metrics")),
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_pie",    "Taxonomic Pie Chart"))
-            #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_dwnld",    "Download Data File")),
-            #tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_refdat",    "Reference Data Authorship")),
           )
         )
       ),
@@ -523,78 +520,6 @@ $(function(){
           )
         )
       ),
-
-      # ---- Explore Protocols SECTION ----
-      # div(
-      #   id = "sec_method", class = "scroll-section",
-      #   h3("Explore Protocols"),
-      #
-      #   # ---- Row 1: target gene + primer menus ----
-      #   div(
-      #     class = "data-select-grid",
-      #
-      #     div(
-      #       class = "data-select-item",
-      #       selectizeInput(
-      #         "div_target_gene",
-      #         "Target gene",
-      #         choices = NULL,
-      #         selected = NULL,
-      #         multiple = FALSE,
-      #         options = list(
-      #           placeholder = "Select target gene(s)"
-      #         )
-      #       )
-      #     ),
-      #
-      #     div(
-      #       class = "data-select-item",
-      #       selectizeInput(
-      #         "div_primer",
-      #         "Primer",
-      #         choices = NULL,
-      #         selected = NULL,
-      #         multiple = TRUE,
-      #         options = list(
-      #           plugins = list("remove_button"),
-      #           placeholder = "Select primer(s)"
-      #         )
-      #       ),
-      #       div(
-      #         class = "primer-btn-row",
-      #         actionButton("div_primer_all", "Select all", class = "btn btn-default btn-secondary btn-sm"),
-      #         actionButton("div_primer_none", "Deselect all", class = "btn btn-default btn-secondary btn-sm")
-      #       )
-      #     )
-      #   ),
-      #
-      #   # ---- Row 2: protocol dropdown + cards/plots ----
-      #   div(
-      #     id = "data_request_wrap",
-      #     class = "method-comparison-wrap",
-      #     h3(" "),
-      #
-      #     # h4("Data Request"),
-      #
-      #     fluidRow(
-      #       column(
-      #         width = 2,
-      #         selectInput(
-      #           "req_protocol",
-      #           "Protocol ID",
-      #           choices = NULL,
-      #           selected = NULL,
-      #           selectize = TRUE
-      #         )
-      #       ),
-      #
-      #       column(
-      #         width = 4,
-      #         uiOutput("protocol_details"),
-      #       )
-      #     )
-      #   )
-      # ),
 
         # ---- DATA SELECTION SECTION ----
         div(
@@ -3760,7 +3685,27 @@ app_b_server <- function(input, output, session){
         message("Coordinates added")
 
         dat <- dat %>%
-          sf::st_drop_geometry()
+          sf::st_drop_geometry() %>%
+          dplyr::rename(
+            'IUCN Red List Category' = category
+          ) %>%
+          dplyr::left_join(
+            SARA %>%
+              dplyr::select(
+                Scientific.Name,
+                'SARA Rating' = Rating,
+                'SARA Schedule' = Schedule
+              ),
+            by = c("scientificName" = "Scientific.Name")
+          ) %>%
+          dplyr::left_join(
+            AIS %>%
+              dplyr::select(
+                Scientific.Name,
+                'AIS Type' = Type
+              ),
+            by = c("scientificName" = "Scientific.Name")
+          )
         message("Geometry dropped")
 
         dat <- add_primer_combo(dat)
@@ -3774,7 +3719,7 @@ app_b_server <- function(input, output, session){
           "organismQuantity", "organismQuantityType",
           "decimalLatitude", "decimalLongitude", "polygon_selection",
           "minimumDepthInMeters", "maximumDepthInMeters",
-          "samp_size", "samp_size_unit"
+          "samp_size", "samp_size_unit", "IUCN Red List Category", "SARA Rating", "SARA Schedule", "AIS Type"
         )
 
         keep_cols <- c(
@@ -3963,30 +3908,6 @@ app_b_server <- function(input, output, session){
         highlightOptions = highlightOptions(weight = 3, bringToFront = TRUE)
       )
 
-    # ---- legends + controls ----
-    # rich_vals <- init_ALL$n_species_total
-    # rich_vals <- rich_vals[is.finite(rich_vals)]
-    #
-    # legend_range <- range(rich_vals, na.rm = TRUE)
-    #
-    # legend_vals <- pretty(legend_range, n = 4)
-    #
-    # legend_vals <- legend_vals[
-    #   legend_vals >= legend_range[1] &
-    #     legend_vals <= legend_range[2]
-    # ]
-    #
-    # m <- m %>%
-    #   leaflet::addLegend(
-    #     position = "bottomright",
-    #     pal      = pal_rich,
-    #     values   = legend_vals,
-    #     title    = "Species richness from eDNA",
-    #     opacity  = 1,
-    #     className = "legend-base legend-richness-box",
-    #     labFormat = leaflet::labelFormat(digits = 0)
-    #   )
-    #
     rich_legend_html <- htmltools::HTML("
 <div class='legend-base legend-richness-box custom-richness-legend'>
   <div class='rich-title'>Species richness<br>from eDNA</div>
@@ -4048,17 +3969,6 @@ app_b_server <- function(input, output, session){
           "Monthly Sampling Plot"
         ),
         options = layersControlOptions(collapsed = FALSE)
-        # )
-        # addLayersControl(
-        #   baseGroups = c("CartoDB Positron", "Esri Ocean Basemap", "Esri World Imagery"),
-        #   overlayGroups = c(
-        #     "MPA/AOI total species richness",
-        #     "All", "12S", "COI", "16S", "18S",
-        #     "MPA/AOI Zone Boundaries",
-        #     "Sampling Points",
-        #     "Sampling Depth"
-        #   ),
-        #   options = layersControlOptions(collapsed = FALSE)
       ) %>%
       htmlwidgets::onRender("
                       function(el, x){
@@ -4635,33 +4545,6 @@ const obs = new MutationObserver(() => {
 
   }, ignoreInit = TRUE)
 
-  # observeEvent(input$div_apply, {
-  #   depth <- confirmed_rarefaction_depth()
-  #
-  #   shiny::validate(
-  #     shiny::need(!is.null(depth), "Enter a rarefaction depth."),
-  #     shiny::need(!is.na(depth), "Enter a valid rarefaction depth."),
-  #     shiny::need(depth >= 0, "Rarefaction depth must be 0 or greater.")
-  #   )
-  #
-  #   confirmed_rarefaction_depth(as.numeric(depth))
-  #
-  #   # Force alpha rarefaction summary to calculate/print first
-  #   # rr <- isolate(rarefaction_drop_summary())
-  #
-  #   message("Rarefaction depth used for alpha diversity: ", rr$depth)
-  #   message("Total samples in current alpha matrix: ", rr$total_samples)
-  #   message("Kept after rarefaction filter: ", rr$kept_samples)
-  #   message("Dropped before rarefaction: ", rr$dropped_samples)
-  #
-  #   if (nrow(rr$dropped_table) > 0) {
-  #     print(rr$dropped_table)
-  #   } else {
-  #     message("No samples dropped at this rarefaction depth.")
-  #   }
-  #
-  # }, ignoreInit = TRUE, priority = 100)
-
   rarefaction_depth <- reactive({
     req(confirmed_rarefaction_depth())
     confirmed_rarefaction_depth()
@@ -4693,29 +4576,6 @@ const obs = new MutationObserver(() => {
       full_table    = out
     )
   })
-
-  # observe({
-  #   rr <- rarefaction_drop_summary()
-  #   req(rr)
-  #
-  #   message("Rarefaction depth: ", rr$depth)
-  #   message("Total samples in current alpha matrix: ", rr$total_samples)
-  #   message("Kept after rarefaction filter: ", rr$kept_samples)
-  #   message("Dropped before rarefaction: ", rr$dropped_samples)
-  # })
-
-  # #Check which samples were dropped
-  # observe({
-  #   rr <- rarefaction_drop_summary()
-  #   req(rr)
-  #
-  #   if (nrow(rr$dropped_table) > 0) {
-  #     print(rr$dropped_table)
-  #   } else {
-  #     message("No samples dropped at this rarefaction depth.")
-  #   }
-  # })
-
 
   #Create rarefied matrix for alpha diversity
   comm_mat_mpa_rarefied <- reactive({
@@ -4918,7 +4778,7 @@ const obs = new MutationObserver(() => {
     mat_out
   })
 
-  beta_distance <- reactive({     #NEW
+  beta_distance <- reactive({
     req(div_unlocked())
     mat_use <- beta_mat_processed()
     beta_method <- input$beta_metric %||% "bray"
@@ -5006,7 +4866,7 @@ const obs = new MutationObserver(() => {
     NULL
   })
 
-  #Beta diagnostics - Checks for ordination (beta)  *NEW
+  #Beta diagnostics - Checks for ordination (beta)
   observeEvent(input$div_apply, {
     req(input$div_apply > 0)
 
@@ -5069,7 +4929,7 @@ const obs = new MutationObserver(() => {
       dplyr::distinct(sample_id, samp_name, group_label, site_type, year)
   })
 
-  beta_stats_data <- reactive({    #NEW
+  beta_stats_data <- reactive({
     req(div_unlocked())
     if (!is.null(beta_overlap_warning())) {
       return(NULL)
@@ -5217,7 +5077,7 @@ const obs = new MutationObserver(() => {
     )
   })
 
-  output$alpha_warning_text <- renderText({  #NEW
+  output$alpha_warning_text <- renderText({
     alpha_overlap_warning() %||% ""
   })
 
