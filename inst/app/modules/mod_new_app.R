@@ -6311,9 +6311,8 @@ const obs = new MutationObserver(() => {
       "organismQuantity", "project_contact", "LClabel",
       "samp_size", "samp_size_unit", "occurrenceID",
       "minimumDepthInMeters", "maximumDepthInMeters",
-      "bathymetry", "associatedSequences",
-      "decimalLatitude", "decimalLongitude",
-      "flags", "dataset_id"
+      "bathymetry", "decimalLatitude", "decimalLongitude",
+      "flags", "dataset_id", "datasetID_obis"
     )
 
     missing_cols <- setdiff(needed_cols, names(det_show))
@@ -6339,18 +6338,31 @@ const obs = new MutationObserver(() => {
       TRUE ~ NA_character_
     )
 
-    det_show <- det_show %>%
+      det_show <- det_show %>%
       dplyr::mutate(
         across(c(
           scientificName, samp_name, target_gene,
-          bathymetry, flags, dataset_id, eventDate
+          bathymetry, flags, dataset_id, datasetID_obis, eventDate
         ), ~ as.character(.)),
+
+        dataset_id = dplyr::coalesce(datasetID_obis, dataset_id),
+
+        dataset_id = dplyr::if_else(
+          !is.na(dataset_id) & dataset_id != "",
+          paste0(
+            "<a href='https://obis.org/dataset/", dataset_id,
+            "' target='_blank'>", dataset_id, "</a>"
+          ),
+          NA_character_
+        ),
+
         Volume = dplyr::case_when(
           !is.na(samp_size) & !is.na(samp_size_unit) ~ paste(samp_size, samp_size_unit),
           !is.na(samp_size) ~ as.character(samp_size),
           !is.na(samp_size_unit) ~ as.character(samp_size_unit),
           TRUE ~ NA_character_
         ),
+
         `Depth Range (m)` = dplyr::case_when(
           !is.na(minimumDepthInMeters) & !is.na(maximumDepthInMeters) ~
             paste(minimumDepthInMeters, maximumDepthInMeters, sep = " | "),
@@ -6361,65 +6373,26 @@ const obs = new MutationObserver(() => {
       ) %>%
       dplyr::arrange(scientificName, samp_name) %>%
       dplyr::select(
-        kingdom,
-        phylum,
-        class,
-        order,
-        family,
-        genus,
-        scientificName,
-        samp_name,
-        eventDate,
-        target_gene,
-        Primers,
-        organismQuantity,
-        Volume,
-        `Depth Range (m)`,
-        bathymetry,
-        decimalLatitude,
-        decimalLongitude,
-        flags,
-        occurrenceID,
-        dataset_id,
-        associatedSequences,
-        project_contact,
-        LClabel
+        kingdom, phylum, class, order, family, genus,
+        scientificName, samp_name, eventDate, target_gene, Primers,
+        organismQuantity, Volume, `Depth Range (m)`, bathymetry,
+        decimalLatitude, decimalLongitude, flags, occurrenceID,
+        dataset_id, project_contact, LClabel
       )
 
     DT::datatable(
       det_show,
       rownames = FALSE,
+      escape = FALSE,
       colnames = c(
-        "Kingdom",
-        "Phylum",
-        "Class",
-        "Order",
-        "Family",
-        "Genus",
-        "Species",
-        "Sample Name",
-        "Date",
-        "Target Gene",
-        "Primers",
-        "# of Sequence Reads",
-        "Volume",
-        "Minimum/Maximum Depth (m)",
-        "Bathymetry",
-        "Latitude",
-        "Longitude",
-        "OBIS Data Flags",
-        "OBIS Occurrence ID",
-        "OBIS Dataset Identifier",
-        "Associated Sequences",
-        "Project Contact",
-        "Indigenous Acknowledgement & Contributions"
+        "Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+        "Species", "Sample Name", "Date", "Target Gene", "Primers",
+        "# of Sequence Reads", "Volume", "Minimum/Maximum Depth (m)",
+        "Bathymetry", "Latitude", "Longitude", "OBIS Data Flags",
+        "OBIS Occurrence ID", "OBIS Dataset Identifier",
+        "Project Contact", "Indigenous Acknowledgement & Contributions"
       ),
-      options = list(
-        pageLength = 10,
-        scrollX = TRUE,
-        autoWidth = FALSE,
-        scrollCollapse = TRUE
-      ),
+      options = list(pageLength = 10, scrollX = TRUE, autoWidth = FALSE),
       class = "nowrap"
     )
   })
