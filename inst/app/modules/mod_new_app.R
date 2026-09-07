@@ -2415,33 +2415,51 @@ app_b_server <- function(input, output, session){
     det <- selection_map_df()
     req(det)
 
+    yr <- sel_year_chr()
+
     det0 <- det %>%
       sf::st_drop_geometry() %>%
       dplyr::mutate(
         samp_name = as.character(samp_name),
+        year      = as.character(year),
         month_chr = as.character(month)
       )
 
+    # Apply Year dropdown
+    if (!identical(yr, "All")) {
+      det0 <- det0 %>%
+        dplyr::filter(year == yr)
+    }
+
     shiny::validate(
-      shiny::need(nrow(det0) > 0, "No detections in current selection.")
+      shiny::need(
+        nrow(det0) > 0,
+        paste0("No samples available for ", yr, ".")
+      )
     )
 
     month_levels <- month.abb
 
     counts <- det0 %>%
       dplyr::filter(
-        !is.na(samp_name), samp_name != "",
-        !is.na(month_chr), month_chr %in% month_levels
+        !is.na(samp_name),
+        samp_name != "",
+        !is.na(month_chr),
+        month_chr %in% month_levels
       ) %>%
-      dplyr::distinct(samp_name, month_chr) %>%
+      dplyr::distinct(samp_name, year, month_chr) %>%
       dplyr::count(month_chr, name = "n_samples") %>%
-      dplyr::mutate(month_chr = factor(month_chr, levels = month_levels))
+      dplyr::mutate(
+        month_chr = factor(month_chr, levels = month_levels)
+      )
 
     data.frame(
       month_chr = factor(month_levels, levels = month_levels)
     ) %>%
       dplyr::left_join(counts, by = "month_chr") %>%
-      dplyr::mutate(n_samples = dplyr::coalesce(n_samples, 0L))
+      dplyr::mutate(
+        n_samples = dplyr::coalesce(n_samples, 0L)
+      )
   })
 
   output$monthly_plot_subtitle <- renderText({
@@ -2475,8 +2493,8 @@ app_b_server <- function(input, output, session){
 
     small_screen <- session$clientData$output_map_width < 1440
 
-    month_font <- if (small_screen) 2.8 else 4.2
-    count_font <- if (small_screen) 2.0 else 3.0
+    month_font <- if (small_screen) 2.7 else 3.6
+    count_font <- if (small_screen) 2.0 else 2.7
     base_font  <- if (small_screen) 8 else 12
 
     groups_on <- input$map_groups %||% character(0)
@@ -2526,9 +2544,13 @@ app_b_server <- function(input, output, session){
 
     outer_max    <- max(1, ceiling(ymax * 1.10))
     inner_offset <- outer_max * 0.42
-    label_radius <- outer_max * if (small_screen) 1.35 else 1.28
 
-    plot_limit <- inner_offset + label_radius + outer_max * if (small_screen) 0.18 else 0.14
+    # Move month labels farther outside the bars
+    label_radius <- outer_max * if (small_screen) 1.65 else 1.55
+
+    # Give the outward labels enough plotting space
+    plot_limit <- inner_offset + label_radius +
+      outer_max * if (small_screen) 0.22 else 0.18
 
     ring_vals <- c(0, 0.25, 0.50, 0.75, 1.00) * outer_max + inner_offset
 
@@ -2561,7 +2583,7 @@ app_b_server <- function(input, output, session){
       ) +
       ggplot2::geom_text(
         ggplot2::aes(
-          y = n_samples + inner_offset + outer_max * 0.10,
+          y = n_samples + inner_offset + outer_max * 0.05,
           label = n_samples
         ),
         size = count_font,
