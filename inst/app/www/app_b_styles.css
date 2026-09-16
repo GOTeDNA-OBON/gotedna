@@ -842,8 +842,8 @@ table.dataTable.nowrap th {
   --legend-pad-x: 13px;
   --legend-line-h: 1.35;
   --legend-swatch: 18px;
-  --monthly-w: 500px;
-  --monthly-plot-h: 400px;
+  --monthly-w: 450px;
+  --monthly-plot-h: 350px;
   --layers-minw: 220px;
   --filter-btn-h: 70px;
   --filter-btn-short-h: 40px;
