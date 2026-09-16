@@ -3812,9 +3812,9 @@ app_b_server <- function(input, output, session){
       addMapPane("pane_points",     zIndex = 430) %>%
       addMapPane("pane_drawn_top",    zIndex = 900) %>%
       addMapPane("pane_selected_top", zIndex = 950) %>%
-      addProviderTiles(providers$CartoDB.Positron, group = "CartoDB Positron") %>%
-      addProviderTiles(providers$Esri.OceanBasemap, group = "Esri Ocean Basemap") %>%
-      addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery") %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas, group = "World Gray Canvas") %>%
+      addProviderTiles(providers$Esri.OceanBasemap, group = "Ocean Basemap") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
       fitBounds(
         lng1 = -65, lat1 = 41,
         lng2 = -59, lat2 = 47
@@ -3992,7 +3992,7 @@ app_b_server <- function(input, output, session){
         editOptions = editToolbarOptions()
       ) %>%
       addLayersControl(
-        baseGroups = c("CartoDB Positron", "Esri Ocean Basemap", "Esri World Imagery"),
+        baseGroups = c("World Gray Canvas", "Ocean Basemap", "World Imagery"),
         overlayGroups = c(
           "Site Polygon",
           "All", "12S", "COI", "16S", "18S",
