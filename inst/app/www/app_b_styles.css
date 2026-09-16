@@ -842,8 +842,8 @@ table.dataTable.nowrap th {
   --legend-pad-x: 13px;
   --legend-line-h: 1.35;
   --legend-swatch: 18px;
-  --monthly-w: 350px;
-  --monthly-plot-h: 350px;
+  --monthly-w: 500px;
+  --monthly-plot-h: 400px;
   --layers-minw: 220px;
   --filter-btn-h: 70px;
   --filter-btn-short-h: 40px;
@@ -908,8 +908,8 @@ table.dataTable.nowrap th {
     --legend-pad-y: 3px;
     --legend-pad-x: 5px;
 
-    --monthly-w: 300px;
-    --monthly-plot-h: 150px;
+    --monthly-w: 440px;
+    --monthly-plot-h: 350px;
   }
 
   #map{
@@ -921,18 +921,6 @@ table.dataTable.nowrap th {
     line-height: 1 !important;
     width: 225px !important;
   }
-
-#monthly_plot_control{
-    width: 300px !important;
-    max-height: 260px !important;
-  }
-
-  #monthly_circular_plot,
-  #monthly_circular_plot img{
-    height: 170px !important;
-    max-height: 170px !important;
-  }
-}
 
   #monthly_plot_title{
     font-size: 12px !important;
@@ -1359,6 +1347,25 @@ table.dataTable.nowrap th {
    ========================= */
 
 @media (max-width: 1440px), (max-height: 800px){
+
+  #map_wrap{
+    height: calc(100vh - 80px) !important;
+
+    --floating-w: 350px;
+    --floating-left: 70px;
+    --floating-top: 10px;
+
+    --legend-w: 120px;
+    --legend-h: 40px;
+    --legend-fs: 10px;
+    --legend-line-h: 0.5;
+    --legend-swatch: 7px;
+    --legend-pad-y: 3px;
+    --legend-pad-x: 5px;
+
+    --monthly-w: 325px;
+    --monthly-plot-h: 240px;
+  }
 
   .leaflet-control-layers-overlays input[type='checkbox']{
     width: 22px !important;

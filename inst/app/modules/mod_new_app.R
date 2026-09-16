@@ -280,7 +280,7 @@ $(function(){
             div(id = "monthly_plot_subtitle", textOutput("monthly_plot_subtitle", inline = TRUE)),
             plotOutput(
               "monthly_circular_plot",
-              height = "350px",
+              height = "400px",
               width = "100%"
             )
           ),
@@ -2491,11 +2491,12 @@ app_b_server <- function(input, output, session){
 
   output$monthly_circular_plot <- renderPlot({
 
-    small_screen <- session$clientData$output_map_width < 1440
+    map_width <- session$clientData$output_map_width
+    small_screen <- !is.null(map_width) && is.finite(map_width) && map_width < 1440
 
-    month_font <- if (small_screen) 2.7 else 3.6
-    count_font <- if (small_screen) 2.0 else 2.7
-    base_font  <- if (small_screen) 8 else 12
+    month_font <- if (small_screen) 3.2 else 4.0
+    count_font <- if (small_screen) 2.5 else 3.2
+    base_font  <- if (small_screen) 11 else 14
 
     groups_on <- input$map_groups %||% character(0)
     monthly_on <- "Monthly Sampling Plot" %in% groups_on
@@ -2505,6 +2506,7 @@ app_b_server <- function(input, output, session){
     det <- selection_map_df()
 
     if (is.null(det) || nrow(det) == 0) {
+
       p_empty <- ggplot2::ggplot(
         data.frame(x = 0.5, y = 0.5, lab = "Select or draw a polygon"),
         ggplot2::aes(x, y)
@@ -2527,30 +2529,39 @@ app_b_server <- function(input, output, session){
       return(invisible(NULL))
     }
 
+    # CREATE dat FIRST
     dat <- monthly_sample_counts()
 
     shiny::validate(
       shiny::need(nrow(dat) > 0, "No monthly data available."),
-      shiny::need(sum(dat$n_samples, na.rm = TRUE) > 0, "No samples available for this selection.")
+      shiny::need(
+        sum(dat$n_samples, na.rm = TRUE) > 0,
+        "No samples available for this selection."
+      )
     )
 
     dat <- dat %>%
       dplyr::mutate(
         month_chr = factor(month_chr, levels = month.abb),
-        fill_group = ifelse(n_samples == 0, "zero", as.character(month_chr))
+        fill_group = ifelse(
+          n_samples == 0,
+          "zero",
+          as.character(month_chr)
+        )
       )
 
+    # NOW calculate everything that depends on dat
     ymax <- max(dat$n_samples, na.rm = TRUE)
 
     outer_max    <- max(1, ceiling(ymax * 1.10))
     inner_offset <- outer_max * 0.42
 
-    # Move month labels farther outside the bars
-    label_radius <- outer_max * if (small_screen) 1.65 else 1.55
+    label_radius <- outer_max *
+      if (small_screen) 1.65 else 1.55
 
-    # Give the outward labels enough plotting space
-    plot_limit <- inner_offset + label_radius +
-      outer_max * if (small_screen) 0.22 else 0.18
+    plot_limit <- inner_offset +
+      label_radius +
+      outer_max * if (small_screen) 0.12 else 0.10
 
     ring_vals <- c(0, 0.25, 0.50, 0.75, 1.00) * outer_max + inner_offset
 
@@ -2568,7 +2579,7 @@ app_b_server <- function(input, output, session){
       dat,
       ggplot2::aes(
         x = month_chr,
-        y = n_samples + inner_offset,
+        y = n_samples + inner_offset, #coloured bars
         fill = fill_group
       )
     ) +
@@ -2583,7 +2594,7 @@ app_b_server <- function(input, output, session){
       ) +
       ggplot2::geom_text(
         ggplot2::aes(
-          y = n_samples + inner_offset + outer_max * 0.05,
+          y = inner_offset + outer_max * 1.08, #sample numbers
           label = n_samples
         ),
         size = count_font,
@@ -2593,7 +2604,7 @@ app_b_server <- function(input, output, session){
         data = dat,
         ggplot2::aes(
           x = month_chr,
-          y = inner_offset + label_radius,
+          y = inner_offset + label_radius, #month names
           label = month_chr
         ),
         inherit.aes = FALSE,
