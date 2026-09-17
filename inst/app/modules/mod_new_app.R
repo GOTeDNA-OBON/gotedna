@@ -881,6 +881,9 @@ assign_protocol_ID <- function(df,
 
 app_b_server <- function(input, output, session){
 
+  # Minimum number of samples required per group for inferential alpha-diversity comparisons
+  MIN_ALPHA_N <- 3L
+
   protocol_source <- reactive({
     df <- protocol_available_df()
 
@@ -4671,6 +4674,36 @@ const obs = new MutationObserver(() => {
     meta
   })
 
+  rarefaction_by_group <- reactive({
+
+    depth <- rarefaction_depth()
+    mat   <- comm_mat_mpa()
+    meta  <- sample_meta_mpa()
+
+    req(mat, meta)
+
+    lib_sizes <- data.frame(
+      sample_id = rownames(mat),
+      library_size = rowSums(mat, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    ) %>%
+      dplyr::mutate(
+        retained = depth == 0 | library_size >= depth
+      )
+
+    meta %>%
+      dplyr::distinct(sample_id, group_label) %>%
+      dplyr::inner_join(lib_sizes, by = "sample_id") %>%
+      dplyr::group_by(group_label) %>%
+      dplyr::summarise(
+        n_before = dplyr::n_distinct(sample_id),
+        n_after = dplyr::n_distinct(sample_id[retained]),
+        percent_retained = round(100 * n_after / n_before, 1),
+        inference_eligible = n_after >= MIN_ALPHA_N,
+        .groups = "drop"
+      )
+  })
+
   # ---- base detections used for beta ordination ----
   # Includes:
   #   - all detections inside MPA/AOI polygons
@@ -5111,7 +5144,43 @@ const obs = new MutationObserver(() => {
   })
 
   output$alpha_warning_text <- renderText({
-    alpha_overlap_warning() %||% ""
+
+    overlap_msg <- alpha_overlap_warning()
+
+    if (!is.null(overlap_msg)) {
+      return(overlap_msg)
+    }
+
+    sizes <- alpha_sample_sizes()
+
+    if (is.null(sizes) || nrow(sizes) == 0) {
+      return("")
+    }
+
+    excluded <- sizes %>%
+      dplyr::filter(!eligible_for_inference)
+
+    if (nrow(excluded) == 0) {
+      return("")
+    }
+
+    excluded_txt <- paste0(
+      excluded$group_label,
+      " (n = ",
+      excluded$n_samples,
+      ")",
+      collapse = ", "
+    )
+
+    paste0(
+      "Inferential analyses require ≥ ",
+      MIN_ALPHA_N,
+      " samples per group. ",
+      "The following groups are shown descriptively but excluded from ",
+      "inferential tests and significance-group lettering: ",
+      excluded_txt,
+      "."
+    )
   })
 
   output$beta_warning_text <- renderText({
@@ -5327,13 +5396,62 @@ const obs = new MutationObserver(() => {
       )
   })
 
+  # Minimum alpha sample sizes post rarefaction
+  alpha_sample_sizes <- reactive({
+
+    alpha <- alpha_boxplot_occ_all()
+
+    if (is.null(alpha) || nrow(alpha) == 0) {
+      return(data.frame())
+    }
+
+    alpha %>%
+      dplyr::filter(
+        !is.na(alpha_val),
+        !is.na(group_label),
+        !is.na(sample_id)
+      ) %>%
+      dplyr::group_by(group_label) %>%
+      dplyr::summarise(
+        n_samples = dplyr::n_distinct(sample_id),
+        .groups = "drop"
+      ) %>%
+      dplyr::mutate(
+        eligible_for_inference = n_samples >= MIN_ALPHA_N
+      )
+  })
+
+  alpha_inference_data <- reactive({
+
+    alpha <- alpha_boxplot_occ_all()
+    sizes <- alpha_sample_sizes()
+
+    req(alpha)
+    req(sizes)
+
+    eligible_groups <- sizes %>%
+      dplyr::filter(eligible_for_inference) %>%
+      dplyr::pull(group_label) %>%
+      as.character()
+
+    alpha %>%
+      dplyr::filter(
+        as.character(group_label) %in% eligible_groups,
+        !is.na(alpha_val),
+        !is.na(sample_id)
+      ) %>%
+      dplyr::mutate(
+        group_label = droplevels(as.factor(group_label))
+      )
+  })
+
   #-----------------------------------------------------------------------------
   alpha_stats <- reactive({
     if (!is.null(alpha_overlap_warning())) {
       return(NULL)
     }
 
-    alpha <- alpha_boxplot_occ_all()
+    alpha <- alpha_inference_data()
 
     shiny::validate(
       shiny::need(nrow(alpha) > 0, "No alpha diversity data available.")
@@ -5346,7 +5464,13 @@ const obs = new MutationObserver(() => {
     n_groups <- dplyr::n_distinct(alpha$group_label)
 
     shiny::validate(
-      shiny::need(n_groups > 1, "At least 2 polygons are needed for alpha comparison.")
+      shiny::need(
+        n_groups >= 2,
+        paste0(
+          "Inferential alpha-diversity analysis requires at least two ",
+          "groups with ≥ ", MIN_ALPHA_N, " samples each."
+        )
+      )
     )
 
     if (n_groups == 2) {
@@ -5389,35 +5513,88 @@ const obs = new MutationObserver(() => {
     )
   })
 
+
   output$alpha_summary_tbl <- DT::renderDT({
+
     alpha <- alpha_boxplot_occ_all()
+    retention <- rarefaction_by_group()
+    sizes <- alpha_sample_sizes()
 
     shiny::validate(
       shiny::need(nrow(alpha) > 0, "No alpha diversity data available.")
     )
 
-    out <- alpha %>%
+    stats_out <- alpha %>%
       dplyr::filter(!is.na(group_label), !is.na(alpha_val)) %>%
       dplyr::group_by(group_label) %>%
       dplyr::summarise(
-        n_samples = dplyr::n(),
         mean = round(mean(alpha_val, na.rm = TRUE), 2),
         median = round(stats::median(alpha_val, na.rm = TRUE), 2),
         sd = round(stats::sd(alpha_val, na.rm = TRUE), 2),
         min = round(min(alpha_val, na.rm = TRUE), 2),
-        q1 = round(as.numeric(stats::quantile(alpha_val, 0.25, na.rm = TRUE, type = 7)), 2),
-        q3 = round(as.numeric(stats::quantile(alpha_val, 0.75, na.rm = TRUE, type = 7)), 2),
+        q1 = round(as.numeric(
+          stats::quantile(alpha_val, 0.25, na.rm = TRUE)
+        ), 2),
+        q3 = round(as.numeric(
+          stats::quantile(alpha_val, 0.75, na.rm = TRUE)
+        ), 2),
         max = round(max(alpha_val, na.rm = TRUE), 2),
         .groups = "drop"
+      )
+
+    out <- stats_out %>%
+      dplyr::left_join(
+        retention %>%
+          dplyr::select(
+            group_label,
+            n_before,
+            n_after,
+            percent_retained
+          ),
+        by = "group_label"
       ) %>%
-      dplyr::rename(Polygon = group_label)
+      dplyr::left_join(
+        sizes %>%
+          dplyr::select(
+            group_label,
+            eligible_for_inference
+          ),
+        by = "group_label"
+      ) %>%
+      dplyr::mutate(
+        eligible_for_inference = ifelse(
+          eligible_for_inference,
+          "Yes",
+          "No"
+        )
+      ) %>%
+      dplyr::select(
+        group_label,
+        n_before,
+        n_after,
+        percent_retained,
+        eligible_for_inference,
+        mean,
+        median,
+        sd,
+        min,
+        q1,
+        q3,
+        max
+      ) %>%
+      dplyr::rename(
+        Polygon = group_label
+      )
 
     DT::datatable(
       out,
       rownames = FALSE,
       colnames = c(
         "Polygon",
-        "Number of Samples",
+        "Samples Before Rarefaction",
+        "Samples After Rarefaction",
+        "% Retained",
+        "Inference Eligible",
         "Mean",
         "Median",
         "Standard Deviation",
@@ -5431,7 +5608,20 @@ const obs = new MutationObserver(() => {
         dom = "tip",
         scrollX = TRUE,
         autoWidth = FALSE,
-        scrollCollapse = TRUE
+        scrollCollapse = TRUE,
+        columnDefs = list(
+          list(
+            className = "dt-center",
+            targets = 1:11
+          )
+        ),
+
+        # Center headers
+        headerCallback = DT::JS(
+          "function(thead, data, start, end, display) {
+     $(thead).find('th').css('text-align', 'center');
+   }"
+        )
       ),
       class = "nowrap"
     )
@@ -5524,11 +5714,10 @@ const obs = new MutationObserver(() => {
   make_cld_letters <- function(alpha_df, st, alpha = 0.05) {
     groups <- levels(droplevels(as.factor(alpha_df$group_label)))
 
-    # If only 1 group, return that group with "A"
-    if (length(groups) == 1) {
+    if (length(groups) < 2) {
       return(data.frame(
-        group_label = groups,
-        letters = "A",
+        group_label = character(0),
+        letters = character(0),
         stringsAsFactors = FALSE
       ))
     }
@@ -5569,15 +5758,33 @@ const obs = new MutationObserver(() => {
   }
 
   alpha_plot_annotations <- reactive({
-    st <- alpha_stats()
-    alpha <- alpha_boxplot_occ_all()
 
-    req(st, alpha)
-    req(nrow(alpha) > 0)
+    alpha <- alpha_inference_data()
+
+    if (is.null(alpha) || nrow(alpha) == 0) {
+      return(NULL)
+    }
+
+    n_groups <- dplyr::n_distinct(alpha$group_label)
+
+    if (n_groups < 2) {
+      return(NULL)
+    }
+
+    st <- alpha_stats()
+
+    if (is.null(st)) {
+      return(NULL)
+    }
 
     alpha2 <- alpha %>%
-      dplyr::filter(!is.na(group_label), !is.na(alpha_val)) %>%
-      dplyr::mutate(group_label = droplevels(as.factor(group_label)))
+      dplyr::filter(
+        !is.na(group_label),
+        !is.na(alpha_val)
+      ) %>%
+      dplyr::mutate(
+        group_label = droplevels(as.factor(group_label))
+      )
 
     cld <- make_cld_letters(alpha2, st, alpha = 0.05)
 
@@ -5587,11 +5794,18 @@ const obs = new MutationObserver(() => {
         y = max(alpha_val, na.rm = TRUE) * 1.08,
         .groups = "drop"
       ) %>%
-      dplyr::mutate(group_label = as.character(group_label))
+      dplyr::mutate(
+        group_label = as.character(group_label)
+      )
 
     cld %>%
-      dplyr::mutate(group_label = as.character(group_label)) %>%
-      dplyr::left_join(y_pos, by = "group_label") %>%
+      dplyr::mutate(
+        group_label = as.character(group_label)
+      ) %>%
+      dplyr::left_join(
+        y_pos,
+        by = "group_label"
+      ) %>%
       dplyr::mutate(
         x = group_label
       )
@@ -5633,18 +5847,31 @@ const obs = new MutationObserver(() => {
   output$alpha_boxplot <- plotly::renderPlotly({
 
     alpha <- alpha_boxplot_occ_all()
+    sizes <- alpha_sample_sizes()
     ann   <- alpha_plot_annotations()
 
     shiny::validate(
-      shiny::need(nrow(alpha) > 0, "No samples available for the current selection/year.")
+      shiny::need(
+        nrow(alpha) > 0,
+        "No samples available for the current selection/year."
+      )
     )
 
+    # Add sample-size eligibility to plotting data
+    alpha <- alpha %>%
+      dplyr::left_join(
+        sizes,
+        by = "group_label"
+      )
+
     y_max <- max(alpha$alpha_val, na.rm = TRUE)
+
     ann_top <- if (!is.null(ann) && nrow(ann) > 0) {
       max(ann$y, na.rm = TRUE)
     } else {
       y_max * 1.10
     }
+
     y_upper <- max(y_max * 1.15, ann_top * 1.10)
 
     metric_label <- switch(
@@ -5696,41 +5923,109 @@ const obs = new MutationObserver(() => {
     p <- plotly::plot_ly()
 
     for (grp in group_levels) {
-      df_grp <- alpha[as.character(alpha$group_label) == grp, , drop = FALSE]
-      grp_col <- unname(pal[grp])
-      if (is.na(grp_col) || is.null(grp_col)) grp_col <- "#333333"
 
-      p <- p %>%
-        plotly::add_trace(
-          data = df_grp,
-          x = ~group_label,
-          y = ~alpha_val,
-          type = "box",
-          name = grp,
-          legendgroup = grp,
-          showlegend = TRUE,
-          marker = list(
-            color = grp_col,
-            opacity = 0.8
-          ),
-          line = list(color = grp_col),
-          fillcolor = grDevices::adjustcolor(grp_col, alpha.f = 0.35),
-          boxpoints = "all",
-          jitter = 0.3,
-          pointpos = 0,
-          customdata = ~samp_name,
-          hovertemplate = paste(
-            "<b>Sample:</b> %{customdata}<br>",
-            "<b>Group:</b> %{x}<br>",
-            "<b>", metric_label, ":</b> %{y}<extra></extra>"
-          ),
-          inherit = FALSE
-        )
+      df_grp <- alpha[
+        as.character(alpha$group_label) == grp,
+        ,
+        drop = FALSE
+      ]
+
+      grp_col <- unname(pal[grp])
+
+      if (is.na(grp_col) || is.null(grp_col)) {
+        grp_col <- "#333333"
+      }
+
+      # Determine whether this group has enough samples
+      # for a boxplot / inferential analysis
+      eligible <- isTRUE(df_grp$eligible_for_inference[1])
+
+      # ------------------------------------------------------------
+      # n >= MIN_ALPHA_N:
+      # show boxplot + individual sample points
+      # ------------------------------------------------------------
+      if (eligible) {
+
+        p <- p %>%
+          plotly::add_trace(
+            data = df_grp,
+            x = ~group_label,
+            y = ~alpha_val,
+            type = "box",
+            name = grp,
+            legendgroup = grp,
+            showlegend = TRUE,
+            marker = list(
+              color = grp_col,
+              opacity = 0.8
+            ),
+            line = list(color = grp_col),
+            fillcolor = grDevices::adjustcolor(
+              grp_col,
+              alpha.f = 0.35
+            ),
+            boxpoints = "all",
+            jitter = 0.3,
+            pointpos = 0,
+            customdata = ~samp_name,
+            hovertemplate = paste(
+              "<b>Sample:</b> %{customdata}<br>",
+              "<b>Group:</b> %{x}<br>",
+              "<b>", metric_label, ":</b> %{y}<extra></extra>"
+            ),
+            inherit = FALSE
+          )
+
+      } else {
+
+        # ----------------------------------------------------------
+        # n < MIN_ALPHA_N:
+        # show individual observations only — no boxplot
+        # ----------------------------------------------------------
+
+        p <- p %>%
+          plotly::add_trace(
+            data = df_grp,
+            x = ~group_label,
+            y = ~alpha_val,
+            type = "scatter",
+            mode = "markers",
+            name = grp,
+            legendgroup = grp,
+            showlegend = TRUE,
+            marker = list(
+              color = grp_col,
+              size = 9,
+              opacity = 0.8
+            ),
+            customdata = ~samp_name,
+            hovertemplate = paste(
+              "<b>Sample:</b> %{customdata}<br>",
+              "<b>Group:</b> %{x}<br>",
+              "<b>", metric_label, ":</b> %{y}<br>",
+              "<b>n:</b> ", df_grp$n_samples[1],
+              "<br><i>Descriptive only; excluded from inference</i>",
+              "<extra></extra>"
+            ),
+            inherit = FALSE
+          )
+      }
+
+      # ------------------------------------------------------------
+      # Significance letters
+      # Only eligible groups should occur in ann
+      # ------------------------------------------------------------
 
       if (!is.null(ann) && nrow(ann) > 0) {
-        ann_grp <- ann[ann$x == grp, , drop = FALSE]
+
+        ann_grp <- ann[
+          ann$x == grp,
+          ,
+          drop = FALSE
+        ]
 
         if (nrow(ann_grp) > 0) {
+
           p <- p %>%
             plotly::add_text(
               data = ann_grp,
@@ -5738,7 +6033,10 @@ const obs = new MutationObserver(() => {
               y = ~y,
               text = ~letters,
               textposition = "top center",
-              textfont = list(size = 18, color = "black"),
+              textfont = list(
+                size = 18,
+                color = "black"
+              ),
               showlegend = FALSE,
               legendgroup = grp,
               hoverinfo = "skip",
@@ -5751,16 +6049,24 @@ const obs = new MutationObserver(() => {
     p <- p %>%
       plotly::layout(
         font = list(size = 18),
+
         xaxis = list(
-          title = list(text = "Location (Polygon)", font = list(size = 20)),
+          title = list(
+            text = "Location (Polygon)",
+            font = list(size = 20)
+          ),
           tickfont = list(size = 16),
           showgrid = FALSE,
           showline = TRUE,
           linecolor = "black",
           rangemode = "tozero"
         ),
+
         yaxis = list(
-          title = list(text = metric_axis_label, font = list(size = 20)),
+          title = list(
+            text = metric_axis_label,
+            font = list(size = 20)
+          ),
           tickfont = list(size = 16),
           showgrid = FALSE,
           showline = TRUE,
@@ -5768,6 +6074,7 @@ const obs = new MutationObserver(() => {
           range = c(0, y_upper),
           fixedrange = FALSE
         ),
+
         legend = list(
           title = list(text = "Polygon"),
           font = list(size = 14),
@@ -5775,16 +6082,24 @@ const obs = new MutationObserver(() => {
           itemdoubleclick = "toggleothers",
           groupclick = "togglegroup"
         ),
-        margin = list(l = 80, r = 30, t = 40, b = 120),
+
+        margin = list(
+          l = 80,
+          r = 30,
+          t = 40,
+          b = 120
+        ),
+
         showlegend = TRUE
       ) %>%
+
       htmlwidgets::onRender("
-    function(el,x){
-      setTimeout(function(){
-        $('#alpha_loading_overlay').addClass('hidden');
-      },300);
-    }
-  ")
+      function(el,x){
+        setTimeout(function(){
+          $('#alpha_loading_overlay').addClass('hidden');
+        },300);
+      }
+    ")
 
     p
   })
