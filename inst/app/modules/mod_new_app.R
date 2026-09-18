@@ -253,7 +253,7 @@ $(function(){
             tags$li(tags$a(class="nav-scroll", href="#", `data-target`="sec_pie",    "Taxonomic Pie Chart"))
           )
         )
-      ),
+    ),
 
       # ---- MAP SECTION ----
       div(
@@ -631,7 +631,6 @@ $(function(){
 
           div(class = "data-select-item"),
           div(class = "data-select-item")
-        )
       ),
 
         # ---- Alpha plot ----
@@ -772,26 +771,35 @@ $(function(){
           )
         ),
 
-        fluidRow(
-          column(
-            width = 8,
-            offset = 2,
-            tags$div(
-              style = "margin-top: 10px; font-size: 16px;",
-              strong(textOutput("beta_stats_text", inline = TRUE))
-            ),
-            tags$div(
-              style = "margin-top: 6px; font-size: 15px;",
-              textOutput("beta_dispersion_text", inline = TRUE)
-            )
+      fluidRow(
+        column(
+          width = 8,
+          offset = 2,
+
+          tags$div(
+            style = "margin-top: 10px; font-size: 16px;",
+            strong(textOutput("beta_stats_text", inline = TRUE))
+          ),
+
+          tags$div(
+            style = "margin-top: 24px; font-size: 15px;",
+            uiOutput("beta_dispersion_text", inline = TRUE)
+          ),
+
+          tags$div(
+            style = "
+    margin-top: 24px;
+    font-size: 14px;
+    line-height: 1.4;
+  ",
+            uiOutput("beta_pcoa_diagnostic_text", inline = TRUE)
           )
         )
       ),
 
-
       # ---- Taxonomic Pie Chart ----
       div(
-        id = "sec_pie", class = "scroll-section",
+        id = "sec_pie", class = "scroll-section",  style = "margin-top: 40px;",
         h3("Taxonomic Pie Chart"),
 
         div(
@@ -810,6 +818,8 @@ $(function(){
         )
       )
     )
+  )
+)
 }
 
 
@@ -4970,7 +4980,8 @@ const obs = new MutationObserver(() => {
     message("BETA metric: ", input$beta_metric %||% "bray")
   }, ignoreInit = TRUE, priority = 50)
 
-  # ---- metadata for plotting: samples can belong to multiple groups ----
+  # ---- metadata for beta plotting/statistics ----
+  # Samples must have unique group membership for inferential analyses.
   beta_plot_meta <- reactive({
     det <- diversity_detections_beta()
     req(det)
@@ -5107,40 +5118,112 @@ const obs = new MutationObserver(() => {
 
   beta_dispersion <- reactive({
     dat <- beta_stats_data()
+
     if (is.null(dat)) {
       return(NULL)
     }
 
-    d   <- dat$dist
-    md  <- dat$meta
+    d  <- dat$dist
+    md <- dat$meta
 
     md$group_label <- as.factor(md$group_label)
 
     bd <- vegan::betadisper(d, md$group_label)
-    an <- anova(bd)
+
+    set.seed(123)
+
+    perm <- vegan::permutest(
+      bd,
+      permutations = 999
+    )
 
     list(
       betadisper = bd,
-      anova = an
+      permutest = perm
     )
   })
 
-  output$beta_dispersion_text <- renderText({
+  output$beta_dispersion_text <- renderUI({
+
     if (!is.null(beta_overlap_warning())) {
-      return("")
+      return(NULL)
     }
 
     bd <- beta_dispersion()
-    if (is.null(bd)) {
-      return("")
+    st <- beta_stats()
+
+    if (is.null(bd) || is.null(st)) {
+      return(NULL)
     }
 
-    paste0(
-      "Beta dispersion: F = ",
-      round(bd$anova$`F value`[1], 3),
+    disp_p <- bd$permutest$tab$`Pr(>F)`[1]
+
+    per_tab <- as.data.frame(st$permanova)
+    per_p   <- per_tab$`Pr(>F)`[1]
+
+    base_txt <- paste0(
+      "Multivariate dispersion (999 permutations): F = ",
+      round(bd$permutest$tab$F[1], 3),
       ", p = ",
-      p_with_stars(bd$anova$`Pr(>F)`[1])
+      p_with_stars(disp_p),
+      ".<div style='margin-top:6px;'></div>"
     )
+
+    if (!is.na(disp_p) && disp_p <= 0.05 &&
+        !is.na(per_p) && per_p <= 0.05) {
+
+      HTML(paste0(
+        base_txt,
+        "<strong>Caution:</strong> ",
+        "Community variability also differed among areas. ",
+        "This means the PERMANOVA result may be influenced by both differences in community composition ",
+        "among areas and differences in how variable the samples are within each area."
+      ))
+
+    } else if (!is.na(disp_p) && disp_p <= 0.05) {
+
+      HTML(paste0(
+        base_txt,
+        "Community variability differs significantly among areas, indicating ",
+        "that samples within some areas are more variable than samples within others."
+      ))
+
+    } else {
+
+      HTML(paste0(
+        base_txt,
+        "No significant difference in community variability was detected among areas."
+      ))
+    }
+  })
+
+  output$beta_pcoa_diagnostic_text <- renderUI({
+
+    res <- beta_pcoa_result()
+
+    if (is.null(res)) {
+      return(NULL)
+    }
+
+    if (res$has_negative_eigenvalues) {
+
+      HTML(
+        paste0(
+          "<strong>PCoA Note:</strong> ",
+          "A statistical correction was applied to improve how community ",
+          "differences are represented in the PCoA plot."
+        )
+      )
+
+    } else {
+
+      HTML(
+        paste0(
+          "<strong>PCoA Note:</strong> ",
+          "No statistical correction was required for the PCoA plot."
+        )
+      )
+    }
   })
 
   output$alpha_warning_text <- renderText({
@@ -6104,65 +6187,128 @@ const obs = new MutationObserver(() => {
     p
   })
 
-  make_ellipse <- function(df, conf = 0.95, npoints = 100) {
-    if (nrow(df) < 3) return(NULL)
-
-    center <- c(mean(df$PC1, na.rm = TRUE), mean(df$PC2, na.rm = TRUE))
-    cov_mat <- stats::cov(df[, c("PC1", "PC2")], use = "complete.obs")
-
-    if (any(!is.finite(cov_mat)) || det(cov_mat) <= 0) return(NULL)
-
-    angles <- seq(0, 2 * pi, length.out = npoints)
-    circle <- cbind(cos(angles), sin(angles))
-
-    radius <- sqrt(stats::qchisq(conf, df = 2))
-    ellipse <- t(center + radius * t(circle %*% chol(cov_mat)))
-
-    out <- data.frame(
-      PC1 = ellipse[, 1],
-      PC2 = ellipse[, 2]
-    )
-    out
-  }
-
   #Beta diversity
+  beta_pcoa_result <- reactive({
+
+    dat <- beta_stats_data()
+
+    if (is.null(dat)) {
+      return(NULL)
+    }
+
+    d <- dat$dist
+
+    sample_ids <- attr(d, "Labels")
+
+    shiny::validate(
+      shiny::need(
+        !is.null(sample_ids),
+        "Sample names are missing from the beta diversity distance object."
+      ),
+      shiny::need(
+        length(sample_ids) > 2,
+        "At least 3 samples are required to compute a PCoA."
+      )
+    )
+
+    # First evaluate the uncorrected ordination
+    ord_raw <- vegan::wcmdscale(
+      d,
+      k = 2,
+      eig = TRUE,
+      add = FALSE
+    )
+
+    neg_eig <- ord_raw$eig[
+      ord_raw$eig < -sqrt(.Machine$double.eps)
+    ]
+
+    has_negative <- length(neg_eig) > 0
+
+    # Apply Lingoes correction only when needed
+    if (has_negative) {
+
+      ord <- vegan::wcmdscale(
+        d,
+        k = 2,
+        eig = TRUE,
+        add = "lingoes"
+      )
+
+      correction <- "Lingoes"
+
+    } else {
+
+      ord <- ord_raw
+      correction <- "None"
+    }
+
+    list(
+      ord = ord,
+      raw_eigenvalues = ord_raw$eig,
+      negative_eigenvalues = neg_eig,
+      has_negative_eigenvalues = has_negative,
+      correction = correction
+    )
+  })
+
   output$beta_pcoa <- plotly::renderPlotly({
+
     if (!is.null(beta_overlap_warning())) {
       return(NULL)
     }
 
-    dat  <- beta_stats_data()
+    dat <- beta_stats_data()
+
+    shiny::validate(
+      shiny::need(
+        !is.null(dat),
+        "No beta diversity data are available for the current selection."
+      )
+    )
+
     d    <- dat$dist
     meta <- dat$meta
 
     sample_ids <- attr(d, "Labels")
 
     shiny::validate(
-      shiny::need(!is.null(sample_ids), "Sample names are missing from the beta diversity distance object."),
-      shiny::need(length(sample_ids) > 2, "At least 3 samples are required to compute a PCoA.")
-    )
-
-    beta_method <- input$beta_metric %||% "bray"
-
-    shiny::validate(
+      shiny::need(
+        !is.null(sample_ids),
+        "Sample names are missing from the beta diversity distance object."
+      ),
+      shiny::need(
+        length(sample_ids) > 2,
+        "At least 3 samples are required to compute a PCoA."
+      ),
       shiny::need(
         all(is.finite(as.vector(d))),
         "Distance matrix contains non-finite values for the current filters/metric."
       )
     )
 
-    ord <- tryCatch(
-      stats::cmdscale(d, k = 2, eig = TRUE),
-      error = function(e) NULL
-    )
+    beta_method <- input$beta_metric %||% "bray"
+
+    pcoa_res <- beta_pcoa_result()
 
     shiny::validate(
-      shiny::need(!is.null(ord), "PCoA could not be computed for the current beta diversity selection."),
-      shiny::need(!is.null(ord$points), "PCoA returned no coordinates.")
+      shiny::need(
+        !is.null(pcoa_res),
+        "PCoA could not be computed for the current beta diversity selection."
+      )
     )
 
+    ord <- pcoa_res$ord
+
     shiny::validate(
-      shiny::need(length(sample_ids) == nrow(ord$points), "Mismatch between sample names and ordination points.")
+      shiny::need(
+        !is.null(ord$points),
+        "PCoA returned no coordinates."
+      ),
+      shiny::need(
+        length(sample_ids) == nrow(ord$points),
+        "Mismatch between sample names and ordination points."
+      )
     )
 
     scores <- data.frame(
