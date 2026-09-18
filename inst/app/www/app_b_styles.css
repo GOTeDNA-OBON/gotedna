@@ -104,8 +104,8 @@ table.dataTable,
 .app_b .navbar { margin-bottom: 10px; }
 
 .app_b .navbar{
-background-color: #2241a7 !important;
-border-color: #2241a7 !important;
+background-color: #305CDE !important;
+border-color: #305CDE !important;
 z-index: 20000 !important;
 position: fixed !important;
 width: 100%;
@@ -114,7 +114,7 @@ width: 100%;
 /* navbar text */
 .app_b .navbar .navbar-brand,
 .app_b .navbar .navbar-nav > li > a{
-  color: #ffffff !important;
+  color: #FFFDF7 !important;
 }
 
 .app_b .navbar-brand{
@@ -224,7 +224,7 @@ body {
 
 #floating_panel{
   position: absolute;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.92); /* background floating panel colour */
   z-index: 9999;
 
   display: flex;
@@ -498,15 +498,15 @@ body {
 
 /* OFF state (default look) */
 .filter-btn{
-  background-color: #f7f7f7 !important;
+  background-color: #C1DBE8 !important;
   border-color: #d0d0d0 !important;
   color: black;
 }
 
 /* ON state (group buttons) */
 .filter-btn.btn-group-on{
-  background-color: #ABDDDE !important;
-  border-color: #046c9a !important;
+  background-color: #305CDE!important;
+  border-color: #305CDE !important;
   color: black;
 }
 
@@ -518,8 +518,8 @@ body {
 
 /* ON hover (different colour) */
 .filter-btn.btn-group-on:hover{
-  background-color: #ABDDDE !important;
-  border-color: #046c9a !important;
+  background-color: #305CDE!important;
+  border-color: #305CDE !important;
   color: black;
 }
 
@@ -540,16 +540,16 @@ body {
 /* SARA / AIS buttons */
 .filter-btn.btn-sara-on,
 .filter-btn.btn-ais-on{
-  background-color: #ABDDDE !important;
-  border-color: #046c9a !important;
+  background-color: #305CDE!important;
+  border-color: #305CDE !important;
   color: black;
 }
 
 /* SARA / AIS hover when ON */
 .filter-btn.btn-sara-on:hover,
 .filter-btn.btn-ais-on:hover{
-  background-color: #ABDDDE !important;
-  border-color: #046c9a !important;
+  background-color: #305CDE!important;
+  border-color: #305CDE !important;
   color: black;
 }
 
