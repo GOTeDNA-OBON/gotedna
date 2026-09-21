@@ -5210,8 +5210,8 @@ const obs = new MutationObserver(() => {
       HTML(
         paste0(
           "<strong>PCoA Note:</strong> ",
-          "A statistical correction was applied to improve how community ",
-          "differences are represented in the PCoA plot."
+          "Negative eigenvalues were detected, so a Lingoes correction was applied ",
+          "to improve the Euclidean representation of distances in the PCoA ordination."
         )
       )
 
