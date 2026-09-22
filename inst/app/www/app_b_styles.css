@@ -876,7 +876,7 @@ table.dataTable.nowrap th {
   /* logo/title */
   .app_b .navbar-brand{
     font-size: 16px !important;
-    padding-top: 10px !important;
+    padding-top: 5px !important;
     padding-bottom: 10px !important;
     height: 50px !important;
     line-height: 30px !important;
@@ -885,6 +885,7 @@ table.dataTable.nowrap th {
   /* navbar tabs */
   .app_b .navbar .navbar-nav > li > a{
     font-size: 14px !important;
+    font-weight: 550 !important;
     padding-top: 14px !important;
     padding-bottom: 14px !important;
     padding-left: 16px !important;
